@@ -136,19 +136,19 @@ class AuthController {
             $expires_at = date('Y-m-d H:i:s', time() + 3600);
             $this->userModel->savePasswordResetToken($email, $token, $expires_at);
 
-            $reset_link = "http://localhost/GameLoggd/index.php?action=reset_password&token=$token";
+            $reset_link = "http://localhost/GameLoggd/public/index.php?action=reset_password&token=$token";
 
             $mail = new PHPMailer(true);
             try {
                 $mail->isSMTP();
-                $mail->Host = getenv('SMTP_HOST');
+                $mail->Host = $_ENV['SMTP_HOST'];
                 $mail->SMTPAuth = true;
-                $mail->Username = getenv('SMTP_USER');
-                $mail->Password = getenv('SMTP_PASS');
+                $mail->Username = $_ENV['SMTP_USER'];
+                $mail->Password = $_ENV['SMTP_PASS'];
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-                $mail->Port = getenv('SMTP_PORT');
+                $mail->Port = $_ENV['SMTP_PORT'];
 
-                $mail->setFrom(getenv('SMTP_USER'), 'GameLoggd');
+                $mail->setFrom($_ENV['SMTP_USER'], 'GameLoggd');
                 $mail->addAddress($email);
                 $mail->isHTML(true);
                 $mail->Subject = 'Redefinição de Senha - GameLoggd';
@@ -159,7 +159,7 @@ class AuthController {
                 include __DIR__ . '/../Views/auth/forgot_password.php';
                 return;
             } catch (Exception $e) {
-                $error = "Erro ao enviar email. Tente novamente mais tarde.";
+                $error = "Erro detalhado: " . $mail->ErrorInfo;
                 include __DIR__ . '/../Views/auth/forgot_password.php';
                 return;
             }
