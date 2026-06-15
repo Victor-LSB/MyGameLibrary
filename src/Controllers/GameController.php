@@ -142,7 +142,7 @@ class GameController {
             $platform = filter_input(INPUT_POST, 'platform', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? 'Desconhecida';
             $genre = filter_input(INPUT_POST, 'genre', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? 'Desconhecido';
             $release_date = filter_input(INPUT_POST, 'release_date', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-            $cover_image = filter_input(INPUT_POST, 'cover_image', FILTER_SANITIZE_URL);
+            $cover_image = filter_input(INPUT_POST, 'cover', FILTER_SANITIZE_URL);
 
             if ($external_id && $title) {
                 $existingGame = $this->gameModel->findGameByExternalId($external_id);
@@ -151,7 +151,8 @@ class GameController {
                     $game_id = $existingGame['id'];
                 } else {
                     $gameDetails = $this->api->getGameDetails($external_id);
-                    $description = $gameDetails['description'] ?? null;
+                    $raw_description = $gameDetails['description'] ?? '';
+                    $description = $this->api->translateHTML($raw_description, 'EN', 'PT');
                     
                     $game_id = $this->gameModel->addGame($external_id, $title, $platform, $genre, $release_date, $cover_image);
                     
