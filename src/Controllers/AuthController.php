@@ -1,5 +1,7 @@
 <?php
 namespace Victi\GameLoggd\Controllers;
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 use Victi\GameLoggd\Database\Database;
 use Victi\GameLoggd\Models\User;
 
@@ -108,11 +110,142 @@ class AuthController {
         include __DIR__ . '/../Views/auth/register.php';
     }
 
+    public function forgotPassword() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL) ?? '';
+
+            if (empty($email)) {
+                $error = 'Email é obrigatório.';
+                include __DIR__ . '/../Views/auth/forgot_password.php';
+                return;
+            }
+
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $error = 'Email inválido.';
+                include __DIR__ . '/../Views/auth/forgot_password.php';
+                return;
+            }
+
+            if (!$this->userModel->emailExists($email)) {
+                $error = 'Email não encontrado em nossa base de dados.';
+                include __DIR__ . '/../Views/auth/forgot_password.php';
+                return;
+            }
+
+            $token = bin2hex(random_bytes(50));
+            $expires_at = date('Y-m-d H:i:s', time() + 3600);
+            $this->userModel->savePasswordResetToken($email, $token, $expires_at);
+
+            $reset_link = "http://localhost/GameLoggd/index.php?action=reset_password&token=$token";
+
+            $mail = new PHPMailer(true);
+            try {
+                $mail->isSMTP();
+                $mail->Host = getenv('SMTP_HOST');
+                $mail->SMTPAuth = true;
+                $mail->Username = getenv('SMTP_USER');
+                $mail->Password = getenv('SMTP_PASS');
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port = getenv('SMTP_PORT');
+
+                $mail->setFrom(getenv('SMTP_USER'), 'GameLoggd');
+                $mail->addAddress($email);
+                $mail->isHTML(true);
+                $mail->Subject = 'Redefinição de Senha - GameLoggd';
+                $mail->Body = "Clique no link para redefinir sua senha: <a href='$reset_link'>$reset_link</a><br><br>Este link expira em 1 hora.";
+
+                $mail->send();
+                $success = 'Link de redefinição de senha enviado para seu email!';
+                include __DIR__ . '/../Views/auth/forgot_password.php';
+                return;
+            } catch (Exception $e) {
+                $error = "Erro ao enviar email. Tente novamente mais tarde.";
+                include __DIR__ . '/../Views/auth/forgot_password.php';
+                return;
+            }
+        }
+
+        include __DIR__ . '/../Views/auth/forgot_password.php';
+    }
+
+    public function resetPassword() {
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            $token = filter_input(INPUT_GET, 'token', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
+
+            if (empty($token)) {
+                $error = 'Token inválido ou ausente.';
+                include __DIR__ . '/../Views/auth/reset_password.php';
+                return;
+            }
+
+            $user = $this->userModel->getUserByResetToken($token);
+            
+            if (!$user) {
+                $error = 'Token inválido ou expirado. Solicite um novo link de recuperação.';
+                include __DIR__ . '/../Views/auth/reset_password.php';
+                return;
+            }
+
+            include __DIR__ . '/../Views/auth/reset_password.php';
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $token = filter_input(INPUT_POST, 'token', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
+            $new_password = filter_input(INPUT_POST, 'new_password', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
+            $password_confirm = filter_input(INPUT_POST, 'password_confirm', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
+
+            if (empty($token)) {
+                $error = 'Token inválido ou ausente.';
+                include __DIR__ . '/../Views/auth/reset_password.php';
+                return;
+            }
+
+            if (empty($new_password) || empty($password_confirm)) {
+                $error = 'Todos os campos são obrigatórios.';
+                include __DIR__ . '/../Views/auth/reset_password.php';
+                return;
+            }
+
+            if ($new_password !== $password_confirm) {
+                $error = 'As senhas não coincidem.';
+                include __DIR__ . '/../Views/auth/reset_password.php';
+                return;
+            }
+
+            if (strlen($new_password) < 6) {
+                $error = 'A senha deve ter no mínimo 6 caracteres.';
+                include __DIR__ . '/../Views/auth/reset_password.php';
+                return;
+            }
+
+            $user = $this->userModel->getUserByResetToken($token);
+            
+            if (!$user) {
+                $error = 'Token inválido ou expirado. Solicite um novo link de recuperação.';
+                include __DIR__ . '/../Views/auth/reset_password.php';
+                return;
+            }
+
+            if ($this->userModel->updatePassword($user['id'], $new_password)) {
+                $success = 'Senha redefinida com sucesso! Faça login com sua nova senha.';
+                include __DIR__ . '/../Views/auth/reset_password.php';
+                return;
+            } else {
+                $error = 'Erro ao redefinir senha. Tente novamente.';
+                include __DIR__ . '/../Views/auth/reset_password.php';
+                return;
+            }
+        }
+    }
+
     public function logout() {
         $this->startSession();
         session_destroy();
         header("Location: index.php?action=login"); 
         exit();
     }
+
+    
 }
 ?>

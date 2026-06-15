@@ -42,6 +42,10 @@
                     Entrar
                 </button>
                 
+                <div class="text-center pt-3">
+                    <a href="index.php?action=forgot_password" class="inline-block text-violet-400 hover:text-violet-300 font-bold uppercase tracking-wide transition-colors text-xs">Esqueceu sua senha?</a>
+                </div>
+                
                 <div class="mt-6 text-center pt-6 border-t border-zinc-800">
                     <p class="text-zinc-500 font-medium text-sm">Não tem uma conta?</p>
                     <a href="index.php?action=register" class="inline-block mt-1 text-violet-400 hover:text-violet-300 font-bold uppercase tracking-wide transition-colors text-sm">Registrar nova conta</a>
