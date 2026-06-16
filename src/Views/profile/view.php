@@ -36,7 +36,7 @@
                 <?php endif; ?>
                 
                 <button onclick="navigator.clipboard.writeText(window.location.href); alert('Link do perfil copiado!');" class="absolute top-4 right-4 bg-black/50 hover:bg-black/80 backdrop-blur-sm text-white px-3 py-2 rounded-sm text-xs font-bold uppercase tracking-wider transition-colors border border-white/10 z-10">
-                    🔗 Partilhar
+                    🔗 Compartilhar
                 </button>
             </div>
 

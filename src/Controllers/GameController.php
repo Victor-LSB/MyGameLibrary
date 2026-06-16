@@ -278,6 +278,9 @@ class GameController {
             exit();
         }
 
+        $tags_string = $_POST['tags'] ?? '';
+        $tags_array = array_filter(array_map('trim', explode(',', $tags_string)));
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $game_id = filter_input(INPUT_POST, 'game_id', FILTER_SANITIZE_NUMBER_INT);
             $review = $_POST['review'] ?? '';

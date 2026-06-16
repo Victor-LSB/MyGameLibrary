@@ -100,6 +100,9 @@
                             <div class="mt-4 flex justify-end">
                                 <button type="submit" class="bg-violet-600 hover:bg-violet-500 text-white px-8 py-3 rounded-sm font-black uppercase tracking-widest text-sm transition-colors shadow-lg">Guardar Análise</button>
                             </div>
+                            <div class="tags" style="display: flex;">
+                                <input type="text" name="tags" placeholder="Adicionar tags separadas por vírgula" class="w-full mt-4 bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
+                            </div>
                         </form>
                     <?php else: ?>
                         <div class="bg-zinc-950 border-2 border-zinc-800 p-5 rounded-sm min-h-[150px]">
