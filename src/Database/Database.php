@@ -4,17 +4,17 @@ use PDO;
 use PDOException;
 
 class Database {
-    private $host = "127.0.0.1";
-    private $dbname = "gameloggd";
-    private $user = "root";
-    private $password = "";
     private $conn = null;
-
 
     public function connect() {
         try {
             if ($this->conn == null) {
-                $this->conn = new PDO("mysql:host={$this->host};dbname={$this->dbname}", $this->user, $this->password);
+                $host = $_ENV['DB_HOST'] ?? '127.0.0.1';
+                $dbname = $_ENV['DB_DATABASE'] ?? 'mygamelibrary';
+                $user = $_ENV['DB_USERNAME'] ?? 'root';
+                $password = $_ENV['DB_PASSWORD'] ?? '';
+
+                $this->conn = new PDO("mysql:host={$host};dbname={$dbname}", $user, $password);
                 $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             }
             return $this->conn;
@@ -24,6 +24,4 @@ class Database {
         }
     }
 }
-
-
 ?>

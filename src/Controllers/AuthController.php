@@ -136,7 +136,7 @@ class AuthController {
             $expires_at = date('Y-m-d H:i:s', time() + 3600);
             $this->userModel->savePasswordResetToken($email, $token, $expires_at);
 
-            $reset_link = "http://localhost/GameLoggd/public/index.php?action=reset_password&token=$token";
+            $reset_link = "http://localhost/MyGameLibrary/public/index.php?action=reset_password&token=$token";
 
             $mail = new PHPMailer(true);
             try {
@@ -148,10 +148,10 @@ class AuthController {
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                 $mail->Port = $_ENV['SMTP_PORT'];
 
-                $mail->setFrom($_ENV['SMTP_USER'], 'GameLoggd');
+                $mail->setFrom($_ENV['SMTP_USER'], 'MyGameLibrary');
                 $mail->addAddress($email);
                 $mail->isHTML(true);
-                $mail->Subject = 'Redefinição de Senha - GameLoggd';
+                $mail->Subject = 'Redefinição de Senha - MyGameLibrary';
                 $mail->Body = "Clique no link para redefinir sua senha: <a href='$reset_link'>$reset_link</a><br><br>Este link expira em 1 hora.";
 
                 $mail->send();

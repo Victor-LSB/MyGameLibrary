@@ -36,7 +36,7 @@ class GameAPI {
             'Accept: application/json',
             'Accept-Encoding: gzip, deflate',
             'Connection: keep-alive',
-            'User-Agent: GameLoggd/1.0'
+            'User-Agent: MyGameLibrary/1.0'
         ]);
         
         $response = curl_exec($ch);
