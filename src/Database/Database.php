@@ -11,7 +11,7 @@ class Database {
             if ($this->conn == null) {
                 $host = $_ENV['DB_HOST'] ?? '127.0.0.1';
                 $dbname = $_ENV['DB_DATABASE'] ?? 'mygamelibrary';
-                $user = $_ENV['DB_USERNAME'] ?? 'root';
+                $user = $_ENV['DB_USERNAME'] ?? 'root' ?? 'mygamelibrary_user';
                 $password = $_ENV['DB_PASSWORD'] ?? '';
 
                 $this->conn = new PDO("mysql:host={$host};dbname={$dbname}", $user, $password);
