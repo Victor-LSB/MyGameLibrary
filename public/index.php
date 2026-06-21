@@ -4,9 +4,9 @@ require_once __DIR__ . '/../vendor/autoload.php';
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
 $dotenv->load();
 
-use Victi\GameLoggd\Controllers\AuthController;
-use Victi\GameLoggd\Controllers\GameController;
-use Victi\GameLoggd\Controllers\ProfileController;
+use Victi\MyGameLibrary\Controllers\AuthController;
+use Victi\MyGameLibrary\Controllers\GameController;
+use Victi\MyGameLibrary\Controllers\ProfileController;
 
 
 $action = $_GET['action'] ?? 'home';

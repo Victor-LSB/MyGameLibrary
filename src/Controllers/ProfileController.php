@@ -1,8 +1,8 @@
 <?php
-namespace Victi\GameLoggd\Controllers;
-use Victi\GameLoggd\Database\Database;
-use Victi\GameLoggd\Models\User;
-use Victi\GameLoggd\Models\Game;
+namespace Victi\MyGameLibrary\Controllers;
+use Victi\MyGameLibrary\Database\Database;
+use Victi\MyGameLibrary\Models\User;
+use Victi\MyGameLibrary\Models\Game;
 
 class ProfileController {
     private $db;

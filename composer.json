@@ -1,8 +1,8 @@
 {
-    "name": "victi/game-loggd",
+    "name": "victi/mygamelibrary",
     "autoload": {
         "psr-4": {
-            "Victi\\GameLoggd\\": "src/"
+            "Victi\\MyGameLibrary\\": "src/"
         }
     },
     "authors": [

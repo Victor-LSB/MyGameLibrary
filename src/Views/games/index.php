@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GameLoggd - Meus Jogos</title>
+    <title>MyGameLibrary - Meus Jogos</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen selection:bg-violet-600 selection:text-white">
@@ -11,7 +11,7 @@
     <header class="bg-zinc-900 border-b-4 border-violet-600 shadow-md px-6 py-5 mb-8">
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
             <div>
-                <h1 class="text-3xl font-black text-white tracking-tighter uppercase">GameLoggd</h1>
+                <h1 class="text-3xl font-black text-white tracking-tighter uppercase">MyGameLibrary</h1>
                 <p class="text-sm text-zinc-400 font-medium mt-1">Bem-vindo, <span class="text-violet-400 font-bold"><?php echo htmlspecialchars(!empty($_SESSION['display_name']) ? $_SESSION['display_name'] : $_SESSION['username']); ?></span>!</p>
             </div>
             <div class="flex flex-wrap items-center gap-3">

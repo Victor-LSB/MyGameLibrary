@@ -1,9 +1,9 @@
 <?php
-namespace Victi\GameLoggd\Controllers;
+namespace Victi\MyGameLibrary\Controllers;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
-use Victi\GameLoggd\Database\Database;
-use Victi\GameLoggd\Models\User;
+use Victi\MyGameLibrary\Database\Database;
+use Victi\MyGameLibrary\Models\User;
 
 class AuthController {
     private $db;

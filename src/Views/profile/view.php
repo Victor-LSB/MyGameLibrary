@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?php $profileUser = $profileUser ?? []; ?>
     <?php $isOwner = $isOwner ?? false; ?>
-    <title>Perfil de <?php echo htmlspecialchars($profileUser['display_name'] ?: $profileUser['username']); ?> - GameLoggd</title>
+    <title>Perfil de <?php echo htmlspecialchars($profileUser['display_name'] ?: $profileUser['username']); ?> - MyGameLibrary</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen pb-12 selection:bg-violet-600 selection:text-white">
 
     <header class="bg-zinc-900 border-b-4 border-violet-600 shadow-md px-6 py-5">
         <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
-            <a href="index.php?action=home" class="text-2xl font-black text-white tracking-tighter uppercase hover:text-violet-400 transition-colors">GameLoggd</a>
+            <a href="index.php?action=home" class="text-2xl font-black text-white tracking-tighter uppercase hover:text-violet-400 transition-colors">MyGameLibrary</a>
             <?php if (isset($_SESSION['user_id'])): ?>
                 <a href="index.php?action=home" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm border-b-2 border-zinc-950 hover:border-zinc-900 transition-colors shrink-0">A Minha Biblioteca</a>
             <?php else: ?>

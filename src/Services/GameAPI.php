@@ -1,5 +1,5 @@
 <?php
-namespace Victi\GameLoggd\Services;
+namespace Victi\MyGameLibrary\Services;
 
 class GameAPI {
     private $apiKey;

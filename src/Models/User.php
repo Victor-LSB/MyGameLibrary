@@ -1,5 +1,5 @@
 <?php
-namespace Victi\GameLoggd\Models;
+namespace Victi\MyGameLibrary\Models;
 
 use PDO;
 

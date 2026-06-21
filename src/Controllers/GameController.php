@@ -1,10 +1,10 @@
 <?php
-namespace Victi\GameLoggd\Controllers;
+namespace Victi\MyGameLibrary\Controllers;
 
-use Victi\GameLoggd\Database\Database;
-use Victi\GameLoggd\Models\Game;
-use Victi\GameLoggd\Models\User;
-use Victi\GameLoggd\Services\GameAPI;
+use Victi\MyGameLibrary\Database\Database;
+use Victi\MyGameLibrary\Models\Game;
+use Victi\MyGameLibrary\Models\User;
+use Victi\MyGameLibrary\Services\GameAPI;
 
 class GameController {
     private $db;

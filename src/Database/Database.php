@@ -1,5 +1,5 @@
 <?php
-namespace Victi\GameLoggd\Database;
+namespace Victi\MyGameLibrary\Database;
 use PDO;
 use PDOException;
 
