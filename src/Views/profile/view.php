@@ -7,6 +7,7 @@
     <?php $isOwner = $isOwner ?? false; ?>
     <title>Perfil de <?php echo htmlspecialchars($profileUser['display_name'] ?: $profileUser['username']); ?> - MyGameLibrary</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/png" href="assets/icon/icong.png?v=1">
 </head>
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen pb-12 selection:bg-violet-600 selection:text-white">
 

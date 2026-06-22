@@ -1,11 +1,4 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyGameLibrary - Meus Jogos</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
+<?php require_once __DIR__ . '/../header.php'; ?>
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen selection:bg-violet-600 selection:text-white">
 
     <header class="bg-zinc-900 border-b-4 border-violet-600 shadow-md px-6 py-5 mb-8">
@@ -15,7 +8,6 @@
                 <p class="text-sm text-zinc-400 font-medium mt-1">Bem-vindo, <span class="text-violet-400 font-bold"><?php echo htmlspecialchars(!empty($_SESSION['display_name']) ? $_SESSION['display_name'] : $_SESSION['username']); ?></span>!</p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
-                <!-- NOVO: Botão Meu Perfil -->
                 <a href='index.php?action=profile' class="bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors border-b-2 border-zinc-950 hover:border-zinc-900">👤 Meu Perfil</a>
                 
                 <a href='index.php?action=search' class="bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors shadow-lg">✚ Adicionar Jogo</a>
@@ -43,7 +35,7 @@
                     <option value="">Todos os status</option>
                     <option value="Backlog" <?php if (!empty($filter_status) && $filter_status == 'Backlog') echo 'selected'; ?>>Backlog</option>
                     <option value="Jogando" <?php if (!empty($filter_status) && $filter_status == 'Jogando') echo 'selected'; ?>>Jogando</option>
-                    <option value="Completo" <?php if (!empty($filter_status) && $filter_status == 'Completo') echo 'selected'; ?>>Completo</option>
+                    <option value="Zerado" <?php if (!empty($filter_status) && $filter_status == 'Zerado') echo 'selected'; ?>>Zerado</option>
                     <option value="Dropado" <?php if (!empty($filter_status) && $filter_status == 'Dropado') echo 'selected'; ?>>Dropado</option>
                 </select>
             </form>
@@ -104,8 +96,8 @@
                                 <form class="formStatus" action="index.php?action=change_status" method="post">
                                     <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
                                     <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating']); ?>">
-                                    <input type="hidden" name="status" value="Completo">
-                                    <button type="submit" title="Completo" class="w-full text-[11px] font-bold uppercase tracking-wider py-2 bg-emerald-600 text-white rounded-sm hover:bg-emerald-500 transition-colors">Zerado</button>
+                                    <input type="hidden" name="status" value="Zerado">
+                                    <button type="submit" title="Zerado" class="w-full text-[11px] font-bold uppercase tracking-wider py-2 bg-emerald-600 text-white rounded-sm hover:bg-emerald-500 transition-colors">Zerado</button>
                                 </form>
 
                                 <form class="formStatus" action="index.php?action=change_status" method="post">
