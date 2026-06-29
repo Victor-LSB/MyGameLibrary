@@ -136,7 +136,7 @@ class AuthController {
             $expires_at = date('Y-m-d H:i:s', time() + 3600);
             $this->userModel->savePasswordResetToken($email, $token, $expires_at);
 
-            $reset_link = "http://localhost/MyGameLibrary/public/index.php?action=reset_password&token=$token";
+            $reset_link = "http://mygamelibrary/public/index.php?action=reset_password&token=$token";
 
             $mail = new PHPMailer(true);
             try {
