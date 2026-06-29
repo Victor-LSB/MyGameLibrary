@@ -148,6 +148,14 @@ class AuthController {
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                 $mail->Port = $_ENV['SMTP_PORT'];
 
+                $mail->SMTPOptions = array(
+                    'ssl' => array(
+                        'verify_peer' => false,
+                        'verify_peer_name' => false,
+                        'allow_self_signed' => true
+                            )
+                        );
+
                 $mail->setFrom($_ENV['SMTP_USER'], 'MyGameLibrary');
                 $mail->addAddress($email);
                 $mail->isHTML(true);
