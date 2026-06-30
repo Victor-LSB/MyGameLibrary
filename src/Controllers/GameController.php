@@ -32,7 +32,7 @@ class GameController {
     public function index() {
         $this->startSession();
         if (!isset($_SESSION['user_id'])) {
-            header("Location: index.php?action=login");
+            include __DIR__ . '/../Views/auth/login.php';
             exit();
         }
 

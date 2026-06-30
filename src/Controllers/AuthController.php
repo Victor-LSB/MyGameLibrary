@@ -135,7 +135,8 @@ class AuthController {
             $expires_at = date('Y-m-d H:i:s', time() + 3600);
             $this->userModel->savePasswordResetToken($email, $token, $expires_at);
 
-            $reset_link = "https://MyGameLibrary/public/index.php?action=reset_password&token=$token";
+            $baseUrl = $_ENV['APP_URL'] ?? getenv('APP_URL') ?? 'http://localhost/MyGameLibrary/public';
+            $reset_link = rtrim($baseUrl, '/') . "/index.php?action=reset_password&token=$token";
 
             $apiKey = $_ENV['RESEND_API_KEY'] ?? getenv('RESEND_API_KEY');
 
