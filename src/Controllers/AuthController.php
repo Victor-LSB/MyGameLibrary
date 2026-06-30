@@ -1,7 +1,6 @@
 <?php
 namespace Victi\MyGameLibrary\Controllers;
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
+use Resend;
 use Victi\MyGameLibrary\Database\Database;
 use Victi\MyGameLibrary\Models\User;
 
@@ -138,31 +137,27 @@ class AuthController {
 
             $reset_link = "http://localhost/MyGameLibrary/public/index.php?action=reset_password&token=$token";
 
-            $mail = new PHPMailer(true);
+            $apiKey = $_ENV['RESEND_API_KEY'] ?? getenv('RESEND_API_KEY');
+
+            $resend = Resend::client($apiKey);
+
+
             try {
-                $mail->isSMTP();
-                $mail->Host = $_ENV['SMTP_HOST'];
-                $mail->SMTPAuth = true;
-                $mail->Username = $_ENV['SMTP_USER'];
-                $mail->Password = $_ENV['SMTP_PASS'];
-                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-                $mail->Port = $_ENV['SMTP_PORT'];
-
-                $mail->setFrom($_ENV['SMTP_USER'], 'MyGameLibrary');
-                $mail->addAddress($email);
-                $mail->isHTML(true);
-                $mail->Subject = 'Redefinição de Senha - MyGameLibrary';
-                $mail->Body = "Clique no link para redefinir sua senha: <a href='$reset_link'>$reset_link</a><br><br>Este link expira em 1 hora.";
-
-                $mail->send();
-                $success = 'Link de redefinição de senha enviado para seu email!';
-                include __DIR__ . '/../Views/auth/forgot_password.php';
-                return;
-            } catch (Exception $e) {
-                $error = "Erro detalhado: " . $mail->ErrorInfo;
-                include __DIR__ . '/../Views/auth/forgot_password.php';
-                return;
-            }
+                $resend->emails->send([
+                    // Se ainda não verificou o domínio, use 'onboarding@resend.dev'
+                    'from' => 'My Game Library <suporte@mygamelibrary.com.br>', 
+                    'to' => [$email], // Variável com o e-mail do utilizador
+                    'subject' => 'Recuperação de Palavra-passe',
+                    'html' => '<p>Olá!</p><p>Clique no link abaixo para redefinir a sua palavra-passe:</p><p><a href="'.$reset_link.'">Redefinir Palavra-passe</a></p>',
+    ]);
+    
+    // Sucesso: Redirecionar com mensagem de sucesso
+    // ...
+    
+} catch (\Exception $e) {
+    // Erro: Lidar com a exceção (ex: registar no log)
+    echo "Erro ao enviar e-mail: " . $e->getMessage();
+}
         }
 
         include __DIR__ . '/../Views/auth/forgot_password.php';
