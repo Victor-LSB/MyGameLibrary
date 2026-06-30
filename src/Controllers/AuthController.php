@@ -149,17 +149,16 @@ class AuthController {
                     'to' => [$email], // Variável com o e-mail do utilizador
                     'subject' => 'Recuperação de Palavra-passe',
                     'html' => '<p>Olá!</p><p>Clique no link abaixo para redefinir a sua palavra-passe:</p><p><a href="'.$reset_link.'">Redefinir Palavra-passe</a></p>',
-    ]);
+                ]);
     
-    // Sucesso: Redirecionar com mensagem de sucesso
-    // ...
+                    // Sucesso: Redirecionar com mensagem de sucesso
+                    // ...
     
-} catch (\Exception $e) {
-    // Erro: Lidar com a exceção (ex: registar no log)
-    echo "Erro ao enviar e-mail: " . $e->getMessage();
-}
+                } catch (\Exception $e) {
+                    // Erro: Lidar com a exceção (ex: registar no log)
+                    echo "Erro ao enviar e-mail: " . $e->getMessage();
+                }
         }
-
         include __DIR__ . '/../Views/auth/forgot_password.php';
     }
 
