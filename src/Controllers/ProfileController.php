@@ -118,8 +118,8 @@ class ProfileController {
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $displayName = filter_input(INPUT_POST, 'display_name', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
-            $bio = filter_input(INPUT_POST, 'bio', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
+            $displayName = trim((string) ($_POST['display_name'] ?? ''));
+            $bio = trim((string) ($_POST['bio'] ?? ''));
             
             // Pega os dados atuais do usuário
             $currentUser = $this->userModel->getUserById($_SESSION['user_id']);

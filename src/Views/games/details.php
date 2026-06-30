@@ -119,10 +119,10 @@
                     <h3 class="text-xl font-bold text-white mb-2 uppercase tracking-tight">Análise</h3>
                     
                     <?php if (isset($isOwner) && $isOwner): ?>
-                        <form action="index.php?action=save_review" method="POST" class="h-full flex flex-col">
+                        <form action="index.php?action=save_review" method="POST" class="space-y-4">
                             <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($game_id ?? ''); ?>">
-                            <textarea name="review" rows="6" class="w-full flex-grow bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors resize-y font-medium text-sm sm:text-base" placeholder="Escreva o que achou da experiência..."><?php echo htmlspecialchars($game['review'] ?? ''); ?></textarea>
-                            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <textarea name="review" rows="6" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors resize-y font-medium text-sm sm:text-base min-h-[160px]" placeholder="Escreva o que achou da experiência..."><?php echo htmlspecialchars($game['review'] ?? ''); ?></textarea>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <label class="block">
                                     <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Data de conclusão</span>
                                     <input type="date" name="completion_date" value="<?php echo htmlspecialchars($game['completion_date'] ?? ''); ?>" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
@@ -132,13 +132,13 @@
                                     <input type="number" name="time_spent_hours" min="0" step="0.25" value="<?php echo htmlspecialchars(isset($game['time_spent_hours']) ? (string) $game['time_spent_hours'] : ''); ?>" placeholder="Ex.: 15.5" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
                                 </label>
                             </div>
-                            <label class="mt-4 block">
+                            <label class="block">
                                 <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Tags Personalizadas</span>
                                 <input type="text" name="tags" value="<?php echo htmlspecialchars($currentTags); ?>" placeholder="Adicionar tags separadas por vírgula" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
                                 <span class="block mt-2 text-xs text-zinc-500">Exemplo: RPG, Coop, Relaxante</span>
                             </label>
-                            <div class="mt-4 flex justify-end">
-                                <button type="submit" class="bg-violet-600 hover:bg-violet-500 text-white px-8 py-3 rounded-sm font-black uppercase tracking-widest text-sm transition-colors shadow-lg">Guardar Análise</button>
+                            <div>
+                                <button type="submit" class="w-full sm:w-auto bg-violet-600 hover:bg-violet-500 text-white px-8 py-3 rounded-sm font-black uppercase tracking-widest text-sm transition-colors shadow-lg">Guardar Análise</button>
                             </div>
                         </form>
                     <?php else: ?>
