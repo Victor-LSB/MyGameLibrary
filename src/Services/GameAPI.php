@@ -9,6 +9,57 @@ class GameAPI {
         $this->apiKey = $_ENV['RAWG_API_KEY'] ?? '';
     }
 
+    private function normalizeGenreName($genreName) {
+        $genreName = trim((string) $genreName);
+        $genreName = preg_replace('/\s+/', ' ', $genreName);
+
+        if ($genreName === '') {
+            return '';
+        }
+
+        return mb_strtolower($genreName);
+    }
+
+    public function formatGenresForStorage($genres) {
+        $normalizedGenres = [];
+
+        if (is_string($genres)) {
+            $genres = explode(',', $genres);
+        }
+
+        if (!is_array($genres)) {
+            return '';
+        }
+
+        foreach ($genres as $genre) {
+            $genreName = is_array($genre) ? ($genre['name'] ?? '') : $genre;
+            $normalizedGenre = $this->normalizeGenreName($genreName);
+
+            if ($normalizedGenre === '') {
+                continue;
+            }
+
+            if (!in_array($normalizedGenre, $normalizedGenres, true)) {
+                $normalizedGenres[] = $normalizedGenre;
+            }
+        }
+
+        return implode(', ', $normalizedGenres);
+    }
+
+    private function normalizeRawgGameData(array $gameData) {
+        if (!empty($gameData['genres']) && is_array($gameData['genres'])) {
+            $gameData['genres'] = array_values(array_filter(array_map(function ($genre) {
+                $name = is_array($genre) ? ($genre['name'] ?? '') : $genre;
+                $normalized = $this->normalizeGenreName($name);
+
+                return $normalized !== '' ? ['name' => $normalized] : null;
+            }, $gameData['genres'])));
+        }
+
+        return $gameData;
+    }
+
     public function searchGames($query) {
         
         $url = "https://api.rawg.io/api/games?key={$this->apiKey}&search=" . urlencode($query) . "&page_size=20";
@@ -48,7 +99,13 @@ class GameAPI {
         }
         
         curl_close($ch);
-        return json_decode($response, true);
+        $payload = json_decode($response, true);
+
+        if (is_array($payload) && !empty($payload['results']) && is_array($payload['results'])) {
+            $payload['results'] = array_map([$this, 'normalizeRawgGameData'], $payload['results']);
+        }
+
+        return $payload;
     }
 
 
@@ -63,10 +120,12 @@ class GameAPI {
     curl_close($ch);
 
    
-    return json_decode($response, true);
+    $payload = json_decode($response, true);
+
+    return is_array($payload) ? $this->normalizeRawgGameData($payload) : $payload;
     }
 
-    public function translateHTML($htmlText) {
+    public function translateHTML($htmlText, $sourceLang = 'EN', $targetLang = 'PT-BR') {
         if (empty($htmlText)) return $htmlText;
 
         $authKey = trim($_ENV['DEEPL_API_KEY']); 
@@ -76,7 +135,7 @@ class GameAPI {
 
         $data = http_build_query([
             'text' => $htmlText,
-            'target_lang' => 'PT-BR',
+            'target_lang' => $targetLang ?: 'PT-BR',
             'tag_handling' => 'html'
         ]);
 

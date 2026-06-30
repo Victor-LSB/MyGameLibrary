@@ -1,5 +1,17 @@
 <?php require_once __DIR__ . '/../header.php'; ?>
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen pb-12 selection:bg-violet-600 selection:text-white">
+    <?php
+        $currentTags = '';
+        if (isset($gameTags) && is_array($gameTags) && !empty($gameTags)) {
+            $tagNames = [];
+            foreach ($gameTags as $tag) {
+                if (!empty($tag['name'])) {
+                    $tagNames[] = $tag['name'];
+                }
+            }
+            $currentTags = implode(', ', $tagNames);
+        }
+    ?>
 
     <header class="bg-zinc-900 border-b-4 border-violet-600 shadow-md px-6 py-5 mb-8">
         <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
@@ -54,6 +66,26 @@
                     </div>
                 </div>
                 <?php endif; ?>
+
+                <?php if (!empty($game['completion_date']) || !empty($game['time_spent_hours'])): ?>
+                <div class="bg-zinc-950 border-2 border-zinc-800 p-4 rounded-sm text-center">
+                    <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-3">Conclusão</span>
+                    <div class="space-y-2 text-sm">
+                        <?php if (!empty($game['completion_date'])): ?>
+                            <div>
+                                <span class="block text-zinc-500 uppercase tracking-widest text-[10px] mb-1">Data</span>
+                                <span class="font-bold text-white"><?php echo htmlspecialchars(date('d/m/Y', strtotime($game['completion_date']))); ?></span>
+                            </div>
+                        <?php endif; ?>
+                        <?php if (!empty($game['time_spent_hours'])): ?>
+                            <div>
+                                <span class="block text-zinc-500 uppercase tracking-widest text-[10px] mb-1">Horas gastas</span>
+                                <span class="font-bold text-white"><?php echo htmlspecialchars(number_format((float) $game['time_spent_hours'], 2, ',', '.')); ?> h</span>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
 
             <div class="w-full md:w-2/3 flex flex-col">
@@ -90,11 +122,23 @@
                         <form action="index.php?action=save_review" method="POST" class="h-full flex flex-col">
                             <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($game_id ?? ''); ?>">
                             <textarea name="review" rows="6" class="w-full flex-grow bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors resize-y font-medium text-sm sm:text-base" placeholder="Escreva o que achou da experiência..."><?php echo htmlspecialchars($game['review'] ?? ''); ?></textarea>
+                            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <label class="block">
+                                    <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Data de conclusão</span>
+                                    <input type="date" name="completion_date" value="<?php echo htmlspecialchars($game['completion_date'] ?? ''); ?>" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
+                                </label>
+                                <label class="block">
+                                    <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Tempo gasto (horas)</span>
+                                    <input type="number" name="time_spent_hours" min="0" step="0.25" value="<?php echo htmlspecialchars(isset($game['time_spent_hours']) ? (string) $game['time_spent_hours'] : ''); ?>" placeholder="Ex.: 15.5" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
+                                </label>
+                            </div>
+                            <label class="mt-4 block">
+                                <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Tags Personalizadas</span>
+                                <input type="text" name="tags" value="<?php echo htmlspecialchars($currentTags); ?>" placeholder="Adicionar tags separadas por vírgula" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
+                                <span class="block mt-2 text-xs text-zinc-500">Exemplo: RPG, Coop, Relaxante</span>
+                            </label>
                             <div class="mt-4 flex justify-end">
                                 <button type="submit" class="bg-violet-600 hover:bg-violet-500 text-white px-8 py-3 rounded-sm font-black uppercase tracking-widest text-sm transition-colors shadow-lg">Guardar Análise</button>
-                            </div>
-                            <div class="tags" style="display: flex;">
-                                <input type="text" name="tags" placeholder="Adicionar tags separadas por vírgula" class="w-full mt-4 bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
                             </div>
                         </form>
                     <?php else: ?>
@@ -107,6 +151,29 @@
                         </div>
                     <?php endif; ?>
                 </div>
+
+                <?php if (!empty($gameTags)): ?>
+                <div class="mt-6">
+                    <h3 class="text-xl font-bold text-white mb-2 uppercase tracking-tight">Tags</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <?php foreach ($gameTags as $tag): ?>
+                            <div class="inline-flex items-center gap-1 rounded-full border border-violet-500/30 bg-violet-600/15 px-3 py-1.5 text-sm font-semibold text-violet-300">
+                                <a href="index.php?action=home&tag=<?php echo urlencode($tag['name']); ?>" class="inline-flex items-center gap-2 hover:text-white transition-colors">
+                                    <span>#</span>
+                                    <span><?php echo htmlspecialchars($tag['name']); ?></span>
+                                </a>
+                                <?php if (isset($isOwner) && $isOwner): ?>
+                                    <form action="index.php?action=remove_custom_tag" method="POST" class="inline-flex">
+                                        <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($game_id ?? ''); ?>">
+                                        <input type="hidden" name="tag_id" value="<?php echo htmlspecialchars($tag['id']); ?>">
+                                        <button type="submit" class="ml-2 text-xs font-black uppercase tracking-widest text-amber-200/80 hover:text-red-300 transition-colors" title="Remover tag">x</button>
+                                    </form>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
 
             </div>
         </div>

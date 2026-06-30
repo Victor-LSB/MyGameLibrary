@@ -1,26 +1,102 @@
-// Status do Jogo
 const formStatus = document.querySelectorAll('.formStatus');
-// Avaliação do Jogo
 const ratingForm = document.querySelectorAll('.ratingForm');
-// Formulário de Pesquisa
 const searchInput = document.getElementById('searchInput');
 const gameList = document.querySelectorAll('.gameItem');
-// Filtro de Status
 const filterStatus = document.querySelector('.filterStatus');
-// Mensagem de mudança de status
+const completionModal = document.getElementById('completionModal');
+const completionForm = document.getElementById('completionForm');
+const modalGameId = document.getElementById('modalGameId');
+const modalStatus = document.getElementById('modalStatus');
+const modalCompletionDate = document.getElementById('modalCompletionDate');
+const modalTimeSpentHours = document.getElementById('modalTimeSpentHours');
+const cancelCompletionModal = document.getElementById('cancelCompletionModal');
+
 const Toast = Swal.mixin({
-  toast: true,
-  position: 'top-end', // Canto superior direito
-  showConfirmButton: false, // Sem botão de "OK"
-  timer: 3000 // Desaparece em 3 segundos
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3000
 });
 
-// Status do Jogo
+let pendingCompletionForm = null;
+
+function updateStatusCard(gameId, newStatus) {
+    const cardGame = document.getElementById(`game-${gameId}`);
+    if (!cardGame) return;
+
+    const pStatus = cardGame.querySelector('.gameStatus');
+    if (pStatus) {
+        pStatus.textContent = 'Status: ' + newStatus;
+    }
+
+    const ratingFormOfGame = cardGame.querySelector('.ratingForm');
+    if (ratingFormOfGame) {
+        const hiddenStatus = ratingFormOfGame.querySelector('input[name="status"]');
+        if (hiddenStatus) hiddenStatus.value = newStatus;
+    }
+}
+
+function openCompletionModal(form) {
+    if (!completionModal || !completionForm) return;
+
+    pendingCompletionForm = form;
+    const dados = new FormData(form);
+
+    modalGameId.value = dados.get('game_id') || '';
+    modalStatus.value = dados.get('status') || 'Zerado';
+
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    modalCompletionDate.value = now.toISOString().slice(0, 16);
+    modalTimeSpentHours.value = '';
+
+    completionModal.classList.remove('hidden');
+    completionModal.classList.add('flex');
+}
+
+function closeCompletionModal() {
+    if (!completionModal) return;
+    completionModal.classList.add('hidden');
+    completionModal.classList.remove('flex');
+    pendingCompletionForm = null;
+}
+
 formStatus.forEach(function(form) {
-    form.addEventListener('submit', function(event){
+    form.addEventListener('submit', function(event) {
         event.preventDefault();
 
         const dados = new FormData(form);
+        const gameId = dados.get('game_id');
+        const newStatus = dados.get('status');
+
+        if (newStatus === 'Zerado') {
+            openCompletionModal(form);
+            return;
+        }
+
+        fetch('index.php?action=change_status', {
+            method: 'POST',
+            body: dados
+        }).then(function() {
+            Toast.fire({
+                icon: 'success',
+                title: 'Status atualizado com sucesso!'
+            });
+
+            updateStatusCard(gameId, newStatus);
+        });
+    });
+});
+
+if (completionForm) {
+    completionForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        if (!pendingCompletionForm) return;
+
+        const dados = new FormData(pendingCompletionForm);
+        dados.set('completion_date', modalCompletionDate.value);
+        dados.set('time_spent_hours', modalTimeSpentHours.value);
 
         const gameId = dados.get('game_id');
         const newStatus = dados.get('status');
@@ -28,108 +104,86 @@ formStatus.forEach(function(form) {
         fetch('index.php?action=change_status', {
             method: 'POST',
             body: dados
-        })
-        .then(function(resposta) {
+        }).then(function() {
             Toast.fire({
                 icon: 'success',
                 title: 'Status atualizado com sucesso!'
             });
-            
-            const cardGame = document.getElementById(`game-${gameId}`);
-            if(!cardGame) return;
 
-            // Atualiza visualmente
-            const pStatus = cardGame.querySelector('.gameStatus');
-            if (pStatus) {
-                pStatus.textContent = 'Status: ' + newStatus;
-            }
-
-            // CORREÇÃO: Atualiza o status oculto dentro do formulário de avaliação
-            // Assim, se o usuário avaliar o jogo DEPOIS de mudar o status,
-            // o formulário de avaliação enviará o status correto ao invés do antigo.
-            const ratingFormOfGame = cardGame.querySelector('.ratingForm');
-            if (ratingFormOfGame) {
-                const hiddenStatus = ratingFormOfGame.querySelector('input[name="status"]');
-                if (hiddenStatus) {
-                    hiddenStatus.value = newStatus;
-                }
-            }
+            updateStatusCard(gameId, newStatus);
+            closeCompletionModal();
         });
-            
     });
-});
+}
 
-// Avaliação do Jogo
+if (cancelCompletionModal) {
+    cancelCompletionModal.addEventListener('click', closeCompletionModal);
+}
+
+if (completionModal) {
+    completionModal.addEventListener('click', function(event) {
+        if (event.target === completionModal) {
+            closeCompletionModal();
+        }
+    });
+}
+
 ratingForm.forEach(function(form) {
-    form.addEventListener('change', function(event){
+    form.addEventListener('change', function(event) {
         event.preventDefault();
 
         const dados = new FormData(form);
-
-        const gameId = dados.get("game_id");
-        const newRating = dados.get("rating");
+        const gameId = dados.get('game_id');
+        const newRating = dados.get('rating');
 
         fetch('index.php?action=change_rating', {
             method: 'POST',
             body: dados
-        }) 
-        .then(function(resposta) {
+        }).then(function() {
             Toast.fire({
                 icon: 'success',
                 title: 'Avaliação atualizada com sucesso!'
             });
-            
-            const cardGame = document.getElementById(`game-${gameId}`);
-            if(!cardGame) return;
 
-            // Atualiza visualmente
+            const cardGame = document.getElementById(`game-${gameId}`);
+            if (!cardGame) return;
+
             const pRating = cardGame.querySelector('.pRating');
             if (pRating) {
                 pRating.textContent = 'Avaliação: ' + (newRating ? newRating : 'Não avaliado');
             }
 
-            // CORREÇÃO: Atualiza a nota oculta dentro de TODOS os formulários de status
-            // Assim, se o usuário mudar o status DEPOIS de avaliar o jogo,
-            // não correrá o risco da nota nova ser apagada pela nota antiga.
             const statusForms = cardGame.querySelectorAll('.formStatus');
-            statusForms.forEach(sForm => {
+            statusForms.forEach((sForm) => {
                 const hiddenRating = sForm.querySelector('input[name="rating"]');
-                if (hiddenRating) {
-                    hiddenRating.value = newRating;
-                }
+                if (hiddenRating) hiddenRating.value = newRating;
             });
         });
     });
 });
 
-// Filtro de Status
-filterStatus.addEventListener('change', function(event) {
-    event.preventDefault();
-    const selectedStatus = filterStatus.value;
+if (filterStatus) {
+    filterStatus.addEventListener('change', function(event) {
+        event.preventDefault();
+        const selectedStatus = filterStatus.value;
 
-    gameList.forEach(function(game) {
-        const pStatus = game.querySelector('.gameStatus');
-        if (pStatus) {
-            const status = pStatus.textContent.replace('Status: ', '').trim();
-            if (selectedStatus === '' || status === selectedStatus) {
-                game.style.display = 'block';
-            } else {
-                game.style.display = 'none';
+        gameList.forEach(function(game) {
+            const pStatus = game.querySelector('.gameStatus');
+            if (pStatus) {
+                const status = pStatus.textContent.replace('Status: ', '').trim();
+                game.style.display = (selectedStatus === '' || status === selectedStatus) ? 'block' : 'none';
             }
-        }
+        });
     });
-});
+}
 
-// Pesquisa de Jogos
-searchInput.addEventListener('input', function() {
-    const termoPesquisa = searchInput.value.toLowerCase();
+if (searchInput) {
+    searchInput.addEventListener('input', function() {
+        const termoPesquisa = searchInput.value.toLowerCase();
 
-    gameList.forEach(function(game) {
-        const titulo = game.querySelector('h3').textContent.toLowerCase();
-        if (titulo.includes(termoPesquisa)) {
-            game.style.display = 'block';
-        } else {
-            game.style.display = 'none';
-        }
+        gameList.forEach(function(game) {
+            const titulo = game.querySelector('h3').textContent.toLowerCase();
+            game.style.display = titulo.includes(termoPesquisa) ? 'block' : 'none';
+        });
     });
-});
+}

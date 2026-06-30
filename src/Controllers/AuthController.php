@@ -135,27 +135,20 @@ class AuthController {
             $expires_at = date('Y-m-d H:i:s', time() + 3600);
             $this->userModel->savePasswordResetToken($email, $token, $expires_at);
 
-            $reset_link = "http://localhost/MyGameLibrary/public/index.php?action=reset_password&token=$token";
+            $reset_link = "http://MyGameLibrary/public/index.php?action=reset_password&token=$token";
 
             $apiKey = $_ENV['RESEND_API_KEY'] ?? getenv('RESEND_API_KEY');
-
             $resend = Resend::client($apiKey);
 
 
             try {
                 $resend->emails->send([
-                    // Se ainda não verificou o domínio, use 'onboarding@resend.dev'
                     'from' => 'My Game Library <suporte@mygamelibrary.com.br>', 
-                    'to' => [$email], // Variável com o e-mail do utilizador
+                    'to' => [$email], 
                     'subject' => 'Recuperação de Palavra-passe',
                     'html' => '<p>Olá!</p><p>Clique no link abaixo para redefinir a sua palavra-passe:</p><p><a href="'.$reset_link.'">Redefinir Palavra-passe</a></p>',
                 ]);
-    
-                    // Sucesso: Redirecionar com mensagem de sucesso
-                    // ...
-    
                 } catch (\Exception $e) {
-                    // Erro: Lidar com a exceção (ex: registar no log)
                     echo "Erro ao enviar e-mail: " . $e->getMessage();
                 }
         }

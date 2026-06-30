@@ -39,8 +39,10 @@ class GameController {
         $user_id = $_SESSION['user_id'];
         $search_query = filter_input(INPUT_GET, 'search', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         $filter_status = filter_input(INPUT_GET, 'filter_status', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $filter_tag = filter_input(INPUT_GET, 'tag', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
-        $userGames = $this->gameModel->getGamesByUserId($user_id, $filter_status, $search_query);
+        $userGames = $this->gameModel->getGamesByUserId($user_id, $filter_status, $search_query, $filter_tag);
+        $userTags = $this->gameModel->getUniqueTagsForUser($user_id);
         include __DIR__ . '/../Views/games/index.php';
     }
 
@@ -125,6 +127,7 @@ class GameController {
         }
 
         $game = $this->gameModel->getUserGameInfo($target_user_id, $game_id);
+        $gameTags = $this->gameModel->getTagsForGame($target_user_id, $game_id);
 
         include __DIR__ . '/../Views/games/details.php';
     }
@@ -153,8 +156,10 @@ class GameController {
                     $gameDetails = $this->api->getGameDetails($external_id);
                     $raw_description = $gameDetails['description'] ?? '';
                     $description = $this->api->translateHTML($raw_description, 'EN', 'PT');
+                    $normalized_genres = $this->api->formatGenresForStorage($gameDetails['genres'] ?? $genre);
+                    $normalized_genres = $normalized_genres !== '' ? $normalized_genres : trim(mb_strtolower((string) $genre));
                     
-                    $game_id = $this->gameModel->addGame($external_id, $title, $platform, $genre, $release_date, $cover_image);
+                    $game_id = $this->gameModel->addGame($external_id, $title, $platform, $normalized_genres, $release_date, $cover_image);
                     
                     if ($game_id && $description) {
                         $this->gameModel->updateGameDescription($game_id, $description);
@@ -195,17 +200,43 @@ class GameController {
             
             if ($status === '') $status = null;
 
+            $completion_date = null;
+            $time_spent_hours = null;
+
+            $completion_date_raw = $_POST['completion_date'] ?? null;
+            if (!empty($completion_date_raw)) {
+                $dateTime = \DateTime::createFromFormat('Y-m-d\TH:i', $completion_date_raw) ?: \DateTime::createFromFormat('Y-m-d\TH:i:s', $completion_date_raw);
+                if ($dateTime) {
+                    $completion_date = $dateTime->format('Y-m-d');
+                }
+            }
+
+            $time_spent_raw = $_POST['time_spent_hours'] ?? null;
+            if ($time_spent_raw !== null && $time_spent_raw !== '' && is_numeric($time_spent_raw)) {
+                $time_spent_hours = number_format((float) $time_spent_raw, 2, '.', '');
+            }
+
             if ($game_id) {
                 // BUSCA SEGURA: Pega os dados atuais do jogo no banco para não sobrescrever nada com vazio
                 $gameInfo = $this->gameModel->getUserGameInfo($_SESSION['user_id'], $game_id);
                 $existing_rating = $gameInfo ? $gameInfo['rating'] : null;
+                $existing_completion_date = $gameInfo ? ($gameInfo['completion_date'] ?? null) : null;
+                $existing_time_spent = $gameInfo ? ($gameInfo['time_spent_hours'] ?? null) : null;
 
                 // Se não vier nota no POST (ou for vazia), mantém a nota que já estava no banco
                 $rating_post = $_POST['rating'] ?? null;
                 $rating = ($rating_post !== null && $rating_post !== '') ? $rating_post : $existing_rating;
 
+                if ($status === 'Zerado') {
+                    $completion_date = $completion_date ?? $existing_completion_date;
+                    $time_spent_hours = $time_spent_hours ?? $existing_time_spent;
+                } else {
+                    $completion_date = $existing_completion_date;
+                    $time_spent_hours = $existing_time_spent;
+                }
+
                 // Atualiza o banco com o novo status e preserva a nota
-                $this->gameModel->updateGameStatus($_SESSION['user_id'], $game_id, $status, $rating);
+                $this->gameModel->updateGameStatus($_SESSION['user_id'], $game_id, $status, $rating, $completion_date, $time_spent_hours);
                 
                 // Responde perfeitamente para o Javascript (fetch) em JSON
                 header('Content-Type: application/json');
@@ -271,6 +302,47 @@ class GameController {
         exit();
     }
 
+    public function removeCustomTag() {
+        $this->startSession();
+        if (!isset($_SESSION['user_id'])) {
+            header("Location: index.php?action=login");
+            exit();
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $game_id = filter_input(INPUT_POST, 'game_id', FILTER_SANITIZE_NUMBER_INT);
+            $tag_id = filter_input(INPUT_POST, 'tag_id', FILTER_SANITIZE_NUMBER_INT);
+
+            if ($game_id && $tag_id) {
+                $this->gameModel->removeCustomTagFromGame($_SESSION['user_id'], $game_id, $tag_id);
+                $_SESSION['review_success'] = 'Tag removida com sucesso!';
+            }
+        }
+
+        header("Location: index.php?action=details&id=" . urlencode((string) ($_POST['game_id'] ?? '')) . "&u=" . urlencode($_SESSION['username'] ?? ''));
+        exit();
+    }
+
+    public function deleteSavedTag() {
+        $this->startSession();
+        if (!isset($_SESSION['user_id'])) {
+            header("Location: index.php?action=login");
+            exit();
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $tag_id = filter_input(INPUT_POST, 'tag_id', FILTER_SANITIZE_NUMBER_INT);
+
+            if ($tag_id) {
+                $this->gameModel->deleteSavedTagForUser($_SESSION['user_id'], $tag_id);
+                $_SESSION['review_success'] = 'Tag excluída com sucesso!';
+            }
+        }
+
+        header("Location: index.php?action=home");
+        exit();
+    }
+
      public function saveReview() {
         $this->startSession();
         if (!isset($_SESSION['user_id'])) {
@@ -279,14 +351,26 @@ class GameController {
         }
 
         $tags_string = $_POST['tags'] ?? '';
-        $tags_array = array_filter(array_map('trim', explode(',', $tags_string)));
+        $tags_array = array_values(array_filter(array_map('trim', explode(',', $tags_string))));
+        $completion_date_raw = $_POST['completion_date'] ?? '';
+        $completion_date = null;
+        if ($completion_date_raw !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $completion_date_raw)) {
+            $completion_date = $completion_date_raw;
+        }
+
+        $time_spent_raw = $_POST['time_spent_hours'] ?? '';
+        $time_spent_hours = null;
+        if ($time_spent_raw !== '' && is_numeric($time_spent_raw)) {
+            $time_spent_hours = number_format((float) $time_spent_raw, 2, '.', '');
+        }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $game_id = filter_input(INPUT_POST, 'game_id', FILTER_SANITIZE_NUMBER_INT);
             $review = $_POST['review'] ?? '';
 
             if ($game_id) {
-                $this->gameModel->updateReview($review, $_SESSION['user_id'], $game_id);
+                $this->gameModel->updateReviewWithCompletionData($review, $completion_date, $time_spent_hours, $_SESSION['user_id'], $game_id);
+                $this->gameModel->saveTagsForGame($_SESSION['user_id'], $game_id, $tags_array);
                 $_SESSION['review_success'] = "Análise guardada com sucesso!";
                 
                 // Retorna mantendo a URL formatada perfeitamente

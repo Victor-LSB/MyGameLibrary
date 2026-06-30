@@ -8,6 +8,7 @@
                 <p class="text-sm text-zinc-400 font-medium mt-1">Bem-vindo, <span class="text-violet-400 font-bold"><?php echo htmlspecialchars(!empty($_SESSION['display_name']) ? $_SESSION['display_name'] : $_SESSION['username']); ?></span>!</p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
+                <a href='index.php?action=dashboard' class="bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors border-b-2 border-zinc-950 hover:border-zinc-900">📊 Dashboard</a>
                 <a href='index.php?action=profile' class="bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors border-b-2 border-zinc-950 hover:border-zinc-900">👤 Meu Perfil</a>
                 
                 <a href='index.php?action=search' class="bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors shadow-lg">✚ Adicionar Jogo</a>
@@ -21,9 +22,49 @@
             <h2 class="text-2xl font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3">Minha Biblioteca</h2>
         </div>
 
+        <?php if (!empty($filter_tag)): ?>
+            <div class="mb-4 inline-flex items-center gap-2 bg-violet-600/15 text-violet-300 border border-violet-500/30 px-4 py-2 rounded-full text-sm font-semibold">
+                <span>Filtrando por tag:</span>
+                <span>#<?php echo htmlspecialchars($filter_tag); ?></span>
+                <a href="index.php?action=home<?php echo !empty($search_query) ? '&search=' . urlencode($search_query) : ''; ?><?php echo !empty($filter_status) ? '&filter_status=' . urlencode($filter_status) : ''; ?>" class="text-white/70 hover:text-white ml-1">Limpar</a>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($userTags)): ?>
+            <div class="mb-6 bg-zinc-900 rounded-sm border-2 border-zinc-800 p-4 shadow-lg">
+                <div class="flex items-center justify-between gap-4 mb-3">
+                    <h3 class="text-sm font-black uppercase tracking-widest text-zinc-400">Tags Salvas</h3>
+                    <?php if (!empty($filter_tag)): ?>
+                        <a href="index.php?action=home<?php echo !empty($search_query) ? '&search=' . urlencode($search_query) : ''; ?><?php echo !empty($filter_status) ? '&filter_status=' . urlencode($filter_status) : ''; ?>" class="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-white transition-colors">Limpar tag ativa</a>
+                    <?php endif; ?>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <?php foreach ($userTags as $tag): ?>
+                        <?php $isActiveTag = !empty($filter_tag) && $filter_tag === $tag['name']; ?>
+                        <div class="inline-flex items-center overflow-hidden rounded-full border transition-colors <?php echo $isActiveTag ? 'bg-violet-600 text-white border-violet-400' : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:border-violet-500 hover:text-violet-300'; ?>">
+                            <a href="index.php?action=home&tag=<?php echo urlencode($tag['name']); ?><?php echo !empty($search_query) ? '&search=' . urlencode($search_query) : ''; ?><?php echo !empty($filter_status) ? '&filter_status=' . urlencode($filter_status) : ''; ?>" class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold transition-colors">
+                                <span>#</span>
+                                <span><?php echo htmlspecialchars($tag['name']); ?></span>
+                                <span class="text-[10px] <?php echo $isActiveTag ? 'text-violet-100/80' : 'text-zinc-500'; ?>">(<?php echo (int) ($tag['usage_count'] ?? 0); ?>)</span>
+                            </a>
+                            <form action="index.php?action=delete_saved_tag" method="POST" class="flex">
+                                <input type="hidden" name="tag_id" value="<?php echo (int) $tag['id']; ?>">
+                                <button type="submit" class="inline-flex h-full min-h-[32px] w-9 items-center justify-center border-l border-zinc-700 bg-zinc-800 text-zinc-400 transition-colors hover:bg-red-600 hover:text-white" title="Excluir tag salva" aria-label="Excluir tag salva">
+                                    <span class="text-sm font-black leading-none">×</span>
+                                </button>
+                            </form>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+
         <div class="bg-zinc-900 p-5 rounded-sm border-2 border-zinc-800 mb-8 flex flex-col md:flex-row gap-4 items-center shadow-lg">
             <form id="searchForm" action="index.php" method="GET" class="flex-1 w-full flex gap-2">
                 <input type="hidden" name="action" value="home">
+                <?php if (!empty($filter_tag)): ?>
+                    <input type="hidden" name="tag" value="<?php echo htmlspecialchars($filter_tag); ?>">
+                <?php endif; ?>
                 <input id="searchInput" type="text" name="search" placeholder="Buscar na biblioteca..."  autocomplete="off" value="<?php echo htmlspecialchars($search_query ?? ''); ?>" 
                     class="flex-1 bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 font-medium placeholder-zinc-600">
                 <button type="submit" class="bg-zinc-200 hover:bg-white text-zinc-900 px-6 py-3 rounded-sm font-bold uppercase tracking-wide transition-colors">Buscar</button>
@@ -31,6 +72,9 @@
 
             <form action="index.php" method="GET" class="w-full md:w-auto flex-shrink-0">
                 <input type="hidden" name="action" value="home">
+                <?php if (!empty($filter_tag)): ?>
+                    <input type="hidden" name="tag" value="<?php echo htmlspecialchars($filter_tag); ?>">
+                <?php endif; ?>
                 <select name="filter_status" class="filterStatus w-full bg-zinc-950 border-2 border-zinc-800 text-white font-medium rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 cursor-pointer appearance-none">
                     <option value="">Todos os status</option>
                     <option value="Backlog" <?php if (!empty($filter_status) && $filter_status == 'Backlog') echo 'selected'; ?>>Backlog</option>
@@ -128,6 +172,38 @@
         <?php endif; ?>
 
     </main>
+
+    <div id="completionModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm px-4">
+        <div class="w-full max-w-lg rounded-sm border-2 border-amber-900 bg-[#15110e] shadow-2xl shadow-black/60">
+            <div class="border-b border-amber-900/60 px-6 py-5">
+                <p class="text-[10px] font-black uppercase tracking-[0.35em] text-amber-400/80">Dark Academia Archive</p>
+                <h3 class="mt-2 text-2xl font-black uppercase tracking-tight text-zinc-100">Mark as Completed</h3>
+                <p class="mt-2 text-sm text-zinc-400">Add the completion details before saving the status as Zerado.</p>
+            </div>
+
+            <form id="completionForm" class="px-6 py-6">
+                <input type="hidden" name="game_id" id="modalGameId">
+                <input type="hidden" name="status" id="modalStatus" value="Zerado">
+
+                <div class="grid grid-cols-1 gap-4">
+                    <label class="block">
+                        <span class="mb-2 block text-xs font-black uppercase tracking-widest text-amber-200/70">Completion Date</span>
+                        <input type="datetime-local" name="completion_date" id="modalCompletionDate" class="w-full rounded-sm border border-amber-900/70 bg-zinc-950 px-4 py-3 text-zinc-100 outline-none transition-colors focus:border-amber-400">
+                    </label>
+
+                    <label class="block">
+                        <span class="mb-2 block text-xs font-black uppercase tracking-widest text-amber-200/70">Time Spent (hours)</span>
+                        <input type="number" min="0" step="0.25" name="time_spent_hours" id="modalTimeSpentHours" class="w-full rounded-sm border border-amber-900/70 bg-zinc-950 px-4 py-3 text-zinc-100 outline-none transition-colors focus:border-amber-400" placeholder="Ex.: 24.5">
+                    </label>
+                </div>
+
+                <div class="mt-6 flex items-center justify-end gap-3">
+                    <button type="button" id="cancelCompletionModal" class="rounded-sm border border-zinc-700 px-4 py-2 text-sm font-bold uppercase tracking-widest text-zinc-300 transition-colors hover:border-zinc-500 hover:text-white">Cancelar</button>
+                    <button type="submit" class="rounded-sm bg-amber-700 px-5 py-2.5 text-sm font-black uppercase tracking-widest text-zinc-950 transition-colors hover:bg-amber-600">Salvar Zerado</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="./assets/js/status.js"></script>
