@@ -55,12 +55,12 @@
         <section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <article class="bg-zinc-900 border-2 border-zinc-800 rounded-sm p-6 shadow-xl">
                 <span class="text-xs font-black uppercase tracking-widest text-zinc-500">Total concluído</span>
-                <div id="dashboardTotalCompleted" class="mt-3 text-4xl font-black text-white"><?php echo (int) $dashboardStats['total_completed']; ?></div>
+                <div id="dashboardTotalCompleted" class="mt-3 text-4xl font-black text-white"><?php echo (int) ($dashboardStats['total_completed'] ?? 0); ?></div>
             </article>
 
             <article class="bg-zinc-900 border-2 border-zinc-800 rounded-sm p-6 shadow-xl">
                 <span class="text-xs font-black uppercase tracking-widest text-zinc-500">Tempo médio por jogo</span>
-                <div id="dashboardAvgTime" class="mt-3 text-4xl font-black text-amber-400"><?php echo number_format((float) $dashboardStats['avg_time_spent'], 2, ',', '.'); ?>h</div>
+                <div id="dashboardAvgTime" class="mt-3 text-4xl font-black text-amber-400"><?php echo number_format((float) ($dashboardStats['avg_time_spent'] ?? 0), 2, ',', '.'); ?>h</div>
             </article>
 
             <article class="bg-zinc-900 border-2 border-zinc-800 rounded-sm p-6 shadow-xl">

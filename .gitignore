@@ -1,2 +1,41 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Tailwind CSS compilado (gerado automaticamente)
+public/assets/css/output.css
+public/assets/css/output.css.map
+
+# PHP
+composer.lock
+vendor/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
 .env
-/vendor/
+.env.local
+.env.*.local
+
+# Uploads
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Cache
+.cache/
+tmp/
+
+# Testing
+coverage/
+.phpunit.result.cache

@@ -126,17 +126,25 @@ class DashboardController {
         $summary = $summaryStmt->fetch(PDO::FETCH_ASSOC) ?: ['total_completed' => 0, 'avg_time_spent' => 0];
 
         $genreTopSql = "SELECT genre, total
-            FROM (
-                SELECT LOWER(TRIM(COALESCE(g.genre, 'Desconhecido'))) AS genre, COUNT(*) AS total
-                FROM user_games ug
-                INNER JOIN games g ON g.id = ug.game_id
-                WHERE ug.user_id = ?
-                    AND ug.completion_date IS NOT NULL
-                    AND ug.completion_date BETWEEN ? AND ?
-                GROUP BY LOWER(TRIM(COALESCE(g.genre, 'Desconhecido')))
-            ) AS genre_counts
-            ORDER BY total DESC, genre ASC
-            LIMIT 5";
+                FROM (
+                    SELECT 
+                        LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(g.genre, ',', numbers.n), ',', -1))) AS genre,
+                        COUNT(*) AS total
+                    FROM user_games ug
+                    INNER JOIN games g ON g.id = ug.game_id
+                    INNER JOIN (
+                        SELECT 1 AS n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL 
+                        SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6
+                    ) AS numbers ON CHAR_LENGTH(g.genre) - CHAR_LENGTH(REPLACE(g.genre, ',', '')) >= numbers.n - 1
+                    WHERE ug.user_id = ?
+                        AND ug.completion_date IS NOT NULL
+                        AND ug.completion_date BETWEEN ? AND ?
+                        AND g.genre IS NOT NULL AND g.genre != ''
+                    GROUP BY LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(g.genre, ',', numbers.n), ',', -1)))
+                ) AS genre_counts
+                WHERE genre != ''
+                ORDER BY total DESC, genre ASC
+                LIMIT 5";
         $genreStmt = $this->db->prepare($genreTopSql);
         $genreStmt->execute([$user_id, $window['start'], $window['end']]);
         $genres = $genreStmt->fetchAll(PDO::FETCH_ASSOC);
