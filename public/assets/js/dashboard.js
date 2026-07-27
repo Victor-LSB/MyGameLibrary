@@ -58,22 +58,26 @@
     genreChart = new Chart(genreCanvas, {
       type: 'bar',
       data: {
-        labels,
-        datasets: [{
-          label: 'Jogos concluídos',
-          data: values,
-          backgroundColor: [
-            darkAcademia.goldSoft,
-            'rgba(110, 123, 79, 0.35)',
-            'rgba(109, 63, 52, 0.35)',
-            'rgba(231, 219, 193, 0.28)',
-            'rgba(200, 169, 106, 0.5)',
-          ],
-          borderColor: darkAcademia.gold,
-          borderWidth: 1,
-          borderRadius: 8,
-          barThickness: 28,
-        }],
+        labels: labels.map(label => {
+          return label.length > 15 ? label.substring(0, 15) + '...' : label;
+        }),
+        datasets: [
+          {
+            label: 'Jogos concluídos',
+            data: values,
+            backgroundColor: [
+              darkAcademia.goldSoft,
+              'rgba(110, 123, 79, 0.35)',
+              'rgba(109, 63, 52, 0.35)',
+              'rgba(231, 219, 193, 0.28)',
+              'rgba(200, 169, 106, 0.5)',
+            ],
+            borderColor: darkAcademia.gold,
+            borderWidth: 1,
+            borderRadius: 8,
+            barThickness: 28,
+          },
+        ],
       },
       options: {
         responsive: true,
@@ -82,6 +86,17 @@
           legend: {
             labels: { color: darkAcademia.parchment },
           },
+          tooltip: {
+            callbacks: {
+              title(context) {
+                return context[0]?.label || '';
+              },
+              label(context) {
+                const value = context.raw ?? 0;
+                return `Concluídos: ${Math.round(value)}`;
+              }
+            }
+          }
         },
         scales: {
           x: {
@@ -90,7 +105,12 @@
           },
           y: {
             beginAtZero: true,
-            ticks: { color: darkAcademia.parchment, precision: 0 },
+            ticks: {
+              color: darkAcademia.parchment,
+              callback(value) {
+                return Math.round(value);
+              },
+            },
             grid: { color: 'rgba(231, 219, 193, 0.08)' },
           },
         },
@@ -113,19 +133,21 @@
     trendChart = new Chart(trendCanvas, {
       type: 'line',
       data: {
-        datasets: [{
-          label: `Tendência de conclusão (${periodMap[period] || 'semanal'})`,
-          data: points,
-          borderColor: darkAcademia.gold,
-          backgroundColor: 'rgba(200, 169, 106, 0.16)',
-          fill: true,
-          tension: 0.35,
-          pointRadius: 4,
-          pointHoverRadius: 7,
-          pointBackgroundColor: darkAcademia.gold,
-          pointBorderColor: darkAcademia.background,
-          pointBorderWidth: 2,
-        }],
+        datasets: [
+          {
+            label: `Tendência de conclusão (${periodMap[period] || 'semanal'})`,
+            data: points,
+            borderColor: darkAcademia.gold,
+            backgroundColor: 'rgba(200, 169, 106, 0.16)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 4,
+            pointHoverRadius: 7,
+            pointBackgroundColor: darkAcademia.gold,
+            pointBorderColor: darkAcademia.background,
+            pointBorderWidth: 2,
+          },
+        ],
       },
       options: {
         responsive: true,
@@ -137,20 +159,27 @@
         },
         scales: {
           x: {
-            type: 'linear',
-            min: 0,
-            max: Math.max(points.length - 1, 0),
-            ticks: {
-              color: darkAcademia.parchment,
-              callback(value) {
-                return labels[Math.round(Number(value))] ?? '';
+              type: 'linear',
+              min: 0,
+              max: Math.max(points.length - 1, 0),
+              ticks: {
+                  color: darkAcademia.parchment,
+                  maxRotation: activePeriod === 'year' ? 45 : 0,
+                  minRotation: activePeriod === 'year' ? 45 : 0,
+                  callback(value) {
+                      return labels[Math.round(Number(value))] ?? '';
+                  },
               },
-            },
-            grid: { color: 'rgba(231, 219, 193, 0.08)' },
+              grid: { color: 'rgba(231, 219, 193, 0.08)' },
           },
           y: {
             beginAtZero: true,
-            ticks: { color: darkAcademia.parchment, precision: 0 },
+            ticks: {
+              color: darkAcademia.parchment,
+              callback(value) {
+                return Math.round(value);
+              },
+            },
             grid: { color: 'rgba(231, 219, 193, 0.08)' },
           },
         },
@@ -173,19 +202,21 @@
     timeChart = new Chart(timeCanvas, {
       type: 'line',
       data: {
-        datasets: [{
-          label: 'Tempo médio gasto (horas)',
-          data: points,
-          borderColor: darkAcademia.moss,
-          backgroundColor: 'rgba(110, 123, 79, 0.15)',
-          fill: true,
-          tension: 0.35,
-          pointRadius: 4,
-          pointHoverRadius: 7,
-          pointBackgroundColor: darkAcademia.moss,
-          pointBorderColor: darkAcademia.background,
-          pointBorderWidth: 2,
-        }],
+        datasets: [
+          {
+            label: 'Tempo médio gasto (horas)',
+            data: points,
+            borderColor: darkAcademia.moss,
+            backgroundColor: 'rgba(110, 123, 79, 0.15)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 4,
+            pointHoverRadius: 7,
+            pointBackgroundColor: darkAcademia.moss,
+            pointBorderColor: darkAcademia.background,
+            pointBorderWidth: 2,
+          },
+        ],
       },
       options: {
         responsive: true,
@@ -210,7 +241,12 @@
           },
           y: {
             beginAtZero: true,
-            ticks: { color: darkAcademia.parchment },
+            ticks: {
+              color: darkAcademia.parchment,
+              callback(value) {
+                return Number(value).toFixed(2) + 'h';
+              },
+            },
             grid: { color: 'rgba(231, 219, 193, 0.08)' },
           },
         },
@@ -227,7 +263,7 @@
       return value;
     }
 
-    if (value && typeof value === 'object') {
+    if (value && typeof value === 'object' && value.constructor === Object) {
       return Object.values(value);
     }
 
@@ -255,12 +291,18 @@
 
     genreList.innerHTML = `
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        ${genres.map((genre) => `
+        ${genres
+          .map(
+            (genre) => `
           <div class="bg-zinc-950 border border-zinc-800 rounded-sm p-4 flex items-center justify-between gap-4">
-            <span class="font-semibold text-zinc-200">${escapeHtml(genre.genre)}</span>
+            <span class="font-semibold text-zinc-200" title="${escapeHtml(genre.genre)}">
+                ${escapeHtml(genre.genre.length > 25 ? genre.genre.substring(0, 25) + '...' : genre.genre)}
+            </span>
             <span class="text-sm font-black text-violet-400">${Number(genre.total) || 0}</span>
           </div>
-        `).join('')}
+        `
+          )
+          .join('')}
       </div>
     `;
   }
@@ -293,6 +335,14 @@
     const timeTrendSeries = normalizeSeries(periodData.time_trend?.labels, periodData.time_trend?.values);
 
     activePeriod = nextPeriod;
+    const trendContainer = document.getElementById('trendContainer');
+    if (trendContainer) {
+        if (nextPeriod === 'year') {
+            trendContainer.className = 'h-[500px] md:h-[600px]';
+        } else {
+            trendContainer.className = 'h-[400px] md:h-[500px]';
+        }
+    }
     setActiveTab(nextPeriod);
 
     if (periodLabel) periodLabel.textContent = periodData.period_label;
