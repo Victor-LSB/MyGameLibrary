@@ -4,9 +4,6 @@ npm-debug.log
 yarn-error.log
 package-lock.json
 
-# Tailwind CSS compilado (gerado automaticamente)
-public/assets/css/output.css
-public/assets/css/output.css.map
 
 # PHP
 composer.lock
