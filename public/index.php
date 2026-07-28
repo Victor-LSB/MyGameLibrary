@@ -6,6 +6,8 @@ error_reporting(E_ALL);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../src/Controllers/DashboardController.php';
+require_once __DIR__ . '/../src/Controllers/NotificationController.php';
+require_once __DIR__ . '/../src/Controllers/FollowController.php';
 
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
 $dotenv->load();
@@ -14,6 +16,8 @@ use Victi\MyGameLibrary\Controllers\AuthController;
 use Victi\MyGameLibrary\Controllers\DashboardController;
 use Victi\MyGameLibrary\Controllers\GameController;
 use Victi\MyGameLibrary\Controllers\ProfileController;
+use Victi\MyGameLibrary\Controllers\FollowController;
+use Victi\MyGameLibrary\Controllers\NotificationController;
 
 
 $action = $_GET['action'] ?? 'home';
@@ -38,11 +42,14 @@ $routes = [
     'dashboard'      => [DashboardController::class, 'index'],
     'dashboard_data' => [DashboardController::class, 'data'],
     'home'           => [GameController::class, 'index'],
-    
-    // Novas rotas de Perfil
     'profile'        => [ProfileController::class, 'view'],
     'edit_profile'   => [ProfileController::class, 'edit'],
-    'update_profile' => [ProfileController::class, 'update']
+    'update_profile' => [ProfileController::class, 'update'],
+    'follow_toggle'  => [FollowController::class, 'toggle'],
+    'notifications_get' => [NotificationController::class, 'getNotifications'],
+    'notifications_count' => [NotificationController::class, 'countUnread'],
+    'notification_mark_read' => [NotificationController::class, 'markAsRead'],
+    'notifications_mark_all_read' => [NotificationController::class, 'markAllAsRead']
 ];
 
 if (array_key_exists($action, $routes)) {

@@ -20,6 +20,19 @@
                 <a href="index.php?action=login" class="bg-violet-600 hover:bg-violet-500 text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors shrink-0">Iniciar Sessão</a>
             <?php endif; ?>
         </div>
+        <div style="position: relative; cursor: pointer; display: flex; align-items: center;">
+            <button id="notificationBell" style="background: none; border: none; font-size: 1.5rem;">
+                🔔
+                <span id="unreadCount" style="position: absolute; top: 0; right: 0; background: red; color: white; border-radius: 50%; width: 20px; height: 20px; display: none;">0</span>
+            </button>
+            
+            <div id="notificationPanel" style="display: none; position: absolute; top: 50px; right: 0; width: 400px; background: #18181b; border: 2px solid #27272a; border-radius: 5px; max-height: 500px; overflow-y: auto; z-index: 50;">
+                <div style="padding: 10px; border-bottom: 1px solid #27272a;">
+                    <h3 style="margin: 0; color: white;">Notificações</h3>
+                </div>
+                <div id="notificationsList" style="padding: 10px;"></div>
+            </div>
+        </div>
     </header>
 
     <main class="max-w-5xl mx-auto px-6 mt-8">
@@ -54,6 +67,9 @@
                             <div class="w-full h-full flex items-center justify-center text-5xl sm:text-7xl bg-zinc-800 font-black text-zinc-600 uppercase">
                                 <?php echo substr($profileUser['username'], 0, 1); ?>
                             </div>
+                        <?php endif; ?>
+                        <?php if ($currentUserId !== $profileUserId): ?>
+                            <button id="followBtn" style="background-color: #7c3aed; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;" data-user-id="<?= $profileUserId ?>" data-is-following="false">Seguir</button>
                         <?php endif; ?>
                     </div>
                     
@@ -131,6 +147,8 @@
             icon: 'success', title: '<?php echo $_SESSION['profile_success']; ?>'
         });
     </script>
+    <script src="js/follow.js"></script>
+    <script src="js/notifications.js"></script>
     <?php unset($_SESSION['profile_success']); endif; ?>
 </body>
 </html>
