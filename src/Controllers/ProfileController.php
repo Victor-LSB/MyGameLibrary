@@ -48,8 +48,27 @@ class ProfileController {
             return;
         }
 
-        $isOwner = (isset($_SESSION['user_id']) && $_SESSION['user_id'] === $profileUser['id']);
+        $currentUserId = $_SESSION['user_id'] ?? null;
+        $profileUserId = $profileUser['id'];
+        $isOwner = ($currentUserId !== null && $currentUserId === $profileUserId);
         $recentGames = $this->gameModel->getRecentGamesByUserId($profileUser['id'], 10);
+
+        $isFollowing = false;
+        if ($currentUserId !== null && !$isOwner) {
+            $followStmt = $this->db->prepare("SELECT id FROM user_follows WHERE follower_id = ? AND following_id = ? LIMIT 1");
+            $followStmt->execute([$currentUserId, $profileUserId]);
+            $isFollowing = $followStmt->fetch() !== false;
+        }
+
+        $followingStmt = $this->db->prepare("
+            SELECT u.id, u.username, u.display_name, u.avatar
+            FROM user_follows uf
+            INNER JOIN users u ON u.id = uf.following_id
+            WHERE uf.follower_id = ?
+            ORDER BY uf.created_at DESC
+        ");
+        $followingStmt->execute([$profileUserId]);
+        $followingList = $followingStmt->fetchAll(\PDO::FETCH_ASSOC);
 
         include __DIR__ . '/../Views/profile/view.php';
     }

@@ -2,24 +2,31 @@
 
 namespace Victi\MyGameLibrary\Controllers;
 
+use Victi\MyGameLibrary\Database\Database;
 use PDO;
 
 class NotificationController {
     private $db;
     private $userId;
 
-    public function __construct() {
-        try {
-            $this->db = new PDO(
-                'mysql:host=' . $_ENV['DB_HOST'] . ';dbname=' . $_ENV['DB_NAME'],
-                $_ENV['DB_USER'],
-                $_ENV['DB_PASS'],
-                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-            );
-        } catch (\PDOException $e) {
-            http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Erro de conexão']);
-            exit;
+    /**
+     * @param PDO|null $db Conexão já aberta (ex: quando instanciado a partir de
+     *                      outro controller, como o FollowController). Se não
+     *                      for passada, abre uma nova usando a classe Database.
+     */
+    public function __construct($db = null) {
+        if ($db instanceof PDO) {
+            $this->db = $db;
+        } else {
+            try {
+                $database = new Database();
+                $this->db = $database->connect();
+            } catch (\Exception $e) {
+                http_response_code(500);
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Erro de conexão']);
+                exit;
+            }
         }
 
         if (session_status() === PHP_SESSION_NONE) {
@@ -28,7 +35,11 @@ class NotificationController {
 
         $this->userId = $_SESSION['user_id'] ?? null;
 
-        if (!$this->userId) {
+        // Só exige usuário autenticado quando o controller é chamado
+        // diretamente pelas rotas (ex: buscar notificações). Quando é
+        // instanciado internamente (ex: pelo FollowController para criar
+        // uma notificação para outro usuário), não deve barrar aqui.
+        if ($db === null && !$this->userId) {
             header('Content-Type: application/json');
             http_response_code(401);
             echo json_encode(['success' => false, 'message' => 'Não autenticado']);

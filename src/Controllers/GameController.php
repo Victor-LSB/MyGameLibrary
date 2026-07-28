@@ -371,6 +371,18 @@ class GameController {
             if ($game_id) {
                 $this->gameModel->updateReviewWithCompletionData($review, $completion_date, $time_spent_hours, $_SESSION['user_id'], $game_id);
                 $this->gameModel->saveTagsForGame($_SESSION['user_id'], $game_id, $tags_array);
+
+                // Notifica quem segue este usuário, se a análise tiver conteúdo de fato
+                if (trim((string) $review) !== '') {
+                    $game = $this->gameModel->getGameById($game_id);
+                    $notificationController = new NotificationController($this->db);
+                    $notificationController->notifyFollowers(
+                        $_SESSION['user_id'],
+                        $game_id,
+                        ($_SESSION['username'] ?? 'Alguém') . ' publicou uma análise de ' . ($game['title'] ?? 'um jogo')
+                    );
+                }
+
                 $_SESSION['review_success'] = "Análise guardada com sucesso!";
                 
                 // Retorna mantendo a URL formatada perfeitamente

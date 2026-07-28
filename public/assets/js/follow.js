@@ -35,13 +35,13 @@
                 if (isFollowing) {
                     followBtn.textContent = 'Seguir';
                     followBtn.dataset.isFollowing = 'false';
-                    followBtn.classList.remove('btn-danger');
-                    followBtn.classList.add('btn-primary');
+                    followBtn.classList.remove('bg-zinc-700', 'hover:bg-zinc-600');
+                    followBtn.classList.add('bg-violet-600', 'hover:bg-violet-500');
                 } else {
                     followBtn.textContent = 'Deixar de Seguir';
                     followBtn.dataset.isFollowing = 'true';
-                    followBtn.classList.remove('btn-primary');
-                    followBtn.classList.add('btn-danger');
+                    followBtn.classList.remove('bg-violet-600', 'hover:bg-violet-500');
+                    followBtn.classList.add('bg-zinc-700', 'hover:bg-zinc-600');
                 }
 
                 // Mostrar mensagem de sucesso

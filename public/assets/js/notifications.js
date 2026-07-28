@@ -47,7 +47,7 @@
             }
         } catch (error) {
             console.error('Erro ao carregar notificações:', error);
-            notificationsList.innerHTML = '<p class="empty">Erro ao carregar notificações</p>';
+            notificationsList.innerHTML = '<p class="text-center py-8 text-zinc-500">Erro ao carregar notificações</p>';
         }
     }
 
@@ -59,14 +59,17 @@
         }
 
         notificationsList.innerHTML = notifications.map(notif => `
-            <div class="notification-item ${notif.is_read ? 'read' : 'unread'}" data-id="${notif.id}">
-                <img src="${notif.actor_avatar || 'assets/images/avatar-default.png'}" alt="${notif.actor_name}" class="notification-avatar">
-                <div class="notification-content">
-                    <p class="notification-message">${escapeHtml(notif.message)}</p>
-                    <time class="notification-time">${formatDate(notif.created_at)}</time>
+            <div class="notification-item ${notif.is_read ? 'read' : 'unread'} flex items-start gap-3 p-4 ${notif.is_read ? '' : 'bg-violet-950/30'} hover:bg-zinc-800/50 transition-colors cursor-pointer" data-id="${notif.id}">
+                ${notif.actor_avatar
+                    ? `<img src="${notif.actor_avatar}" alt="${escapeHtml(notif.actor_name)}" class="notification-avatar w-9 h-9 rounded-sm object-cover shrink-0 bg-zinc-800">`
+                    : `<div class="notification-avatar w-9 h-9 rounded-sm shrink-0 bg-zinc-800 flex items-center justify-center text-zinc-500 font-black uppercase text-sm">${escapeHtml((notif.actor_name || '?').charAt(0))}</div>`
+                }
+                <div class="notification-content flex-1 min-w-0">
+                    <p class="notification-message text-sm text-zinc-200 leading-snug">${escapeHtml(notif.message)}</p>
+                    <time class="notification-time text-xs text-zinc-500">${formatDate(notif.created_at)}</time>
                 </div>
                 ${!notif.is_read ? `
-                    <button class="notification-mark-read-btn" data-id="${notif.id}" title="Marcar como lido">
+                    <button class="notification-mark-read-btn shrink-0 w-6 h-6 flex items-center justify-center rounded-sm bg-zinc-800 hover:bg-violet-600 text-zinc-400 hover:text-white text-xs transition-colors" data-id="${notif.id}" title="Marcar como lido">
                         ✓
                     </button>
                 ` : ''}
@@ -110,7 +113,7 @@
     function updateUnreadCount(count) {
         if (unreadCount) {
             unreadCount.textContent = count;
-            unreadCount.style.display = count > 0 ? 'block' : 'none';
+            unreadCount.style.display = count > 0 ? 'flex' : 'none';
         }
     }
 

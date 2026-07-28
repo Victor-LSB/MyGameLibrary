@@ -2,6 +2,7 @@
 
 namespace Victi\MyGameLibrary\Controllers;
 
+use Victi\MyGameLibrary\Database\Database;
 use PDO;
 
 class FollowController {
@@ -9,16 +10,14 @@ class FollowController {
     private $userId;
 
     public function __construct() {
-        // Obter conexão do banco usando variáveis de ambiente
+        // Reaproveita a mesma classe de conexão usada pelo resto do projeto
+        // (evita nomes de variáveis de ambiente diferentes entre local/prod)
         try {
-            $this->db = new PDO(
-                'mysql:host=' . $_ENV['DB_HOST'] . ';dbname=' . $_ENV['DB_NAME'],
-                $_ENV['DB_USER'],
-                $_ENV['DB_PASS'],
-                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-            );
-        } catch (\PDOException $e) {
+            $database = new Database();
+            $this->db = $database->connect();
+        } catch (\Exception $e) {
             http_response_code(500);
+            header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Erro de conexão']);
             exit;
         }
@@ -84,6 +83,16 @@ class FollowController {
                 VALUES (?, ?)
             ");
             $stmt->execute([$this->userId, $followingId]);
+
+            // Notifica o usuário que ganhou um novo seguidor
+            $notificationController = new NotificationController($this->db);
+            $notificationController->createNotification(
+                $followingId,
+                $this->userId,
+                'new_follower',
+                null,
+                'Começou a seguir você'
+            );
 
             return ['success' => true, 'message' => 'Você começou a seguir este usuário'];
         } catch (\PDOException $e) {
