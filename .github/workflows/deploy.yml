@@ -19,3 +19,4 @@ jobs:
             cd /var/www/html
             git pull origin main
             composer install --no-dev --optimize-autoloader
+            sudo systemctl reload apache2

@@ -56,12 +56,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 : `<div class="w-full h-full flex items-center justify-center text-zinc-700 font-bold uppercase">Sem Capa</div>`;
 
             const year = game.released ? game.released.substring(0, 4) : 'N/A';
-            const genres = game.genres && game.genres.length > 0 ? game.genres.map(g => g.name).join(' • ') : 'Desconhecido';
+            const genreNames = game.genres && game.genres.length > 0 ? game.genres.map(g => g.name) : ['Desconhecido'];
+            const genres = genreNames.join(' • ');
+            const genresForSubmit = genreNames.join(', ');
             const platforms = game.platforms ? game.platforms.map(p => p.platform.name).join(', ') : '';
 
             const safeName = game.name.replace(/"/g, '&quot;');
             const safePlatforms = platforms.replace(/"/g, '&quot;');
-            const safeGenres = genres.replace(/"/g, '&quot;');
+            const safeGenres = genresForSubmit.replace(/"/g, '&quot;');
 
             return `
             <div class="bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl flex flex-col overflow-hidden group">

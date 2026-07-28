@@ -11,6 +11,9 @@ class GameAPI {
 
     private function normalizeGenreName($genreName) {
         $genreName = trim((string) $genreName);
+        // Segurança extra: decodifica entidades HTML residuais (ex: "&bull;" literal)
+        // que possam ter vindo de algum fallback ou fonte externa
+        $genreName = html_entity_decode($genreName, ENT_QUOTES, 'UTF-8');
         $genreName = preg_replace('/\s+/', ' ', $genreName);
 
         if ($genreName === '') {
@@ -24,7 +27,9 @@ class GameAPI {
         $normalizedGenres = [];
 
         if (is_string($genres)) {
-            $genres = explode(',', $genres);
+            // Aceita vírgula, bullet ou pipe como separador (evita que um fallback
+            // com separador diferente vire "um gênero só" com o separador dentro do nome)
+            $genres = preg_split('/\s*(?:,|•|\|)\s*/u', $genres);
         }
 
         if (!is_array($genres)) {
@@ -116,6 +121,8 @@ class GameAPI {
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_USERAGENT, 'GameLoggd');
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
     $response = curl_exec($ch);
     curl_close($ch);
 
@@ -143,6 +150,8 @@ class GameAPI {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
         
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         
