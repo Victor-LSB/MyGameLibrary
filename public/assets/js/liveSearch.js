@@ -2,11 +2,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const input = document.getElementById('liveSearchInput');
     const grid = document.getElementById('resultsGrid');
     const title = document.getElementById('searchTitle');
+    const spinner = document.getElementById('searchSpinner');
     
     if (!input || !grid || !title) return;
 
     let typingTimer;
-    const doneTypingInterval = 500;
+    const doneTypingInterval = 350; // debounce mais curto: menos espera após parar de digitar
+
+    // Cache local simples (evita rebater a mesma busca na API se o usuário digitar/apagar/redigitar)
+    const resultsCache = new Map();
+
+    // Cancela requisições antigas ainda pendentes, evitando resultados
+    // desatualizados "chegando atrasados" e sobrescrevendo os mais novos
+    let activeController = null;
 
     input.addEventListener('input', () => {
         clearTimeout(typingTimer);
@@ -15,37 +23,61 @@ document.addEventListener('DOMContentLoaded', () => {
         if (query.length >= 3) {
             title.style.display = 'block';
             title.innerHTML = `Buscando por "<span class="text-violet-400">${query}</span>"... ⏳`;
-            
+
+            // Resposta instantânea se já tivermos essa busca em cache
+            const cached = resultsCache.get(query.toLowerCase());
+            if (cached) {
+                renderResults(query, cached);
+            }
+
             typingTimer = setTimeout(() => {
                 fetchGames(query);
             }, doneTypingInterval);
         } else if (query.length === 0) {
             title.style.display = 'none';
             grid.innerHTML = '';
+            if (activeController) activeController.abort();
         }
     });
 
+    function renderResults(query, results) {
+        if (results.length > 0) {
+            title.innerHTML = `Resultados para "<span class="text-violet-400">${query}</span>"`;
+            renderGames(results);
+        } else {
+            title.innerHTML = `Nenhum resultado 📡`;
+            grid.innerHTML = `
+                <div class="col-span-full bg-zinc-900 border-2 border-zinc-800 rounded-sm p-12 text-center shadow-xl mt-4">
+                    <div class="text-zinc-700 mb-4 text-5xl">📡</div>
+                    <h3 class="text-xl font-black text-white uppercase tracking-tight mb-2">Sinal Perdido</h3>
+                    <p class="text-zinc-400 font-medium">Nenhum jogo encontrado para "<strong>${query}</strong>".</p>
+                </div>
+            `;
+        }
+    }
+
     async function fetchGames(query) {
+        // Cancela a busca anterior ainda em andamento (o usuário já digitou algo novo)
+        if (activeController) activeController.abort();
+        activeController = new AbortController();
+
+        if (spinner) spinner.classList.remove('hidden');
+
         try {
-            const response = await fetch(`index.php?action=ajax_search&q=${encodeURIComponent(query)}`);
+            const response = await fetch(`index.php?action=ajax_search&q=${encodeURIComponent(query)}`, {
+                signal: activeController.signal
+            });
             const data = await response.json();
-            
-            if (data.results && data.results.length > 0) {
-                title.innerHTML = `Resultados para "<span class="text-violet-400">${query}</span>"`;
-                renderGames(data.results);
-            } else {
-                title.innerHTML = `Nenhum resultado 📡`;
-                grid.innerHTML = `
-                    <div class="col-span-full bg-zinc-900 border-2 border-zinc-800 rounded-sm p-12 text-center shadow-xl mt-4">
-                        <div class="text-zinc-700 mb-4 text-5xl">📡</div>
-                        <h3 class="text-xl font-black text-white uppercase tracking-tight mb-2">Sinal Perdido</h3>
-                        <p class="text-zinc-400 font-medium">Nenhum jogo encontrado para "<strong>${query}</strong>".</p>
-                    </div>
-                `;
-            }
+            const results = data.results || [];
+
+            resultsCache.set(query.toLowerCase(), results);
+            renderResults(query, results);
         } catch (error) {
+            if (error.name === 'AbortError') return; // busca cancelada porque uma nova começou, ignora
             console.error("Erro ao buscar jogos:", error);
             title.innerHTML = "Erro na conexão. Tente novamente.";
+        } finally {
+            if (spinner) spinner.classList.add('hidden');
         }
     }
 

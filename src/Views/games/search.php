@@ -8,13 +8,11 @@
 
         
         <div class="bg-zinc-900 p-6 sm:p-8 rounded-sm border-2 border-zinc-800 mb-10 shadow-xl max-w-4xl mx-auto">
-            <form action="index.php" method="GET" class="flex flex-col sm:flex-row gap-3">
+            <form action="index.php" method="GET" class="relative" onsubmit="return false;">
                 <input type="hidden" name="action" value="search">
-                <div class="flex-1">
-                    <input type="text" id="liveSearchInput" name="q" autocomplete="off" placeholder="Ex: The Witcher 3, Elden Ring, Minecraft..." value="<?php echo htmlspecialchars($q ?? '', ENT_QUOTES, 'UTF-8'); ?>" required
-                           class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-5 py-4 text-lg focus:outline-none focus:border-violet-500 font-medium placeholder-zinc-600">
-                </div>
-                <button type="submit" class="bg-zinc-200 hover:bg-white text-zinc-900 px-8 py-4 rounded-sm font-black text-lg uppercase tracking-wide transition-colors shadow-lg">Pesquisar</button>
+                <input type="text" id="liveSearchInput" name="q" autocomplete="off" placeholder="Ex: The Witcher 3, Elden Ring, Minecraft..." value="<?php echo htmlspecialchars($q ?? '', ENT_QUOTES, 'UTF-8'); ?>" autofocus
+                       class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-5 py-4 text-lg focus:outline-none focus:border-violet-500 font-medium placeholder-zinc-600">
+                <span id="searchSpinner" class="hidden absolute right-5 top-1/2 -translate-y-1/2 h-5 w-5 border-2 border-zinc-600 border-t-violet-500 rounded-full animate-spin"></span>
             </form>
         </div>
 

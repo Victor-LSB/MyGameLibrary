@@ -32,6 +32,8 @@ public/uploads/*
 # Cache
 .cache/
 tmp/
+storage/cache/*
+!storage/cache/**/.gitkeep
 
 # Testing
 coverage/
