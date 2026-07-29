@@ -59,7 +59,7 @@ class User {
 
    
     public function getUserById($id) {
-        $sql = "SELECT id, username, email, display_name, bio, avatar, banner FROM " . $this->table . " WHERE id = ? LIMIT 1";
+        $sql = "SELECT id, username, email, email_verified_at, display_name, bio, avatar, banner FROM " . $this->table . " WHERE id = ? LIMIT 1";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
@@ -91,6 +91,43 @@ class User {
         $sql = "UPDATE " . $this->table . " SET password = ?, reset_token = NULL, reset_token_expires_at = NULL WHERE id = ?";
         $stmt = $this->conn->prepare($sql);
         return $stmt->execute([$hashed_password, $user_id]);
+    }
+
+    /**
+     * Grava o token de verificação de e-mail gerado no registo (ou reenviado depois).
+     */
+    public function saveVerificationToken($userId, $token, $expiresAt) {
+        $sql = "UPDATE " . $this->table . " SET verification_token = ?, verification_token_expires_at = ? WHERE id = ?";
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute([$token, $expiresAt, $userId]);
+    }
+
+    public function getUserByVerificationToken($token) {
+        $sql = "SELECT id, email, email_verified_at FROM " . $this->table . " WHERE verification_token = ? AND verification_token_expires_at > NOW() LIMIT 1";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([$token]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function markEmailVerified($userId) {
+        $sql = "UPDATE " . $this->table . " SET email_verified_at = NOW(), verification_token = NULL, verification_token_expires_at = NULL WHERE id = ?";
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute([$userId]);
+    }
+
+    public function isEmailVerified($userId) {
+        $sql = "SELECT email_verified_at FROM " . $this->table . " WHERE id = ? LIMIT 1";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([$userId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row && !empty($row['email_verified_at']);
+    }
+
+    public function getUserByEmail($email) {
+        $sql = "SELECT id, username, email, email_verified_at FROM " . $this->table . " WHERE email = ? LIMIT 1";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([$email]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 }
 ?>

@@ -3,15 +3,53 @@ namespace Victi\MyGameLibrary\Controllers;
 use Resend;
 use Victi\MyGameLibrary\Database\Database;
 use Victi\MyGameLibrary\Models\User;
+use Victi\MyGameLibrary\Services\RateLimiter;
 
 class AuthController {
     private $db;
     private $userModel;
+    private $rateLimiter;
 
     public function __construct() {
         $database = new Database();
         $this->db = $database->connect();
         $this->userModel = new User($this->db);
+        $this->rateLimiter = new RateLimiter($this->db);
+    }
+
+    /**
+     * IP do visitante (considerando proxy reverso, quando presente).
+     */
+    private function clientIp() {
+        return $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    }
+
+    /**
+     * Envia (ou reenvia) o e-mail de verificação de conta via Resend.
+     */
+    private function sendVerificationEmail($email, $userId) {
+        $token = bin2hex(random_bytes(50));
+        $expires_at = date('Y-m-d H:i:s', time() + 86400); // 24h
+        $this->userModel->saveVerificationToken($userId, $token, $expires_at);
+
+        $baseUrl = $_ENV['APP_URL'] ?? getenv('APP_URL') ?? 'http://localhost/MyGameLibrary/public';
+        $verify_link = rtrim($baseUrl, '/') . "/index.php?action=verify_email&token=$token";
+
+        $apiKey = $_ENV['RESEND_API_KEY'] ?? getenv('RESEND_API_KEY');
+        $resend = Resend::client($apiKey);
+
+        try {
+            $resend->emails->send([
+                'from' => 'My Game Library <suporte@mygamelibrary.com.br>',
+                'to' => [$email],
+                'subject' => 'Confirme o seu e-mail',
+                'html' => '<p>Olá!</p><p>Clique no link abaixo para confirmar o seu e-mail e ativar a sua conta:</p><p><a href="'.$verify_link.'">Confirmar e-mail</a></p><p>Este link expira em 24 horas.</p>',
+            ]);
+            return true;
+        } catch (\Exception $e) {
+            error_log('Erro ao enviar e-mail de verificação: ' . $e->getMessage());
+            return false;
+        }
     }
 
     private function startSession() {
@@ -33,14 +71,27 @@ class AuthController {
                 return;
             }
 
+            // No máximo 5 tentativas de login a cada 15 minutos por IP + email
+            $rlKey = $this->rateLimiter->key('login', $this->clientIp(), $email);
+            if ($this->rateLimiter->tooManyAttempts($rlKey, 5, 15)) {
+                $wait = $this->rateLimiter->minutesUntilReset($rlKey, 15);
+                $error = "Muitas tentativas de login. Tente novamente em {$wait} minuto(s).";
+                include __DIR__ . '/../Views/auth/login.php';
+                return;
+            }
+
             $user = $this->userModel->login($email, $password);
 
             if ($user) {
+                // Login válido: limpa o contador de tentativas dessa chave não é necessário,
+                // ele expira sozinho pela janela de tempo.
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
+                $_SESSION['email_verified'] = !empty($user['email_verified_at']);
                 header("Location: index.php?action=home");
                 exit();
             } else {
+                $this->rateLimiter->hit($rlKey);
                 $error = 'Email ou senha inválidos.';
                 include __DIR__ . '/../Views/auth/login.php';
                 return;
@@ -95,8 +146,23 @@ class AuthController {
                 return;
             }
 
+            // No máximo 5 registos por hora a partir do mesmo IP (evita criação em massa de contas)
+            $rlKey = $this->rateLimiter->key('register', $this->clientIp());
+            if ($this->rateLimiter->tooManyAttempts($rlKey, 5, 60)) {
+                $error = 'Muitas contas criadas a partir deste endereço. Tente novamente mais tarde.';
+                include __DIR__ . '/../Views/auth/register.php';
+                return;
+            }
+
             if ($this->userModel->register($username, $email, $password)) {
-                $success = 'Usuário registrado com sucesso! Faça login para continuar.';
+                $this->rateLimiter->hit($rlKey);
+
+                $newUser = $this->userModel->getUserByEmail($email);
+                if ($newUser) {
+                    $this->sendVerificationEmail($email, $newUser['id']);
+                }
+
+                $success = 'Usuário registrado com sucesso! Enviámos um e-mail de confirmação — verifique a sua caixa de entrada. Já pode fazer login.';
                 include __DIR__ . '/../Views/auth/register.php';
                 return;
             } else {
@@ -130,6 +196,15 @@ class AuthController {
                 include __DIR__ . '/../Views/auth/forgot_password.php';
                 return;
             }
+
+            // No máximo 3 pedidos de recuperação por hora por IP + email
+            $rlKey = $this->rateLimiter->key('forgot_password', $this->clientIp(), $email);
+            if ($this->rateLimiter->tooManyAttempts($rlKey, 3, 60)) {
+                $error = 'Muitos pedidos de recuperação de senha. Tente novamente mais tarde.';
+                include __DIR__ . '/../Views/auth/forgot_password.php';
+                return;
+            }
+            $this->rateLimiter->hit($rlKey);
 
             $token = bin2hex(random_bytes(50));
             $expires_at = date('Y-m-d H:i:s', time() + 3600);
@@ -232,6 +307,62 @@ class AuthController {
                 return;
             }
         }
+    }
+
+    public function verifyEmail() {
+        $this->startSession();
+
+        $token = filter_input(INPUT_GET, 'token', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
+
+        if (empty($token)) {
+            $error = 'Token de verificação inválido ou ausente.';
+            include __DIR__ . '/../Views/auth/verify_email.php';
+            return;
+        }
+
+        $user = $this->userModel->getUserByVerificationToken($token);
+
+        if (!$user) {
+            $error = 'Este link de verificação é inválido ou já expirou. Peça um novo e-mail de confirmação.';
+            include __DIR__ . '/../Views/auth/verify_email.php';
+            return;
+        }
+
+        $this->userModel->markEmailVerified($user['id']);
+
+        if (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $user['id']) {
+            $_SESSION['email_verified'] = true;
+        }
+
+        $success = 'E-mail confirmado com sucesso! A sua conta está totalmente ativa.';
+        include __DIR__ . '/../Views/auth/verify_email.php';
+    }
+
+    public function resendVerification() {
+        $this->startSession();
+
+        if (!isset($_SESSION['user_id'])) {
+            header("Location: index.php?action=login");
+            exit();
+        }
+
+        // No máximo 3 reenvios por hora por usuário
+        $rlKey = $this->rateLimiter->key('resend_verification', $_SESSION['user_id']);
+        if ($this->rateLimiter->tooManyAttempts($rlKey, 3, 60)) {
+            $_SESSION['verification_notice'] = 'Muitos pedidos de reenvio. Tente novamente mais tarde.';
+            header("Location: index.php?action=home");
+            exit();
+        }
+        $this->rateLimiter->hit($rlKey);
+
+        $user = $this->userModel->getUserById($_SESSION['user_id']);
+        if ($user && empty($user['email_verified_at'] ?? null)) {
+            $this->sendVerificationEmail($user['email'], $user['id']);
+            $_SESSION['verification_notice'] = 'E-mail de confirmação reenviado! Verifique a sua caixa de entrada.';
+        }
+
+        header("Location: index.php?action=home");
+        exit();
     }
 
     public function logout() {

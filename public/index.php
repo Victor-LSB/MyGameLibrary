@@ -8,6 +8,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../src/Controllers/DashboardController.php';
 require_once __DIR__ . '/../src/Controllers/NotificationController.php';
 require_once __DIR__ . '/../src/Controllers/FollowController.php';
+require_once __DIR__ . '/../src/Controllers/FeedController.php';
 
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
 $dotenv->load();
@@ -17,6 +18,7 @@ use Victi\MyGameLibrary\Controllers\DashboardController;
 use Victi\MyGameLibrary\Controllers\GameController;
 use Victi\MyGameLibrary\Controllers\ProfileController;
 use Victi\MyGameLibrary\Controllers\FollowController;
+use Victi\MyGameLibrary\Controllers\FeedController;
 use Victi\MyGameLibrary\Controllers\NotificationController;
 
 
@@ -46,6 +48,9 @@ $routes = [
     'edit_profile'   => [ProfileController::class, 'edit'],
     'update_profile' => [ProfileController::class, 'update'],
     'follow_toggle'  => [FollowController::class, 'toggle'],
+    'feed'           => [FeedController::class, 'index'],
+    'verify_email'   => [AuthController::class, 'verifyEmail'],
+    'resend_verification' => [AuthController::class, 'resendVerification'],
     'notifications_get' => [NotificationController::class, 'getNotifications'],
     'notifications_count' => [NotificationController::class, 'countUnread'],
     'notification_mark_read' => [NotificationController::class, 'markAsRead'],

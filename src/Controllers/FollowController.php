@@ -3,11 +3,13 @@
 namespace Victi\MyGameLibrary\Controllers;
 
 use Victi\MyGameLibrary\Database\Database;
+use Victi\MyGameLibrary\Services\RateLimiter;
 use PDO;
 
 class FollowController {
     private $db;
     private $userId;
+    private $rateLimiter;
 
     public function __construct() {
         // Reaproveita a mesma classe de conexão usada pelo resto do projeto
@@ -35,6 +37,8 @@ class FollowController {
             echo json_encode(['success' => false, 'message' => 'Não autenticado']);
             exit;
         }
+
+        $this->rateLimiter = new RateLimiter($this->db);
     }
 
     /**
@@ -42,6 +46,15 @@ class FollowController {
      */
     public function toggle() {
         header('Content-Type: application/json');
+
+        // Anti-spam: no máximo 30 ações de seguir/deixar de seguir por minuto por usuário
+        $rlKey = $this->rateLimiter->key('follow_toggle', $this->userId);
+        if ($this->rateLimiter->tooManyAttempts($rlKey, 30, 1)) {
+            http_response_code(429);
+            echo json_encode(['success' => false, 'message' => 'Muitas ações seguidas. Aguarde um instante e tente novamente.']);
+            return;
+        }
+        $this->rateLimiter->hit($rlKey);
 
         $input = json_decode(file_get_contents('php://input'), true);
         $followingId = $input['user_id'] ?? null;
@@ -192,5 +205,29 @@ class FollowController {
         $stmt->execute([$userId]);
 
         return $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    }
+
+    /**
+     * Sugestões de quem seguir: usuários com mais seguidores que $userId
+     * ainda não segue (e que não são ele mesmo).
+     */
+    public function getFollowSuggestions($userId, $limit = 5) {
+        $limit = (int) $limit;
+
+        $stmt = $this->db->prepare("
+            SELECT u.id, u.username, u.display_name, u.avatar, COUNT(uf2.follower_id) as followers_count
+            FROM users u
+            LEFT JOIN user_follows uf2 ON uf2.following_id = u.id
+            WHERE u.id != ?
+              AND u.id NOT IN (
+                  SELECT following_id FROM user_follows WHERE follower_id = ?
+              )
+            GROUP BY u.id
+            ORDER BY followers_count DESC, u.id DESC
+            LIMIT $limit
+        ");
+        $stmt->execute([$userId, $userId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

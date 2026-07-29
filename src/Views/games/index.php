@@ -8,6 +8,7 @@
                 <p class="text-sm text-zinc-400 font-medium mt-1">Bem-vindo, <span class="text-violet-400 font-bold"><?php echo htmlspecialchars(!empty($_SESSION['display_name']) ? $_SESSION['display_name'] : $_SESSION['username']); ?></span>!</p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
+                <a href='index.php?action=feed' class="bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors border-b-2 border-zinc-950 hover:border-zinc-900">📰 Feed</a>
                 <a href='index.php?action=dashboard' class="bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors border-b-2 border-zinc-950 hover:border-zinc-900">📊 Dashboard</a>
                 <a href='index.php?action=profile' class="bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors border-b-2 border-zinc-950 hover:border-zinc-900">👤 Meu Perfil</a>
                 
@@ -18,6 +19,17 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-6 pb-12">
+        <?php if (isset($_SESSION['verification_notice'])): ?>
+            <div class="mb-6 bg-zinc-900 border border-zinc-800 text-zinc-300 px-4 py-3 rounded-sm text-sm">
+                <?php echo htmlspecialchars($_SESSION['verification_notice']); unset($_SESSION['verification_notice']); ?>
+            </div>
+        <?php elseif (isset($_SESSION['email_verified']) && $_SESSION['email_verified'] === false): ?>
+            <div class="mb-6 bg-amber-950/60 border border-amber-800 text-amber-300 px-4 py-3 rounded-sm text-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+                <span>Confirme o seu e-mail para ativar todos os recursos da sua conta.</span>
+                <a href="index.php?action=resend_verification" class="shrink-0 bg-amber-800/60 hover:bg-amber-800 text-amber-100 px-4 py-1.5 rounded-sm font-bold uppercase tracking-wide text-xs transition-colors">Reenviar e-mail</a>
+            </div>
+        <?php endif; ?>
+
         <div class="flex flex-col sm:flex-row justify-between items-end mb-6 gap-4">
             <h2 class="text-2xl font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3">Minha Biblioteca</h2>
         </div>

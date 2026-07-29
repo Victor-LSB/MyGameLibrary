@@ -8,7 +8,10 @@
     <?php $currentUserId = $currentUserId ?? null; ?>
     <?php $profileUserId = $profileUserId ?? ($profileUser['id'] ?? null); ?>
     <?php $isFollowing = $isFollowing ?? false; ?>
+    <?php $followsMe = $followsMe ?? false; ?>
     <?php $followingList = $followingList ?? []; ?>
+    <?php $followersList = $followersList ?? []; ?>
+    <?php $followSuggestions = $followSuggestions ?? []; ?>
     <title>Perfil de <?php echo htmlspecialchars($profileUser['display_name'] ?: $profileUser['username']); ?> - MyGameLibrary</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" type="image/png" href="assets/icon/icong.png?v=1">
@@ -16,7 +19,7 @@
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen pb-12 selection:bg-violet-600 selection:text-white">
 
     <header class="bg-zinc-900 border-b-4 border-violet-600 shadow-md px-6 py-5">
-        <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
             <a href="index.php?action=home" class="text-2xl font-black text-white tracking-tighter uppercase hover:text-violet-400 transition-colors">MyGameLibrary</a>
             <div class="flex items-center gap-3">
                 <?php if (isset($_SESSION['user_id'])): ?>
@@ -44,7 +47,7 @@
         </div>
     </header>
 
-    <main class="max-w-5xl mx-auto px-6 mt-8">
+    <main class="max-w-7xl mx-auto px-6 mt-8">
         
         <div class="bg-zinc-900 rounded-sm border-2 border-zinc-800 shadow-xl overflow-hidden mb-10 relative">
             <div class="h-48 sm:h-64 md:h-80 w-full relative bg-zinc-800 overflow-hidden group">
@@ -84,7 +87,12 @@
                             <h1 class="text-3xl sm:text-4xl font-black text-white uppercase tracking-tight">
                                 <?php echo htmlspecialchars($profileUser['display_name'] ?: $profileUser['username']); ?>
                             </h1>
-                            <p class="text-violet-400 font-bold uppercase tracking-widest text-sm mt-1">@<?php echo htmlspecialchars($profileUser['username']); ?></p>
+                            <p class="text-violet-400 font-bold uppercase tracking-widest text-sm mt-1 flex items-center justify-center sm:justify-start gap-2">
+                                @<?php echo htmlspecialchars($profileUser['username']); ?>
+                                <?php if (!$isOwner && $followsMe): ?>
+                                    <span class="bg-zinc-800 text-zinc-300 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-sm border border-zinc-700">Segue você</span>
+                                <?php endif; ?>
+                            </p>
                         </div>
                         
                         <?php if ($isOwner): ?>
@@ -112,7 +120,7 @@
                 <h2 class="text-2xl font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3 mb-6">Registados Recentemente</h2>
 
                 <?php if (!empty($recentGames) && count($recentGames) > 0): ?>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
                         <?php foreach ($recentGames as $game): ?>
                             <div class="bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl flex flex-col overflow-hidden group">
                                 <!-- AQUI ESTÁ A CORREÇÃO: O link agora carrega o ID do jogo e o nome de utilizador dono do perfil (&u=...) -->
@@ -149,9 +157,16 @@
             </div>
 
             <aside class="w-full lg:w-72 shrink-0">
-                <h2 class="text-2xl font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3 mb-6">Seguindo (<?php echo count($followingList); ?>)</h2>
+                <div class="flex items-stretch gap-1 mb-6 border-l-4 border-violet-500 pl-3">
+                    <button type="button" data-tab-target="followingTab" class="follow-tab-btn flex-1 text-left text-sm sm:text-base font-black text-white uppercase tracking-tight pb-1 border-b-2 border-violet-500 transition-colors whitespace-nowrap">
+                        Seguindo (<?php echo count($followingList); ?>)
+                    </button>
+                    <button type="button" data-tab-target="followersTab" class="follow-tab-btn flex-1 text-left text-sm sm:text-base font-black text-zinc-500 uppercase tracking-tight pb-1 border-b-2 border-transparent transition-colors whitespace-nowrap">
+                        Seguidores (<?php echo count($followersList); ?>)
+                    </button>
+                </div>
 
-                <div class="bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl divide-y divide-zinc-800 max-h-[32rem] overflow-y-auto">
+                <div id="followingTab" class="follow-tab-panel bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl divide-y divide-zinc-800 max-h-[32rem] overflow-y-auto">
                     <?php if (!empty($followingList)): ?>
                         <?php foreach ($followingList as $friend): ?>
                             <a href="index.php?action=profile&u=<?php echo urlencode($friend['username']); ?>" class="flex items-center gap-3 p-3 hover:bg-zinc-800/60 transition-colors">
@@ -176,10 +191,80 @@
                         <p class="text-zinc-500 text-sm p-4 text-center">Ainda não segue ninguém.</p>
                     <?php endif; ?>
                 </div>
+
+                <div id="followersTab" class="follow-tab-panel hidden bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl divide-y divide-zinc-800 max-h-[32rem] overflow-y-auto">
+                    <?php if (!empty($followersList)): ?>
+                        <?php foreach ($followersList as $friend): ?>
+                            <a href="index.php?action=profile&u=<?php echo urlencode($friend['username']); ?>" class="flex items-center gap-3 p-3 hover:bg-zinc-800/60 transition-colors">
+                                <?php if (!empty($friend['avatar'])): ?>
+                                    <?php
+                                        $friendAvatarVal = $friend['avatar'];
+                                        $friendAvatarPath = str_starts_with($friendAvatarVal, 'http') ? $friendAvatarVal : './uploads/profile/' . basename($friendAvatarVal);
+                                    ?>
+                                    <img src="<?php echo htmlspecialchars($friendAvatarPath); ?>" alt="<?php echo htmlspecialchars($friend['username']); ?>" class="w-10 h-10 rounded-sm object-cover shrink-0 bg-zinc-950">
+                                <?php else: ?>
+                                    <div class="w-10 h-10 rounded-sm shrink-0 bg-zinc-800 flex items-center justify-center text-zinc-500 font-black uppercase">
+                                        <?php echo substr($friend['username'], 0, 1); ?>
+                                    </div>
+                                <?php endif; ?>
+                                <div class="min-w-0">
+                                    <p class="text-white text-sm font-bold truncate"><?php echo htmlspecialchars($friend['display_name'] ?: $friend['username']); ?></p>
+                                    <p class="text-zinc-500 text-xs truncate">@<?php echo htmlspecialchars($friend['username']); ?></p>
+                                </div>
+                            </a>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <p class="text-zinc-500 text-sm p-4 text-center">Ainda não tem seguidores.</p>
+                    <?php endif; ?>
+                </div>
+
+                <?php if ($isOwner && !empty($followSuggestions)): ?>
+                    <h2 class="text-lg font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3 mt-8 mb-4">Sugestões para seguir</h2>
+                    <div class="bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl divide-y divide-zinc-800">
+                        <?php foreach ($followSuggestions as $suggestion): ?>
+                            <a href="index.php?action=profile&u=<?php echo urlencode($suggestion['username']); ?>" class="flex items-center gap-3 p-3 hover:bg-zinc-800/60 transition-colors">
+                                <?php if (!empty($suggestion['avatar'])): ?>
+                                    <?php
+                                        $suggAvatarVal = $suggestion['avatar'];
+                                        $suggAvatarPath = str_starts_with($suggAvatarVal, 'http') ? $suggAvatarVal : './uploads/profile/' . basename($suggAvatarVal);
+                                    ?>
+                                    <img src="<?php echo htmlspecialchars($suggAvatarPath); ?>" alt="<?php echo htmlspecialchars($suggestion['username']); ?>" class="w-10 h-10 rounded-sm object-cover shrink-0 bg-zinc-950">
+                                <?php else: ?>
+                                    <div class="w-10 h-10 rounded-sm shrink-0 bg-zinc-800 flex items-center justify-center text-zinc-500 font-black uppercase">
+                                        <?php echo substr($suggestion['username'], 0, 1); ?>
+                                    </div>
+                                <?php endif; ?>
+                                <div class="min-w-0">
+                                    <p class="text-white text-sm font-bold truncate"><?php echo htmlspecialchars($suggestion['display_name'] ?: $suggestion['username']); ?></p>
+                                    <p class="text-zinc-500 text-xs truncate"><?php echo (int) $suggestion['followers_count']; ?> seguidor<?php echo $suggestion['followers_count'] == 1 ? '' : 'es'; ?></p>
+                                </div>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
             </aside>
         </div>
 
     </main>
+
+    <script>
+        // Alterna entre as abas "Seguindo" e "Seguidores" sem recarregar a página
+        document.querySelectorAll('.follow-tab-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.follow-tab-btn').forEach(function (b) {
+                    b.classList.remove('text-white', 'border-violet-500');
+                    b.classList.add('text-zinc-500', 'border-transparent');
+                });
+                btn.classList.remove('text-zinc-500', 'border-transparent');
+                btn.classList.add('text-white', 'border-violet-500');
+
+                document.querySelectorAll('.follow-tab-panel').forEach(function (panel) {
+                    panel.classList.add('hidden');
+                });
+                document.getElementById(btn.dataset.tabTarget).classList.remove('hidden');
+            });
+        });
+    </script>
 
     <script src="./assets/js/follow.js"></script>
     <script src="./assets/js/notifications.js"></script>

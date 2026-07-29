@@ -4,12 +4,14 @@ namespace Victi\MyGameLibrary\Controllers;
 use Victi\MyGameLibrary\Database\Database;
 use Victi\MyGameLibrary\Models\Game;
 use Victi\MyGameLibrary\Models\User;
+use Victi\MyGameLibrary\Models\Activity;
 use Victi\MyGameLibrary\Services\GameAPI;
 
 class GameController {
     private $db;
     private $gameModel;
     private $api;
+    private $activityModel;
 
     public function __construct() {
         $database = new Database();
@@ -18,6 +20,7 @@ class GameController {
         if ($this->db) {
             $this->gameModel = new Game($this->db);
             $this->api = new GameAPI();
+            $this->activityModel = new Activity($this->db);
         } else {
             die("Erro na conexão com o banco de dados.");
         }
@@ -171,6 +174,7 @@ class GameController {
                         $_SESSION['search_error'] = "Este jogo já está na sua biblioteca!";
                     } else {
                         if ($this->gameModel->addGameToUser($_SESSION['user_id'], $game_id)) {
+                            $this->activityModel->log($_SESSION['user_id'], 'game_added', $game_id);
                             header("Location: index.php?action=home");
                             exit();
                         } else {
@@ -237,6 +241,11 @@ class GameController {
 
                 // Atualiza o banco com o novo status e preserva a nota
                 $this->gameModel->updateGameStatus($_SESSION['user_id'], $game_id, $status, $rating, $completion_date, $time_spent_hours);
+
+                // Registra no feed de atividade só quando o status realmente mudou
+                if (!empty($status) && $status !== ($gameInfo['status'] ?? null)) {
+                    $this->activityModel->log($_SESSION['user_id'], 'status_changed', $game_id, $status);
+                }
                 
                 // Responde perfeitamente para o Javascript (fetch) em JSON
                 header('Content-Type: application/json');
@@ -381,6 +390,7 @@ class GameController {
                         $game_id,
                         ($_SESSION['username'] ?? 'Alguém') . ' publicou uma análise de ' . ($game['title'] ?? 'um jogo')
                     );
+                    $this->activityModel->log($_SESSION['user_id'], 'review_posted', $game_id);
                 }
 
                 $_SESSION['review_success'] = "Análise guardada com sucesso!";

@@ -54,10 +54,16 @@ class ProfileController {
         $recentGames = $this->gameModel->getRecentGamesByUserId($profileUser['id'], 10);
 
         $isFollowing = false;
+        $followsMe = false;
         if ($currentUserId !== null && !$isOwner) {
             $followStmt = $this->db->prepare("SELECT id FROM user_follows WHERE follower_id = ? AND following_id = ? LIMIT 1");
             $followStmt->execute([$currentUserId, $profileUserId]);
             $isFollowing = $followStmt->fetch() !== false;
+
+            // Mútuo: o dono do perfil também segue quem está a ver a página?
+            $followsMeStmt = $this->db->prepare("SELECT id FROM user_follows WHERE follower_id = ? AND following_id = ? LIMIT 1");
+            $followsMeStmt->execute([$profileUserId, $currentUserId]);
+            $followsMe = $followsMeStmt->fetch() !== false;
         }
 
         $followingStmt = $this->db->prepare("
@@ -69,6 +75,24 @@ class ProfileController {
         ");
         $followingStmt->execute([$profileUserId]);
         $followingList = $followingStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $followersStmt = $this->db->prepare("
+            SELECT u.id, u.username, u.display_name, u.avatar
+            FROM user_follows uf
+            INNER JOIN users u ON u.id = uf.follower_id
+            WHERE uf.following_id = ?
+            ORDER BY uf.created_at DESC
+        ");
+        $followersStmt->execute([$profileUserId]);
+        $followersList = $followersStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Sugestões de quem seguir só fazem sentido para o dono a ver o próprio perfil
+        $followSuggestions = [];
+        if ($isOwner) {
+            require_once __DIR__ . '/FollowController.php';
+            $followController = new FollowController();
+            $followSuggestions = $followController->getFollowSuggestions($currentUserId, 5);
+        }
 
         include __DIR__ . '/../Views/profile/view.php';
     }
