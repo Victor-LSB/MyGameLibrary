@@ -128,26 +128,26 @@
                         </div>
 
                         <div class="pt-3 border-t-2 border-zinc-800">
-                            <div class="grid grid-cols-3 gap-1 mb-2">
+                            <div class="grid grid-cols-3 gap-1.5 mb-2">
                                 <form class="formStatus" action="index.php?action=change_status" method="post">
                                     <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
                                     <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating']); ?>">
                                     <input type="hidden" name="status" value="Jogando">
-                                    <button type="submit" title="Jogando" class="w-full text-[11px] font-bold uppercase tracking-wider py-2 bg-blue-600 text-white rounded-sm hover:bg-blue-500 transition-colors">Play</button>
+                                    <button type="submit" title="Jogando" class="w-full text-[10px] font-bold uppercase py-2 bg-blue-600 text-white rounded-sm hover:bg-blue-500 transition-colors">Jogando</button>
                                 </form>
 
                                 <form class="formStatus" action="index.php?action=change_status" method="post">
                                     <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
                                     <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating']); ?>">
                                     <input type="hidden" name="status" value="Zerado">
-                                    <button type="submit" title="Zerado" class="w-full text-[11px] font-bold uppercase tracking-wider py-2 bg-emerald-600 text-white rounded-sm hover:bg-emerald-500 transition-colors">Zerado</button>
+                                    <button type="submit" title="Zerado" class="w-full text-[10px] font-bold uppercase py-2 bg-emerald-600 text-white rounded-sm hover:bg-emerald-500 transition-colors">Zerado</button>
                                 </form>
 
                                 <form class="formStatus" action="index.php?action=change_status" method="post">
                                     <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
                                     <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating']); ?>">
                                     <input type="hidden" name="status" value="Dropado">
-                                    <button type="submit" title="Dropado" class="w-full text-[11px] font-bold uppercase tracking-wider py-2 bg-amber-600 text-white rounded-sm hover:bg-amber-500 transition-colors">Drop</button>
+                                    <button type="submit" title="Dropado" class="w-full text-[10px] font-bold uppercase py-2 bg-amber-600 text-white rounded-sm hover:bg-amber-500 transition-colors">Dropado</button>
                                 </form>
                             </div>
 
