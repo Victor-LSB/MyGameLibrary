@@ -144,10 +144,19 @@ class GameController {
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $external_id = filter_input(INPUT_POST, 'external_id', FILTER_SANITIZE_NUMBER_INT);
-            $title = filter_input(INPUT_POST, 'title', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-            $platform = filter_input(INPUT_POST, 'platform', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? 'Desconhecida';
-            $genre = filter_input(INPUT_POST, 'genre', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? 'Desconhecido';
-            $release_date = filter_input(INPUT_POST, 'release_date', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+            // NOTA: usar FILTER_SANITIZE_FULL_SPECIAL_CHARS aqui converte aspas/apóstrofos em
+            // entidades HTML (&#039;) ANTES de salvar no banco. Como as views já escapam com
+            // htmlspecialchars() na hora de exibir, isso causava double-encoding
+            // (ex.: "Senua's" -> banco guarda "Senua&#039;s" -> tela mostra "Senua&amp;#039;s").
+            // O valor deve ser guardado "cru" (só com trim) e escapado apenas na exibição.
+            $title = trim((string) filter_input(INPUT_POST, 'title', FILTER_UNSAFE_RAW));
+            $title = $title !== '' ? $title : null;
+            $platform = trim((string) filter_input(INPUT_POST, 'platform', FILTER_UNSAFE_RAW));
+            $platform = $platform !== '' ? $platform : 'Desconhecida';
+            $genre = trim((string) filter_input(INPUT_POST, 'genre', FILTER_UNSAFE_RAW));
+            $genre = $genre !== '' ? $genre : 'Desconhecido';
+            $release_date = trim((string) filter_input(INPUT_POST, 'release_date', FILTER_UNSAFE_RAW));
+            $release_date = $release_date !== '' ? $release_date : null;
             $cover_image = filter_input(INPUT_POST, 'cover', FILTER_SANITIZE_URL);
 
             if ($external_id && $title) {
@@ -223,9 +232,16 @@ class GameController {
             if ($game_id) {
                 // BUSCA SEGURA: Pega os dados atuais do jogo no banco para não sobrescrever nada com vazio
                 $gameInfo = $this->gameModel->getUserGameInfo($_SESSION['user_id'], $game_id);
-                $existing_rating = $gameInfo ? $gameInfo['rating'] : null;
-                $existing_completion_date = $gameInfo ? ($gameInfo['completion_date'] ?? null) : null;
-                $existing_time_spent = $gameInfo ? ($gameInfo['time_spent_hours'] ?? null) : null;
+
+                if (!$gameInfo) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Jogo não encontrado na sua biblioteca.']);
+                    exit();
+                }
+
+                $existing_rating = $gameInfo['rating'];
+                $existing_completion_date = $gameInfo['completion_date'] ?? null;
+                $existing_time_spent = $gameInfo['time_spent_hours'] ?? null;
 
                 // Se não vier nota no POST (ou for vazia), mantém a nota que já estava no banco
                 $rating_post = $_POST['rating'] ?? null;
@@ -239,19 +255,36 @@ class GameController {
                     $time_spent_hours = $existing_time_spent;
                 }
 
-                // Atualiza o banco com o novo status e preserva a nota
-                $this->gameModel->updateGameStatus($_SESSION['user_id'], $game_id, $status, $rating, $completion_date, $time_spent_hours);
+                try {
+                    // Atualiza o banco com o novo status e preserva a nota
+                    $affected = $this->gameModel->updateGameStatus($_SESSION['user_id'], $game_id, $status, $rating, $completion_date, $time_spent_hours);
 
-                // Registra no feed de atividade só quando o status realmente mudou
-                if (!empty($status) && $status !== ($gameInfo['status'] ?? null)) {
-                    $this->activityModel->log($_SESSION['user_id'], 'status_changed', $game_id, $status);
+                    if ($affected === 0) {
+                        header('Content-Type: application/json');
+                        echo json_encode(['success' => false, 'message' => 'Nenhum registro foi atualizado. Verifique se o jogo pertence à sua biblioteca.']);
+                        exit();
+                    }
+
+                    // Registra no feed de atividade só quando o status realmente mudou
+                    if (!empty($status) && $status !== ($gameInfo['status'] ?? null)) {
+                        $this->activityModel->log($_SESSION['user_id'], 'status_changed', $game_id, $status);
+                    }
+
+                    // Responde perfeitamente para o Javascript (fetch) em JSON
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true]);
+                    exit();
+                } catch (\PDOException $e) {
+                    error_log('changeStatus falhou: ' . $e->getMessage());
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Erro ao salvar o status no banco de dados.']);
+                    exit();
                 }
-                
-                // Responde perfeitamente para o Javascript (fetch) em JSON
-                header('Content-Type: application/json');
-                echo json_encode(['success' => true]);
-                exit();
             }
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'ID do jogo inválido.']);
+            exit();
         }
     }
     
@@ -273,19 +306,41 @@ class GameController {
             if ($game_id) {
                 // BUSCA SEGURA: Pega o status atual do jogo no banco
                 $gameInfo = $this->gameModel->getUserGameInfo($_SESSION['user_id'], $game_id);
-                $existing_status = $gameInfo ? $gameInfo['status'] : null;
+
+                if (!$gameInfo) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Jogo não encontrado na sua biblioteca.']);
+                    exit();
+                }
+
+                $existing_status = $gameInfo['status'];
+                $existing_completion_date = $gameInfo['completion_date'] ?? null;
+                $existing_time_spent = $gameInfo['time_spent_hours'] ?? null;
 
                 // Se não vier status no POST (ou for vazio), mantém o status que já estava no banco
                 $status_post = $_POST['status'] ?? null;
                 $status = ($status_post !== null && $status_post !== '') ? $status_post : $existing_status;
 
-                // Envia para o banco o novo rating e preserva o status atual
-                $this->gameModel->updateGameStatus($_SESSION['user_id'], $game_id, $status, $rating);
-                
-                // Responde perfeitamente para o Javascript (fetch) em JSON
-                header('Content-Type: application/json');
-                echo json_encode(['success' => true]);
-                exit();
+                try {
+                    // Envia para o banco o novo rating e preserva o status atual + completion_date/time_spent_hours
+                    $affected = $this->gameModel->updateGameStatus($_SESSION['user_id'], $game_id, $status, $rating, $existing_completion_date, $existing_time_spent);
+
+                    if ($affected === 0) {
+                        header('Content-Type: application/json');
+                        echo json_encode(['success' => false, 'message' => 'Nenhum registro foi atualizado. Verifique se o jogo pertence à sua biblioteca.']);
+                        exit();
+                    }
+
+                    // Responde perfeitamente para o Javascript (fetch) em JSON
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true]);
+                    exit();
+                } catch (\PDOException $e) {
+                    error_log('changeRating falhou: ' . $e->getMessage());
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Erro ao salvar a avaliação no banco de dados.']);
+                    exit();
+                }
             } else {
                 header('Content-Type: application/json');
                 echo json_encode(['success' => false, 'message' => 'ID inválido']);

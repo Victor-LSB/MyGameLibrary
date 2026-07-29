@@ -77,13 +77,32 @@ formStatus.forEach(function(form) {
         fetch('index.php?action=change_status', {
             method: 'POST',
             body: dados
-        }).then(function() {
-            Toast.fire({
-                icon: 'success',
-                title: 'Status atualizado com sucesso!'
-            });
+        }).then(response => {
+            // Verificar se a resposta HTTP foi bem-sucedida
+            if (!response.ok) {
+                throw new Error('Erro ao atualizar status: ' + response.statusText);
+            }
+            return response.json();
+        }).then(data => {
+            // Verificar se a operação foi bem-sucedida
+            if (data.success) {
+                Toast.fire({
+                    icon: 'success',
+                    title: 'Status atualizado com sucesso!'
+                });
 
-            updateStatusCard(gameId, newStatus);
+                updateStatusCard(gameId, newStatus);
+            } else {
+                throw new Error(data.message || 'Erro desconhecido ao atualizar status');
+            }
+        }).catch(error => {
+            // Mostrar erro ao usuário
+            console.error('Erro:', error);
+            Toast.fire({
+                icon: 'error',
+                title: 'Erro ao atualizar status',
+                text: error.message
+            });
         });
     });
 });
@@ -104,14 +123,33 @@ if (completionForm) {
         fetch('index.php?action=change_status', {
             method: 'POST',
             body: dados
-        }).then(function() {
-            Toast.fire({
-                icon: 'success',
-                title: 'Status atualizado com sucesso!'
-            });
+        }).then(response => {
+            // Verificar se a resposta HTTP foi bem-sucedida
+            if (!response.ok) {
+                throw new Error('Erro ao atualizar status: ' + response.statusText);
+            }
+            return response.json();
+        }).then(data => {
+            // Verificar se a operação foi bem-sucedida
+            if (data.success) {
+                Toast.fire({
+                    icon: 'success',
+                    title: 'Status atualizado com sucesso!'
+                });
 
-            updateStatusCard(gameId, newStatus);
-            closeCompletionModal();
+                updateStatusCard(gameId, newStatus);
+                closeCompletionModal();
+            } else {
+                throw new Error(data.message || 'Erro desconhecido ao atualizar status');
+            }
+        }).catch(error => {
+            // Mostrar erro ao usuário
+            console.error('Erro:', error);
+            Toast.fire({
+                icon: 'error',
+                title: 'Erro ao atualizar status',
+                text: error.message
+            });
         });
     });
 }
@@ -139,24 +177,43 @@ ratingForm.forEach(function(form) {
         fetch('index.php?action=change_rating', {
             method: 'POST',
             body: dados
-        }).then(function() {
-            Toast.fire({
-                icon: 'success',
-                title: 'Avaliação atualizada com sucesso!'
-            });
-
-            const cardGame = document.getElementById(`game-${gameId}`);
-            if (!cardGame) return;
-
-            const pRating = cardGame.querySelector('.pRating');
-            if (pRating) {
-                pRating.textContent = 'Avaliação: ' + (newRating ? newRating : 'Não avaliado');
+        }).then(response => {
+            // Verificar se a resposta HTTP foi bem-sucedida
+            if (!response.ok) {
+                throw new Error('Erro ao atualizar avaliação: ' + response.statusText);
             }
+            return response.json();
+        }).then(data => {
+            // Verificar se a operação foi bem-sucedida
+            if (data.success) {
+                Toast.fire({
+                    icon: 'success',
+                    title: 'Avaliação atualizada com sucesso!'
+                });
 
-            const statusForms = cardGame.querySelectorAll('.formStatus');
-            statusForms.forEach((sForm) => {
-                const hiddenRating = sForm.querySelector('input[name="rating"]');
-                if (hiddenRating) hiddenRating.value = newRating;
+                const cardGame = document.getElementById(`game-${gameId}`);
+                if (!cardGame) return;
+
+                const pRating = cardGame.querySelector('.pRating');
+                if (pRating) {
+                    pRating.textContent = 'Avaliação: ' + (newRating ? newRating : 'Não avaliado');
+                }
+
+                const statusForms = cardGame.querySelectorAll('.formStatus');
+                statusForms.forEach((sForm) => {
+                    const hiddenRating = sForm.querySelector('input[name="rating"]');
+                    if (hiddenRating) hiddenRating.value = newRating;
+                });
+            } else {
+                throw new Error(data.message || 'Erro desconhecido ao atualizar avaliação');
+            }
+        }).catch(error => {
+            // Mostrar erro ao usuário
+            console.error('Erro:', error);
+            Toast.fire({
+                icon: 'error',
+                title: 'Erro ao atualizar avaliação',
+                text: error.message
             });
         });
     });

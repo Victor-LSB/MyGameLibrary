@@ -105,7 +105,7 @@
                                     <?php endif; ?>
 
                                     <div class="absolute top-2 left-2 bg-zinc-900/90 backdrop-blur-sm text-white text-[10px] font-black uppercase tracking-wider px-2 py-1 border border-zinc-700 rounded-sm">
-                                        <?php echo htmlspecialchars($game['status']); ?>
+                                        <?php echo htmlspecialchars($game['status'] ?? ''); ?>
                                     </div>
                                 </a>
                                 <div class="p-3">

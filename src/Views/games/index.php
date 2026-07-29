@@ -24,7 +24,7 @@
         <?php if (!empty($filter_tag)): ?>
             <div class="mb-4 inline-flex items-center gap-2 bg-violet-600/15 text-violet-300 border border-violet-500/30 px-4 py-2 rounded-full text-sm font-semibold">
                 <span>Filtrando por tag:</span>
-                <span>#<?php echo htmlspecialchars($filter_tag); ?></span>
+                <span>#<?php echo htmlspecialchars($filter_tag ?? ''); ?></span>
                 <a href="index.php?action=home<?php echo !empty($search_query) ? '&search=' . urlencode($search_query) : ''; ?><?php echo !empty($filter_status) ? '&filter_status=' . urlencode($filter_status) : ''; ?>" class="text-white/70 hover:text-white ml-1">Limpar</a>
             </div>
         <?php endif; ?>
@@ -62,7 +62,7 @@
             <form id="searchForm" action="index.php" method="GET" class="flex-1 w-full flex gap-2">
                 <input type="hidden" name="action" value="home">
                 <?php if (!empty($filter_tag)): ?>
-                    <input type="hidden" name="tag" value="<?php echo htmlspecialchars($filter_tag); ?>">
+                    <input type="hidden" name="tag" value="<?php echo htmlspecialchars($filter_tag ?? ''); ?>">
                 <?php endif; ?>
                 <input id="searchInput" type="text" name="search" placeholder="Buscar na biblioteca..."  autocomplete="off" value="<?php echo htmlspecialchars($search_query ?? ''); ?>" 
                     class="flex-1 bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 font-medium placeholder-zinc-600">
@@ -72,7 +72,7 @@
             <form action="index.php" method="GET" class="w-full md:w-auto flex-shrink-0">
                 <input type="hidden" name="action" value="home">
                 <?php if (!empty($filter_tag)): ?>
-                    <input type="hidden" name="tag" value="<?php echo htmlspecialchars($filter_tag); ?>">
+                    <input type="hidden" name="tag" value="<?php echo htmlspecialchars($filter_tag ?? ''); ?>">
                 <?php endif; ?>
                 <select name="filter_status" class="filterStatus w-full bg-zinc-950 border-2 border-zinc-800 text-white font-medium rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 cursor-pointer appearance-none">
                     <option value="">Todos os status</option>
@@ -96,7 +96,7 @@
                             <div class="w-full h-full flex items-center justify-center text-zinc-700 font-bold uppercase text-center p-2"><?php echo htmlspecialchars($game['title']); ?></div>
                         <?php endif; ?>
                         
-                        <div class="absolute top-2 left-2 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-wider px-2 py-1 border border-zinc-700 rounded-sm gameStatus">Status: <?php echo htmlspecialchars($game['status']); ?></div>
+                        <div class="absolute top-2 left-2 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-wider px-2 py-1 border border-zinc-700 rounded-sm gameStatus">Status: <?php echo htmlspecialchars($game['status'] ?? ''); ?></div>
                     </a>
 
                     <div class="p-4 flex-1 flex flex-col">
@@ -106,13 +106,13 @@
                             </a>
                         </h3>
                         
-                        <p class="pRating hidden">Avaliação: <?php echo isset($game['rating']) ? htmlspecialchars($game['rating']) : 'Não avaliado'; ?></p>
+                        <p class="pRating hidden">Avaliação: <?php echo isset($game['rating']) ? htmlspecialchars($game['rating'] ?? '') : 'Não avaliado'; ?></p>
                         
                         <div class="mb-4 mt-auto">
                             <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-1.5">Sua Nota</span>
                             <form class="ratingForm block" method="post">
                                 <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
-                                <input type="hidden" name="status" value="<?php echo htmlspecialchars($game['status']); ?>">
+                                <input type="hidden" name="status" value="<?php echo htmlspecialchars($game['status'] ?? ''); ?>">
                                 
                                 <div class="flex gap-1 w-full">
                                     <?php for($i=1; $i<=5; $i++): ?>
@@ -131,21 +131,21 @@
                             <div class="grid grid-cols-3 gap-1.5 mb-2">
                                 <form class="formStatus" action="index.php?action=change_status" method="post">
                                     <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
-                                    <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating']); ?>">
+                                    <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating'] ?? ''); ?>">
                                     <input type="hidden" name="status" value="Jogando">
                                     <button type="submit" title="Jogando" class="w-full text-[10px] font-bold uppercase py-2 bg-blue-600 text-white rounded-sm hover:bg-blue-500 transition-colors">Jogando</button>
                                 </form>
 
                                 <form class="formStatus" action="index.php?action=change_status" method="post">
                                     <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
-                                    <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating']); ?>">
+                                    <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating'] ?? ''); ?>">
                                     <input type="hidden" name="status" value="Zerado">
                                     <button type="submit" title="Zerado" class="w-full text-[10px] font-bold uppercase py-2 bg-emerald-600 text-white rounded-sm hover:bg-emerald-500 transition-colors">Zerado</button>
                                 </form>
 
                                 <form class="formStatus" action="index.php?action=change_status" method="post">
                                     <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
-                                    <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating']); ?>">
+                                    <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating'] ?? ''); ?>">
                                     <input type="hidden" name="status" value="Dropado">
                                     <button type="submit" title="Dropado" class="w-full text-[10px] font-bold uppercase py-2 bg-amber-600 text-white rounded-sm hover:bg-amber-500 transition-colors">Dropado</button>
                                 </form>

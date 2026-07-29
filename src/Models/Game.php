@@ -281,7 +281,12 @@ class Game {
     public function updateGameStatus($user_id, $game_id, $status, $rating, $completion_date = null, $time_spent_hours = null) {
         $sql = "UPDATE user_games SET status = ?, rating = ?, completion_date = ?, time_spent_hours = ? WHERE user_id = ? AND game_id = ?";
         $stmt = $this->conn->prepare($sql);
-        return $stmt->execute([$status, $rating, $completion_date, $time_spent_hours, $user_id, $game_id]);
+        $stmt->execute([$status, $rating, $completion_date, $time_spent_hours, $user_id, $game_id]);
+
+        // Com PDO::MYSQL_ATTR_FOUND_ROWS ligado, rowCount() aqui reflete quantas
+        // linhas BATERAM no WHERE (não só quantas mudaram de valor). Se vier 0,
+        // o game_id/user_id não corresponde a nenhuma linha em user_games.
+        return $stmt->rowCount();
     }
 
     public function deleteGameFromUser($user_id, $game_id) {

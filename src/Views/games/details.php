@@ -1,6 +1,9 @@
 <?php require_once __DIR__ . '/../header.php'; ?>
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen pb-12 selection:bg-violet-600 selection:text-white">
     <?php
+        $isOwner = $isOwner ?? false;
+        $username_profile = $username_profile ?? '';
+
         $currentTags = '';
         if (isset($gameTags) && is_array($gameTags) && !empty($gameTags)) {
             $tagNames = [];
@@ -155,7 +158,7 @@
                     <?php else: ?>
                         <div class="bg-zinc-950 border-2 border-zinc-800 p-5 rounded-sm min-h-[150px]">
                             <?php if (!empty($game['review'])): ?>
-                                <p class="text-zinc-300 leading-relaxed whitespace-pre-wrap text-sm sm:text-base"><?php echo nl2br(htmlspecialchars($game['review'])); ?></p>
+                                <p class="text-zinc-300 leading-relaxed whitespace-pre-wrap text-sm sm:text-base"><?php echo nl2br(htmlspecialchars($game['review'] ?? '')); ?></p>
                             <?php else: ?>
                                 <p class="text-zinc-600 italic">Este jogador ainda não escreveu uma análise para este jogo.</p>
                             <?php endif; ?>
