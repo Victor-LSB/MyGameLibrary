@@ -8,15 +8,15 @@
   const avgTimeCard = document.getElementById('dashboardAvgTime');
   const genreList = document.getElementById('dashboardGenreList');
 
-  const darkAcademia = {
-    background: '#0f0c0a',
-    card: '#181311',
-    gold: '#c8a96a',
-    goldSoft: 'rgba(200, 169, 106, 0.24)',
-    parchment: '#e7dbc1',
-    moss: '#6e7b4f',
-    burgundy: '#6d3f34',
-    line: '#8f7b60',
+  const chartPalette = {
+    background: '#09090b', // zinc-950
+    card: '#18181b', // zinc-900
+    violet: '#a78bfa', // violet-400
+    violetSoft: 'rgba(167, 139, 250, 0.24)',
+    text: '#d4d4d8', // zinc-300
+    amber: '#fbbf24', // amber-400 (mesmo tom usado no card de tempo médio)
+    amberSoft: 'rgba(251, 191, 36, 0.16)',
+    line: '#52525b', // zinc-600
   };
 
   const genreCanvas = document.getElementById('genreChart');
@@ -66,13 +66,13 @@
             label: 'Jogos concluídos',
             data: values,
             backgroundColor: [
-              darkAcademia.goldSoft,
-              'rgba(110, 123, 79, 0.35)',
-              'rgba(109, 63, 52, 0.35)',
-              'rgba(231, 219, 193, 0.28)',
-              'rgba(200, 169, 106, 0.5)',
+              chartPalette.violetSoft,
+              'rgba(167, 139, 250, 0.55)',
+              'rgba(139, 92, 246, 0.4)',
+              'rgba(196, 181, 253, 0.35)',
+              'rgba(212, 212, 216, 0.2)',
             ],
-            borderColor: darkAcademia.gold,
+            borderColor: chartPalette.violet,
             borderWidth: 1,
             borderRadius: 8,
             barThickness: 28,
@@ -84,7 +84,7 @@
         maintainAspectRatio: false,
         plugins: {
           legend: {
-            labels: { color: darkAcademia.parchment },
+            labels: { color: chartPalette.text },
           },
           tooltip: {
             callbacks: {
@@ -100,18 +100,18 @@
         },
         scales: {
           x: {
-            ticks: { color: darkAcademia.parchment },
-            grid: { color: 'rgba(231, 219, 193, 0.08)' },
+            ticks: { color: chartPalette.text },
+            grid: { color: 'rgba(212, 212, 216, 0.08)' },
           },
           y: {
             beginAtZero: true,
             ticks: {
-              color: darkAcademia.parchment,
+              color: chartPalette.text,
               callback(value) {
                 return Math.round(value);
               },
             },
-            grid: { color: 'rgba(231, 219, 193, 0.08)' },
+            grid: { color: 'rgba(212, 212, 216, 0.08)' },
           },
         },
       },
@@ -137,14 +137,14 @@
           {
             label: `Tendência de conclusão (${periodMap[period] || 'semanal'})`,
             data: points,
-            borderColor: darkAcademia.gold,
-            backgroundColor: 'rgba(200, 169, 106, 0.16)',
+            borderColor: chartPalette.violet,
+            backgroundColor: chartPalette.violetSoft,
             fill: true,
             tension: 0.35,
             pointRadius: 4,
             pointHoverRadius: 7,
-            pointBackgroundColor: darkAcademia.gold,
-            pointBorderColor: darkAcademia.background,
+            pointBackgroundColor: chartPalette.violet,
+            pointBorderColor: chartPalette.background,
             pointBorderWidth: 2,
           },
         ],
@@ -154,7 +154,7 @@
         maintainAspectRatio: false,
         plugins: {
           legend: {
-            labels: { color: darkAcademia.parchment },
+            labels: { color: chartPalette.text },
           },
         },
         scales: {
@@ -163,24 +163,24 @@
               min: 0,
               max: Math.max(points.length - 1, 0),
               ticks: {
-                  color: darkAcademia.parchment,
+                  color: chartPalette.text,
                   maxRotation: activePeriod === 'year' ? 45 : 0,
                   minRotation: activePeriod === 'year' ? 45 : 0,
                   callback(value) {
                       return labels[Math.round(Number(value))] ?? '';
                   },
               },
-              grid: { color: 'rgba(231, 219, 193, 0.08)' },
+              grid: { color: 'rgba(212, 212, 216, 0.08)' },
           },
           y: {
             beginAtZero: true,
             ticks: {
-              color: darkAcademia.parchment,
+              color: chartPalette.text,
               callback(value) {
                 return Math.round(value);
               },
             },
-            grid: { color: 'rgba(231, 219, 193, 0.08)' },
+            grid: { color: 'rgba(212, 212, 216, 0.08)' },
           },
         },
       },
@@ -206,14 +206,14 @@
           {
             label: 'Tempo médio gasto (horas)',
             data: points,
-            borderColor: darkAcademia.moss,
-            backgroundColor: 'rgba(110, 123, 79, 0.15)',
+            borderColor: chartPalette.amber,
+            backgroundColor: chartPalette.amberSoft,
             fill: true,
             tension: 0.35,
             pointRadius: 4,
             pointHoverRadius: 7,
-            pointBackgroundColor: darkAcademia.moss,
-            pointBorderColor: darkAcademia.background,
+            pointBackgroundColor: chartPalette.amber,
+            pointBorderColor: chartPalette.background,
             pointBorderWidth: 2,
           },
         ],
@@ -223,7 +223,7 @@
         maintainAspectRatio: false,
         plugins: {
           legend: {
-            labels: { color: darkAcademia.parchment },
+            labels: { color: chartPalette.text },
           },
         },
         scales: {
@@ -232,22 +232,22 @@
             min: 0,
             max: Math.max(points.length - 1, 0),
             ticks: {
-              color: darkAcademia.parchment,
+              color: chartPalette.text,
               callback(value) {
                 return labels[Math.round(Number(value))] ?? '';
               },
             },
-            grid: { color: 'rgba(231, 219, 193, 0.08)' },
+            grid: { color: 'rgba(212, 212, 216, 0.08)' },
           },
           y: {
             beginAtZero: true,
             ticks: {
-              color: darkAcademia.parchment,
+              color: chartPalette.text,
               callback(value) {
                 return Number(value).toFixed(2) + 'h';
               },
             },
-            grid: { color: 'rgba(231, 219, 193, 0.08)' },
+            grid: { color: 'rgba(212, 212, 216, 0.08)' },
           },
         },
       },

@@ -21,15 +21,15 @@ class DashboardController {
     private function getPeriodConfig($period) {
         $periods = [
             'week' => [
-                'label' => 'Current Week',
+                'label' => 'Semana Atual',
                 'interval' => 'DATE_SUB(CURDATE(), INTERVAL 1 WEEK)',
             ],
             'month' => [
-                'label' => 'Current Month',
+                'label' => 'Mês Atual',
                 'interval' => 'DATE_SUB(CURDATE(), INTERVAL 1 MONTH)',
             ],
             'year' => [
-                'label' => 'Current Year',
+                'label' => 'Ano Atual',
                 'interval' => 'DATE_SUB(CURDATE(), INTERVAL 1 YEAR)',
             ],
         ];
@@ -149,7 +149,7 @@ class DashboardController {
         $genreStmt->execute([$user_id, $window['start'], $window['end']]);
         $genres = $genreStmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $othersSql = "SELECT 'Others' AS genre, COALESCE(SUM(rest.total), 0) AS total
+        $othersSql = "SELECT 'Outros' AS genre, COALESCE(SUM(rest.total), 0) AS total
             FROM (
                 SELECT total
                 FROM (
@@ -170,7 +170,7 @@ class DashboardController {
 
         if (!empty($othersRow) && (int) ($othersRow['total'] ?? 0) > 0) {
             $genres[] = [
-                'genre' => 'Others',
+                'genre' => 'Outros',
                 'total' => (int) $othersRow['total'],
             ];
         }
@@ -288,9 +288,9 @@ class DashboardController {
         $dashboardStats = $this->fetchAggregatedStatsForPeriod($_SESSION['user_id'], $period);
 
         $periodOptions = [
-            'week' => 'Weekly',
-            'month' => 'Monthly',
-            'year' => 'Yearly',
+            'week' => 'Semanal',
+            'month' => 'Mensal',
+            'year' => 'Anual',
         ];
 
         include __DIR__ . '/../Views/dashboard.php';
