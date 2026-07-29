@@ -173,11 +173,10 @@
     </main>
 
     <div id="completionModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm px-4">
-        <div class="w-full max-w-lg rounded-sm border-2 border-amber-900 bg-[#15110e] shadow-2xl shadow-black/60">
-            <div class="border-b border-amber-900/60 px-6 py-5">
-                <p class="text-[10px] font-black uppercase tracking-[0.35em] text-amber-400/80">Dark Academia Archive</p>
-                <h3 class="mt-2 text-2xl font-black uppercase tracking-tight text-zinc-100">Mark as Completed</h3>
-                <p class="mt-2 text-sm text-zinc-400">Add the completion details before saving the status as Zerado.</p>
+        <div class="w-full max-w-lg rounded-sm border-2 border-zinc-800 bg-zinc-900 shadow-2xl shadow-black/60">
+            <div class="border-b-2 border-zinc-800 px-6 py-5 border-l-4 border-l-violet-500">
+                <h3 class="text-2xl font-black uppercase tracking-tight text-white">Marcar como Zerado</h3>
+                <p class="mt-2 text-sm text-zinc-400 font-medium">Adicione os detalhes da conclusão antes de salvar o status.</p>
             </div>
 
             <form id="completionForm" class="px-6 py-6">
@@ -186,19 +185,19 @@
 
                 <div class="grid grid-cols-1 gap-4">
                     <label class="block">
-                        <span class="mb-2 block text-xs font-black uppercase tracking-widest text-amber-200/70">Completion Date</span>
-                        <input type="datetime-local" name="completion_date" id="modalCompletionDate" class="w-full rounded-sm border border-amber-900/70 bg-zinc-950 px-4 py-3 text-zinc-100 outline-none transition-colors focus:border-amber-400">
+                        <span class="mb-2 block text-xs font-black uppercase tracking-widest text-zinc-500">Data de Conclusão</span>
+                        <input type="datetime-local" name="completion_date" id="modalCompletionDate" class="w-full rounded-sm border-2 border-zinc-800 bg-zinc-950 px-4 py-3 text-zinc-100 font-medium outline-none transition-colors focus:border-violet-500">
                     </label>
 
                     <label class="block">
-                        <span class="mb-2 block text-xs font-black uppercase tracking-widest text-amber-200/70">Time Spent (hours)</span>
-                        <input type="number" min="0" step="0.25" name="time_spent_hours" id="modalTimeSpentHours" class="w-full rounded-sm border border-amber-900/70 bg-zinc-950 px-4 py-3 text-zinc-100 outline-none transition-colors focus:border-amber-400" placeholder="Ex.: 24.5">
+                        <span class="mb-2 block text-xs font-black uppercase tracking-widest text-zinc-500">Horas Jogadas</span>
+                        <input type="number" min="0" step="0.25" name="time_spent_hours" id="modalTimeSpentHours" class="w-full rounded-sm border-2 border-zinc-800 bg-zinc-950 px-4 py-3 text-zinc-100 font-medium outline-none transition-colors focus:border-violet-500" placeholder="Ex.: 24.5">
                     </label>
                 </div>
 
                 <div class="mt-6 flex items-center justify-end gap-3">
-                    <button type="button" id="cancelCompletionModal" class="rounded-sm border border-zinc-700 px-4 py-2 text-sm font-bold uppercase tracking-widest text-zinc-300 transition-colors hover:border-zinc-500 hover:text-white">Cancelar</button>
-                    <button type="submit" class="rounded-sm bg-amber-700 px-5 py-2.5 text-sm font-black uppercase tracking-widest text-zinc-950 transition-colors hover:bg-amber-600">Salvar Zerado</button>
+                    <button type="button" id="cancelCompletionModal" class="rounded-sm border-2 border-zinc-800 px-4 py-2 text-sm font-bold uppercase tracking-widest text-zinc-300 transition-colors hover:border-zinc-600 hover:text-white">Cancelar</button>
+                    <button type="submit" class="rounded-sm bg-violet-600 px-5 py-2.5 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-violet-500">Salvar Zerado</button>
                 </div>
             </form>
         </div>
