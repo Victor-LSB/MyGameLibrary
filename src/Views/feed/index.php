@@ -1,16 +1,7 @@
 <?php require_once __DIR__ . '/../header.php'; ?>
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen selection:bg-violet-600 selection:text-white">
 
-    <header class="bg-zinc-900 border-b-4 border-violet-600 shadow-md px-6 py-5 mb-8">
-        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
-            <h1 class="text-3xl font-black text-white tracking-tighter uppercase">MyGameLibrary</h1>
-            <div class="flex flex-wrap items-center gap-3">
-                <a href='index.php?action=home' class="bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors border-b-2 border-zinc-950 hover:border-zinc-900">📚 Biblioteca</a>
-                <a href='index.php?action=profile' class="bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors border-b-2 border-zinc-950 hover:border-zinc-900">👤 Meu Perfil</a>
-                <a href='index.php?action=logout' class="bg-zinc-800 hover:bg-red-600 hover:text-white text-zinc-300 px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm border-b-2 border-zinc-950 hover:border-red-800 transition-colors">Sair</a>
-            </div>
-        </div>
-    </header>
+<?php require_once __DIR__ . '/../partials/navbar.php'; ?>
 
     <main class="max-w-7xl mx-auto px-6 pb-12">
         <div class="flex flex-col lg:flex-row gap-8 items-start">
@@ -99,5 +90,7 @@
             <?php endif; ?>
         </div>
     </main>
+
+    <script src="./assets/js/notifications.js"></script>
 </body>
 </html>

@@ -13,16 +13,18 @@
         }
     ?>
 
-    <header class="bg-zinc-900 border-b-4 border-violet-600 shadow-md px-6 py-5 mb-8">
-        <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
+<?php require_once __DIR__ . '/../partials/navbar.php'; ?>
+
+    <main class="max-w-5xl mx-auto px-6">
+        <div class="flex items-center justify-between gap-4 mb-6">
             <h1 class="text-2xl font-black text-white tracking-tighter uppercase line-clamp-1 flex-1">
                 <?php echo isset($game['title']) ? htmlspecialchars($game['title']) : 'Jogo não encontrado'; ?>
             </h1>
-            <a href="index.php?action=home" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm border-b-2 border-zinc-950 hover:border-zinc-900 transition-colors shrink-0">Voltar à Biblioteca</a>
+            <a href="<?php echo $isOwner ? 'index.php?action=home' : 'index.php?action=profile&u=' . urlencode($username_profile); ?>" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm border-b-2 border-zinc-950 hover:border-zinc-900 transition-colors shrink-0">
+                <?php echo $isOwner ? 'Voltar à Biblioteca' : 'Voltar ao Perfil'; ?>
+            </a>
         </div>
-    </header>
 
-    <main class="max-w-5xl mx-auto px-6">
         
         <?php if (!isset($game) || !$game): ?>
             <div class="bg-zinc-900 rounded-sm border-2 border-zinc-800 p-8 text-center shadow-2xl">
@@ -93,20 +95,29 @@
                 <div>
                     <h3 class="text-xl font-bold text-white mb-2 uppercase tracking-tight">Descrição</h3>
                     <?php if (!empty($game['description'])): ?>
+                        <?php
+                            // 1. Troca tags de fechamento de parágrafo e quebras de linha HTML por \n reais
+                            $desc = str_ireplace(['</p>', '<br>', '<br/>', '<br />'], "\n", $game['description']);
+                            // 2. Remove qualquer outra tag HTML restante (como <b>, <i>, <p>)
+                            $desc = strip_tags($desc);
+                            // 3. Evita espaçamentos gigantescos (limita a no máximo 2 quebras de linha seguidas)
+                            $desc = preg_replace("/[\r\n]{3,}/", "\n\n", $desc);
+                            $desc = trim($desc);
+
+                            // Descrições muito longas começam recolhidas, com um botão para expandir.
+                            $isLongDescription = mb_strlen($desc) > 500;
+                        ?>
                         <div class="bg-zinc-950 border-2 border-zinc-800 p-5 rounded-sm">
-                            <p class="text-zinc-300 leading-relaxed text-sm sm:text-base">
-                                <?php 
-                                    // 1. Troca tags de fechamento de parágrafo e quebras de linha HTML por \n reais
-                                    $desc = str_ireplace(['</p>', '<br>', '<br/>', '<br />'], "\n", $game['description']);
-                                    // 2. Remove qualquer outra tag HTML restante (como <b>, <i>, <p>)
-                                    $desc = strip_tags($desc);
-                                    // 3. Evita espaçamentos gigantescos (limita a no máximo 2 quebras de linha seguidas)
-                                    $desc = preg_replace("/[\r\n]{3,}/", "\n\n", $desc);
-                                    
-                                    // 4. Converte de volta para visualização segura
-                                    echo nl2br(htmlspecialchars(trim($desc))); 
-                                ?>
-                            </p>
+                            <div id="gameDescription" class="game-description<?php echo $isLongDescription ? ' is-collapsed' : ''; ?>">
+                                <p class="text-zinc-300 leading-relaxed text-sm sm:text-base">
+                                    <?php echo nl2br(htmlspecialchars($desc)); ?>
+                                </p>
+                            </div>
+                            <?php if ($isLongDescription): ?>
+                                <button type="button" id="toggleDescriptionBtn" class="mt-3 text-violet-400 hover:text-violet-300 font-bold uppercase tracking-wide text-xs transition-colors">
+                                    Mostrar mais
+                                </button>
+                            <?php endif; ?>
                         </div>
                     <?php else: ?>
                         <div class="bg-zinc-950 border-2 border-zinc-800 p-5 rounded-sm">
@@ -195,5 +206,53 @@
     </script>
     <?php unset($_SESSION['review_success']); endif; ?>
 
+    <style>
+        .game-description {
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+        }
+        .game-description.is-collapsed {
+            max-height: 9em;
+            position: relative;
+        }
+        .game-description.is-collapsed::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 3em;
+            background: linear-gradient(to bottom, transparent, #09090b);
+            pointer-events: none;
+        }
+    </style>
+    <script>
+        (function () {
+            var toggleBtn = document.getElementById('toggleDescriptionBtn');
+            var description = document.getElementById('gameDescription');
+            if (!toggleBtn || !description) return;
+
+            var collapsedHeight = '9em';
+
+            toggleBtn.addEventListener('click', function () {
+                var isCollapsed = description.classList.contains('is-collapsed');
+
+                if (isCollapsed) {
+                    // Expandir: mede a altura real do conteúdo e anima suavemente até lá
+                    var fullHeight = description.scrollHeight + 'px';
+                    description.classList.remove('is-collapsed');
+                    description.style.maxHeight = fullHeight;
+                    toggleBtn.textContent = 'Mostrar menos';
+                } else {
+                    // Recolher: anima suavemente de volta até a altura reduzida
+                    description.style.maxHeight = collapsedHeight;
+                    description.classList.add('is-collapsed');
+                    toggleBtn.textContent = 'Mostrar mais';
+                }
+            });
+        })();
+    </script>
+
+    <script src="./assets/js/notifications.js"></script>
 </body>
 </html>

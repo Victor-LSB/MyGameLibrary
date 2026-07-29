@@ -26,19 +26,14 @@
     ];
 ?>
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen pb-12 selection:bg-violet-600 selection:text-white">
-    <header class="bg-zinc-900 border-b-4 border-violet-600 shadow-md px-6 py-5 mb-8">
-        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div>
-                <h1 class="text-3xl font-black text-white tracking-tighter uppercase">Dashboard</h1>
-                <p class="text-sm text-zinc-400 font-medium mt-1">Visão geral do progresso por período</p>
-            </div>
-            <div class="flex flex-wrap items-center gap-3">
-                <a href="index.php?action=home" class="bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors border-b-2 border-zinc-950 hover:border-zinc-900">Biblioteca</a>
-            </div>
-        </div>
-    </header>
+    <?php require_once __DIR__ . '/partials/navbar.php'; ?>
 
     <main class="max-w-7xl mx-auto px-6">
+        <div class="mb-6">
+            <h1 class="text-2xl font-black text-white tracking-tighter uppercase">Dashboard</h1>
+            <p class="text-sm text-zinc-400 font-medium mt-1">Visão geral do progresso por período</p>
+        </div>
+
         <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h2 id="dashboardPeriodLabel" class="text-2xl font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3"><?php echo htmlspecialchars($periodConfig['label']); ?></h2>
@@ -140,5 +135,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="./assets/js/dashboard.js"></script>
+    <script src="./assets/js/notifications.js"></script>
 </body>
 </html>

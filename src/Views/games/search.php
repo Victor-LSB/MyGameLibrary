@@ -1,14 +1,11 @@
 <?php require_once __DIR__ . '/../header.php'; ?>
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen pb-12 selection:bg-violet-600 selection:text-white">
 
-    <header class="bg-zinc-900 border-b-4 border-violet-600 shadow-md px-6 py-5 mb-8">
-        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
-            <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tighter uppercase">Buscar Jogos</h1>
-            <a href="index.php?action=home" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm border-b-2 border-zinc-950 hover:border-zinc-900 transition-colors shrink-0">Voltar à Biblioteca</a>
-        </div>
-    </header>
+<?php require_once __DIR__ . '/../partials/navbar.php'; ?>
 
     <main class="max-w-7xl mx-auto px-6">
+        <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tighter uppercase mb-8 text-center">Buscar Jogos</h1>
+
         
         <div class="bg-zinc-900 p-6 sm:p-8 rounded-sm border-2 border-zinc-800 mb-10 shadow-xl max-w-4xl mx-auto">
             <form action="index.php" method="GET" class="flex flex-col sm:flex-row gap-3">
@@ -89,5 +86,6 @@
     </main>
     
     <script src="./assets/js/liveSearch.js"></script>
+    <script src="./assets/js/notifications.js"></script>
 </body>
 </html>

@@ -167,9 +167,9 @@
 
     // Carregar notificações ao abrir página
     updateUnreadCount(0);
-    
-    // Atualizar contador a cada 30 segundos (polling)
-    setInterval(async () => {
+    refreshUnreadCount();
+
+    async function refreshUnreadCount() {
         try {
             const response = await fetch('index.php?action=notifications_count');
             const data = await response.json();
@@ -177,7 +177,10 @@
         } catch (error) {
             console.error('Erro ao atualizar contagem:', error);
         }
-    }, 30000);
+    }
+
+    // Atualizar contador periodicamente (polling)
+    setInterval(refreshUnreadCount, 8000);
 
     // Se o panel estiver aberto, atualizar notificações a cada 15 segundos
     setInterval(() => {
