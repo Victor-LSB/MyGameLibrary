@@ -129,6 +129,18 @@ class NotificationController {
         echo json_encode(['success' => true]);
     }
 
+    public function clearAll() {
+        header('Content-Type: application/json');
+
+        $stmt = $this->db->prepare("
+            DELETE FROM notifications
+            WHERE user_id = ?
+        ");
+        $success = $stmt->execute([$this->userId]);
+
+        echo json_encode(['success' => $success]);
+    }
+
     public function createNotification($userId, $actorId, $type, $relatedId = null, $message = '') {
         $stmt = $this->db->prepare("
             INSERT INTO notifications (user_id, actor_id, type, related_id, message)

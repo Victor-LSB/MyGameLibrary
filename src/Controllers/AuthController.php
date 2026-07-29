@@ -83,11 +83,19 @@ class AuthController {
             $user = $this->userModel->login($email, $password);
 
             if ($user) {
+                // Bloqueia o acesso enquanto o e-mail não for confirmado.
+                if (empty($user['email_verified_at'])) {
+                    $error = 'Você precisa confirmar o seu e-mail antes de entrar. Verifique a sua caixa de entrada.';
+                    $unverifiedEmail = $email;
+                    include __DIR__ . '/../Views/auth/login.php';
+                    return;
+                }
+
                 // Login válido: limpa o contador de tentativas dessa chave não é necessário,
                 // ele expira sozinho pela janela de tempo.
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
-                $_SESSION['email_verified'] = !empty($user['email_verified_at']);
+                $_SESSION['email_verified'] = true;
                 header("Location: index.php?action=home");
                 exit();
             } else {
@@ -363,6 +371,34 @@ class AuthController {
 
         header("Location: index.php?action=home");
         exit();
+    }
+
+    /**
+     * Reenvio de e-mail de verificação a partir da tela de login (sem sessão ativa),
+     * já que agora o login fica bloqueado até o e-mail ser confirmado.
+     */
+    public function resendVerificationPublic() {
+        $this->startSession();
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
+
+            if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                // No máximo 3 reenvios por hora por IP + email
+                $rlKey = $this->rateLimiter->key('resend_verification', $this->clientIp(), $email);
+                if (!$this->rateLimiter->tooManyAttempts($rlKey, 3, 60)) {
+                    $this->rateLimiter->hit($rlKey);
+                    $user = $this->userModel->getUserByEmail($email);
+                    if ($user && empty($user['email_verified_at'])) {
+                        $this->sendVerificationEmail($user['email'], $user['id']);
+                    }
+                }
+            }
+        }
+
+        // Mensagem genérica sempre igual, para não revelar se o e-mail existe ou já está verificado.
+        $success = 'Se existir uma conta com este e-mail ainda não confirmada, reenviamos o link de verificação.';
+        include __DIR__ . '/../Views/auth/login.php';
     }
 
     public function logout() {

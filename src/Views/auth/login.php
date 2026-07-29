@@ -18,6 +18,21 @@
                 </div>
             <?php endif; ?>
 
+            <?php if (isset($success)): ?>
+                <div class="bg-emerald-950 border border-emerald-800 text-emerald-400 px-4 py-3 rounded-sm mb-6 font-medium text-sm text-center">
+                    <?php echo htmlspecialchars($success); ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if (isset($unverifiedEmail)): ?>
+                <form action="index.php?action=resend_verification_public" method="post" class="mb-6">
+                    <input type="hidden" name="email" value="<?php echo htmlspecialchars($unverifiedEmail); ?>">
+                    <button type="submit" class="w-full bg-amber-800/60 hover:bg-amber-800 text-amber-100 px-4 py-2.5 rounded-sm font-bold uppercase tracking-wide text-xs transition-colors">
+                        Reenviar e-mail de confirmação
+                    </button>
+                </form>
+            <?php endif; ?>
+
             <form action="index.php?action=login" method="post" class="space-y-5">
                 <div>
                     <label for="email" class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Email</label>

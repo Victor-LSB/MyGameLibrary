@@ -104,7 +104,7 @@ class FollowController {
                 $this->userId,
                 'new_follower',
                 null,
-                'Começou a seguir você'
+                ($_SESSION['username'] ?? 'Alguém') . ' começou a seguir você'
             );
 
             return ['success' => true, 'message' => 'Você começou a seguir este usuário'];

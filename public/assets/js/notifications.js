@@ -6,6 +6,7 @@
     const notificationsList = document.getElementById('notificationsList');
     const unreadCount = document.getElementById('unreadCount');
     const markAllReadBtn = document.getElementById('markAllRead');
+    const clearAllBtn = document.getElementById('clearAllNotifications');
 
     if (!notificationBell) return;
 
@@ -29,6 +30,17 @@
     if (markAllReadBtn) {
         markAllReadBtn.addEventListener('click', async () => {
             await fetch('index.php?action=notifications_mark_all_read', {
+                method: 'POST',
+            });
+            loadNotifications();
+        });
+    }
+
+    // Limpar todas as notificações
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await fetch('index.php?action=notifications_clear_all', {
                 method: 'POST',
             });
             loadNotifications();

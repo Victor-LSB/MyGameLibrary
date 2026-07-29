@@ -34,7 +34,10 @@
                         <div id="notificationPanel" class="hidden absolute right-0 top-12 w-80 sm:w-96 bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-2xl max-h-[28rem] overflow-y-auto z-50">
                             <div class="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
                                 <h3 class="text-white font-black uppercase text-sm tracking-wide">Notificações</h3>
-                                <button id="markAllRead" class="text-violet-400 hover:text-violet-300 text-xs font-bold uppercase tracking-wide">Marcar tudo lido</button>
+                                <div class="flex items-center gap-3">
+                                    <button id="markAllRead" class="text-violet-400 hover:text-violet-300 text-xs font-bold uppercase tracking-wide">Marcar tudo lido</button>
+                                    <button id="clearAllNotifications" class="text-zinc-500 hover:text-red-400 text-xs font-bold uppercase tracking-wide">Limpar</button>
+                                </div>
                             </div>
                             <div id="notificationsList" class="divide-y divide-zinc-800"></div>
                         </div>

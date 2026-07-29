@@ -51,10 +51,12 @@ $routes = [
     'feed'           => [FeedController::class, 'index'],
     'verify_email'   => [AuthController::class, 'verifyEmail'],
     'resend_verification' => [AuthController::class, 'resendVerification'],
+    'resend_verification_public' => [AuthController::class, 'resendVerificationPublic'],
     'notifications_get' => [NotificationController::class, 'getNotifications'],
     'notifications_count' => [NotificationController::class, 'countUnread'],
     'notification_mark_read' => [NotificationController::class, 'markAsRead'],
-    'notifications_mark_all_read' => [NotificationController::class, 'markAllAsRead']
+    'notifications_mark_all_read' => [NotificationController::class, 'markAllAsRead'],
+    'notifications_clear_all' => [NotificationController::class, 'clearAll']
 ];
 
 if (array_key_exists($action, $routes)) {
