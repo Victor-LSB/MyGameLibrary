@@ -222,6 +222,7 @@ class FollowController {
             FROM users u
             LEFT JOIN user_follows uf2 ON uf2.following_id = u.id
             WHERE u.id != ?
+              AND u.email_verified_at IS NOT NULL
               AND u.id NOT IN (
                   SELECT following_id FROM user_follows WHERE follower_id = ?
               )

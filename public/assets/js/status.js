@@ -34,6 +34,13 @@ function updateStatusCard(gameId, newStatus) {
         const hiddenStatus = ratingFormOfGame.querySelector('input[name="status"]');
         if (hiddenStatus) hiddenStatus.value = newStatus;
     }
+
+    const statusButtons = cardGame.querySelectorAll('.status-btn');
+    statusButtons.forEach(function(btn) {
+        const isActive = btn.dataset.statusBtn === newStatus;
+        btn.classList.toggle('is-active', isActive);
+        btn.classList.toggle('is-inactive', !isActive);
+    });
 }
 
 function openCompletionModal(form) {

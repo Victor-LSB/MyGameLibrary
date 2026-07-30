@@ -27,6 +27,22 @@
   .heading-section {
     @apply text-xl font-black uppercase tracking-tight text-white border-l-4 border-violet-500 pl-3;
   }
+
+  .status-btn {
+    @apply transform;
+  }
+
+  .status-btn.is-active {
+    @apply scale-105 opacity-100 saturate-100 grayscale-0 ring-2 ring-white/50 ring-offset-2 ring-offset-zinc-900 shadow-lg;
+  }
+
+  .status-btn.is-inactive {
+    @apply scale-95 opacity-40 saturate-50 grayscale;
+  }
+
+  .status-btn.is-inactive:hover {
+    @apply scale-100 opacity-100 saturate-100 grayscale-0;
+  }
 }
 
 /* Variáveis CSS customizadas */

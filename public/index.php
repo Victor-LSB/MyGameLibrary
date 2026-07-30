@@ -54,6 +54,7 @@ $routes = [
     'resend_verification_public' => [AuthController::class, 'resendVerificationPublic'],
     'notifications_get' => [NotificationController::class, 'getNotifications'],
     'notifications_count' => [NotificationController::class, 'countUnread'],
+    'notifications_stream' => [NotificationController::class, 'streamNotifications'],
     'notification_mark_read' => [NotificationController::class, 'markAsRead'],
     'notifications_mark_all_read' => [NotificationController::class, 'markAllAsRead'],
     'notifications_clear_all' => [NotificationController::class, 'clearAll']

@@ -84,6 +84,57 @@ class NotificationController {
         echo json_encode(['unread_count' => $count]);
     }
 
+    /**
+     * Stream de notificações via Server-Sent Events.
+     * Mantém uma única conexão aberta (em vez de o front ficar
+     * fazendo fetch em loop) e só envia dado quando a contagem
+     * de não lidas realmente muda.
+     */
+    public function streamNotifications() {
+        set_time_limit(0);
+        ignore_user_abort(true);
+
+        header('Content-Type: text/event-stream');
+        header('Cache-Control: no-cache');
+        header('Connection: keep-alive');
+        header('X-Accel-Buffering: no'); // evita buffering em proxies (ex: Nginx)
+
+        // Libera o lock da sessão assim que possível: como essa conexão
+        // fica aberta por um tempo, sem isso as outras abas/requisições
+        // do mesmo usuário ficariam travadas esperando a sessão liberar.
+        session_write_close();
+
+        while (ob_get_level() > 0) {
+            ob_end_flush();
+        }
+
+        $lastCount = null;
+        $checkIntervalSeconds = 3;
+        $maxDurationSeconds = 55; // depois disso o EventSource reconecta sozinho no front
+
+        $start = time();
+
+        while (true) {
+            if (connection_aborted() || (time() - $start) >= $maxDurationSeconds) {
+                break;
+            }
+
+            $count = $this->countUnreadCount();
+
+            if ($count !== $lastCount) {
+                echo "event: unread_count\n";
+                echo 'data: ' . json_encode(['unread_count' => $count]) . "\n\n";
+                $lastCount = $count;
+            } else {
+                // Comentário "ping" só pra manter a conexão viva através de proxies
+                echo ": ping\n\n";
+            }
+
+            flush();
+            sleep($checkIntervalSeconds);
+        }
+    }
+
     private function countUnreadCount() {
         $stmt = $this->db->prepare("
             SELECT COUNT(*) as count 

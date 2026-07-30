@@ -188,14 +188,59 @@
         }
     }
 
-    // Atualizar contador periodicamente (polling)
-    setInterval(refreshUnreadCount, 8000);
+    // Live update via SSE: uma única conexão aberta, o servidor só
+    // manda algo quando a contagem de não lidas realmente muda.
+    let eventSource = null;
 
-    // Se o panel estiver aberto, atualizar notificações a cada 15 segundos
-    setInterval(() => {
-        if (!notificationPanel.classList.contains('hidden')) {
-            loadNotifications();
+    function startNotificationsStream() {
+        if (eventSource || typeof EventSource === 'undefined') return;
+
+        eventSource = new EventSource('index.php?action=notifications_stream');
+
+        eventSource.addEventListener('unread_count', (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                updateUnreadCount(data.unread_count);
+
+                // Se o painel estiver aberto, atualiza a lista também
+                if (!notificationPanel.classList.contains('hidden')) {
+                    loadNotifications();
+                }
+            } catch (error) {
+                console.error('Erro ao processar evento de notificação:', error);
+            }
+        });
+
+        eventSource.onerror = () => {
+            // O próprio EventSource reconecta sozinho depois de alguns
+            // segundos (é assim que o protocolo SSE funciona); só logamos.
+            console.warn('Conexão de notificações interrompida, reconectando...');
+        };
+    }
+
+    function stopNotificationsStream() {
+        if (eventSource) {
+            eventSource.close();
+            eventSource = null;
         }
-    }, 15000);
+    }
+
+    // Pausa o stream quando a aba fica em segundo plano e retoma
+    // (com uma checagem imediata) quando o usuário volta pra ela.
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            stopNotificationsStream();
+        } else {
+            refreshUnreadCount();
+            startNotificationsStream();
+        }
+    });
+
+    if (typeof EventSource !== 'undefined') {
+        startNotificationsStream();
+    } else {
+        // Fallback para navegadores muito antigos sem suporte a SSE
+        setInterval(refreshUnreadCount, 30000);
+    }
 
 })();
