@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
     <title>MyGameLibrary</title>
     <link rel="stylesheet" href="./assets/css/output.css">
     <link rel="icon" type="image/png" href="assets/icon/icong.png?v=1">

@@ -10,6 +10,10 @@
 
     if (!notificationBell) return;
 
+    function csrfToken() {
+        return document.querySelector('meta[name="csrf-token"]')?.content || '';
+    }
+
     // Toggle notification panel
     notificationBell.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -31,6 +35,7 @@
         markAllReadBtn.addEventListener('click', async () => {
             await fetch('index.php?action=notifications_mark_all_read', {
                 method: 'POST',
+                headers: { 'X-CSRF-Token': csrfToken() },
             });
             loadNotifications();
         });
@@ -42,6 +47,7 @@
             e.stopPropagation();
             await fetch('index.php?action=notifications_clear_all', {
                 method: 'POST',
+                headers: { 'X-CSRF-Token': csrfToken() },
             });
             loadNotifications();
         });
@@ -112,7 +118,10 @@
         try {
             await fetch('index.php?action=notification_mark_read', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfToken(),
+                },
                 body: JSON.stringify({ notification_id: notificationId }),
             });
             loadNotifications();

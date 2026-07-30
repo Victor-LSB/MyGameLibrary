@@ -25,6 +25,7 @@
             <?php endif; ?>
 
             <form action="index.php?action=register" method="post" id="registerForm" class="space-y-5">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                 <div>
                     <label for="username" class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Nome de Usuário</label>
                     <input type="text" id="username" name="username" required

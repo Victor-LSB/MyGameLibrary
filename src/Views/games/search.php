@@ -52,6 +52,7 @@
                             </p>
                             
                             <form action="index.php?action=add_game" method="post" class="mt-auto pt-4 border-t-2 border-zinc-800">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                                 <input type="hidden" name="external_id" value="<?php echo htmlspecialchars($game['id']); ?>">
                                 <input type="hidden" name="title" value="<?php echo htmlspecialchars($game['name']); ?>">
                                 <input type="hidden" name="cover" value="<?php echo htmlspecialchars($cover); ?>">

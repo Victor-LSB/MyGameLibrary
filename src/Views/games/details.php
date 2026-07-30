@@ -134,6 +134,7 @@
                     
                     <?php if (isset($isOwner) && $isOwner): ?>
                         <form action="index.php?action=save_review" method="POST" class="space-y-4">
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                             <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($game_id ?? ''); ?>">
                             <textarea name="review" rows="6" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors resize-y font-medium text-sm sm:text-base min-h-[160px]" placeholder="Escreva o que achou da experiência..."><?php echo htmlspecialchars($game['review'] ?? ''); ?></textarea>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -178,6 +179,7 @@
                                 </a>
                                 <?php if (isset($isOwner) && $isOwner): ?>
                                     <form action="index.php?action=remove_custom_tag" method="POST" class="inline-flex">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                                         <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($game_id ?? ''); ?>">
                                         <input type="hidden" name="tag_id" value="<?php echo htmlspecialchars($tag['id']); ?>">
                                         <button type="submit" class="ml-2 text-xs font-black uppercase tracking-widest text-amber-200/80 hover:text-red-300 transition-colors" title="Remover tag">x</button>

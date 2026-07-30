@@ -17,10 +17,13 @@
         followBtn.textContent = 'Processando...';
 
         try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
             const response = await fetch('index.php?action=follow_toggle', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfToken,
                 },
                 body: JSON.stringify({
                     user_id: userId,

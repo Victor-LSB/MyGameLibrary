@@ -26,6 +26,7 @@
 
             <?php if (isset($unverifiedEmail)): ?>
                 <form action="index.php?action=resend_verification_public" method="post" class="mb-6">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                     <input type="hidden" name="email" value="<?php echo htmlspecialchars($unverifiedEmail); ?>">
                     <button type="submit" class="w-full bg-amber-800/60 hover:bg-amber-800 text-amber-100 px-4 py-2.5 rounded-sm font-bold uppercase tracking-wide text-xs transition-colors">
                         Reenviar e-mail de confirmação
@@ -34,6 +35,7 @@
             <?php endif; ?>
 
             <form action="index.php?action=login" method="post" class="space-y-5">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                 <div>
                     <label for="email" class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Email</label>
                     <input type="email" id="email" name="email" required

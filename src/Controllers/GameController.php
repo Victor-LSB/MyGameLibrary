@@ -6,6 +6,7 @@ use Victi\MyGameLibrary\Models\Game;
 use Victi\MyGameLibrary\Models\User;
 use Victi\MyGameLibrary\Models\Activity;
 use Victi\MyGameLibrary\Services\GameAPI;
+use Victi\MyGameLibrary\Services\Csrf;
 
 class GameController {
     private $db;
@@ -143,6 +144,8 @@ class GameController {
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            Csrf::verifyOrFail();
+
             $external_id = filter_input(INPUT_POST, 'external_id', FILTER_SANITIZE_NUMBER_INT);
             // NOTA: usar FILTER_SANITIZE_FULL_SPECIAL_CHARS aqui converte aspas/apóstrofos em
             // entidades HTML (&#039;) ANTES de salvar no banco. Como as views já escapam com
@@ -208,6 +211,8 @@ class GameController {
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            Csrf::verifyOrFail();
+
             $game_id = filter_input(INPUT_POST, 'game_id', FILTER_SANITIZE_NUMBER_INT);
             $status = filter_input(INPUT_POST, 'status', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
             
@@ -297,6 +302,8 @@ class GameController {
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            Csrf::verifyOrFail();
+
             $game_id = filter_input(INPUT_POST, 'game_id', FILTER_SANITIZE_NUMBER_INT);
             
             // Pega a nota diretamente para lidar com valores vazios de forma segura
@@ -357,6 +364,8 @@ class GameController {
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            Csrf::verifyOrFail();
+
             $game_id = filter_input(INPUT_POST, 'game_id', FILTER_SANITIZE_NUMBER_INT);
             if ($game_id) {
                 $this->gameModel->deleteGameFromUser($_SESSION['user_id'], $game_id);
@@ -374,6 +383,8 @@ class GameController {
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            Csrf::verifyOrFail();
+
             $game_id = filter_input(INPUT_POST, 'game_id', FILTER_SANITIZE_NUMBER_INT);
             $tag_id = filter_input(INPUT_POST, 'tag_id', FILTER_SANITIZE_NUMBER_INT);
 
@@ -395,6 +406,8 @@ class GameController {
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            Csrf::verifyOrFail();
+
             $tag_id = filter_input(INPUT_POST, 'tag_id', FILTER_SANITIZE_NUMBER_INT);
 
             if ($tag_id) {
@@ -429,6 +442,8 @@ class GameController {
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            Csrf::verifyOrFail();
+
             $game_id = filter_input(INPUT_POST, 'game_id', FILTER_SANITIZE_NUMBER_INT);
             $review = $_POST['review'] ?? '';
 

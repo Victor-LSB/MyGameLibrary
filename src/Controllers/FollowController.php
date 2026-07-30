@@ -4,6 +4,7 @@ namespace Victi\MyGameLibrary\Controllers;
 
 use Victi\MyGameLibrary\Database\Database;
 use Victi\MyGameLibrary\Services\RateLimiter;
+use Victi\MyGameLibrary\Services\Csrf;
 use PDO;
 
 class FollowController {
@@ -46,6 +47,8 @@ class FollowController {
      */
     public function toggle() {
         header('Content-Type: application/json');
+
+        Csrf::verifyOrFail();
 
         // Anti-spam: no máximo 30 ações de seguir/deixar de seguir por minuto por usuário
         $rlKey = $this->rateLimiter->key('follow_toggle', $this->userId);

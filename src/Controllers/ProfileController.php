@@ -3,6 +3,7 @@ namespace Victi\MyGameLibrary\Controllers;
 use Victi\MyGameLibrary\Database\Database;
 use Victi\MyGameLibrary\Models\User;
 use Victi\MyGameLibrary\Models\Game;
+use Victi\MyGameLibrary\Services\Csrf;
 
 class ProfileController {
     private $db;
@@ -161,6 +162,8 @@ class ProfileController {
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            Csrf::verifyOrFail();
+
             $displayName = trim((string) ($_POST['display_name'] ?? ''));
             $bio = trim((string) ($_POST['bio'] ?? ''));
             

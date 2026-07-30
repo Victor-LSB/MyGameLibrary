@@ -3,6 +3,7 @@
 namespace Victi\MyGameLibrary\Controllers;
 
 use Victi\MyGameLibrary\Database\Database;
+use Victi\MyGameLibrary\Services\Csrf;
 use PDO;
 
 class NotificationController {
@@ -97,7 +98,8 @@ class NotificationController {
 
     public function markAsRead() {
         header('Content-Type: application/json');
-        
+        Csrf::verifyOrFail();
+
         $input = json_decode(file_get_contents('php://input'), true);
         $notificationId = $input['notification_id'] ?? null;
 
@@ -118,6 +120,7 @@ class NotificationController {
 
     public function markAllAsRead() {
         header('Content-Type: application/json');
+        Csrf::verifyOrFail();
         
         $stmt = $this->db->prepare("
             UPDATE notifications 
@@ -131,6 +134,7 @@ class NotificationController {
 
     public function clearAll() {
         header('Content-Type: application/json');
+        Csrf::verifyOrFail();
 
         $stmt = $this->db->prepare("
             DELETE FROM notifications

@@ -47,6 +47,7 @@
                                 <span class="text-[10px] <?php echo $isActiveTag ? 'text-violet-100/80' : 'text-zinc-500'; ?>">(<?php echo (int) ($tag['usage_count'] ?? 0); ?>)</span>
                             </a>
                             <form action="index.php?action=delete_saved_tag" method="POST" class="flex">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                                 <input type="hidden" name="tag_id" value="<?php echo (int) $tag['id']; ?>">
                                 <button type="submit" class="inline-flex h-full min-h-[32px] w-9 items-center justify-center border-l border-zinc-700 bg-zinc-800 text-zinc-400 transition-colors hover:bg-red-600 hover:text-white" title="Excluir tag salva" aria-label="Excluir tag salva">
                                     <span class="text-sm font-black leading-none">×</span>
@@ -111,6 +112,7 @@
                         <div class="mb-4 mt-auto">
                             <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-1.5">Sua Nota</span>
                             <form class="ratingForm block" method="post">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                                 <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
                                 <input type="hidden" name="status" value="<?php echo htmlspecialchars($game['status'] ?? ''); ?>">
                                 
@@ -130,6 +132,7 @@
                         <div class="pt-3 border-t-2 border-zinc-800">
                             <div class="grid grid-cols-3 gap-1.5 mb-2">
                                 <form class="formStatus" action="index.php?action=change_status" method="post">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                                     <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
                                     <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating'] ?? ''); ?>">
                                     <input type="hidden" name="status" value="Jogando">
@@ -137,6 +140,7 @@
                                 </form>
 
                                 <form class="formStatus" action="index.php?action=change_status" method="post">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                                     <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
                                     <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating'] ?? ''); ?>">
                                     <input type="hidden" name="status" value="Zerado">
@@ -144,6 +148,7 @@
                                 </form>
 
                                 <form class="formStatus" action="index.php?action=change_status" method="post">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                                     <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
                                     <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating'] ?? ''); ?>">
                                     <input type="hidden" name="status" value="Dropado">
@@ -152,6 +157,7 @@
                             </div>
 
                             <form action="index.php?action=delete_game" method="post">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                                 <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
                                 <button type="submit" class="w-full text-[11px] uppercase tracking-wider font-bold py-2 mt-1 text-zinc-400 bg-zinc-950 border border-zinc-800 rounded-sm hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors">Remover</button>
                             </form>
@@ -180,6 +186,7 @@
             </div>
 
             <form id="completionForm" class="px-6 py-6">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                 <input type="hidden" name="game_id" id="modalGameId">
                 <input type="hidden" name="status" id="modalStatus" value="Zerado">
 

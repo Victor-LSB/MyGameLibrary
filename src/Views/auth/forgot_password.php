@@ -32,6 +32,7 @@
 
             <?php if (!isset($success)): ?>
                 <form action="index.php?action=forgot_password" method="post" id="forgotPasswordForm" class="space-y-5">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                     <div>
                         <label for="email" class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Email</label>
                         <input type="email" id="email" name="email" required

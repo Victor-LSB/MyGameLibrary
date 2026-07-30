@@ -4,6 +4,7 @@ use Resend;
 use Victi\MyGameLibrary\Database\Database;
 use Victi\MyGameLibrary\Models\User;
 use Victi\MyGameLibrary\Services\RateLimiter;
+use Victi\MyGameLibrary\Services\Csrf;
 
 class AuthController {
     private $db;
@@ -62,6 +63,8 @@ class AuthController {
         $this->startSession();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            Csrf::verifyOrFail();
+
             $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
             $password = filter_input(INPUT_POST, 'password', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
 
@@ -113,6 +116,8 @@ class AuthController {
         $this->startSession();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            Csrf::verifyOrFail();
+
             $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
             $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
             $password = filter_input(INPUT_POST, 'password', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
@@ -185,6 +190,8 @@ class AuthController {
 
     public function forgotPassword() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            Csrf::verifyOrFail();
+
             $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL) ?? '';
 
             if (empty($email)) {
@@ -269,6 +276,8 @@ class AuthController {
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            Csrf::verifyOrFail();
+
             $token = filter_input(INPUT_POST, 'token', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
             $new_password = filter_input(INPUT_POST, 'new_password', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
             $password_confirm = filter_input(INPUT_POST, 'password_confirm', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
@@ -381,6 +390,8 @@ class AuthController {
         $this->startSession();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            Csrf::verifyOrFail();
+
             $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
 
             if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {

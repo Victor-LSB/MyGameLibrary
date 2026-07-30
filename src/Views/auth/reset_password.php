@@ -28,6 +28,7 @@
 
             <?php if (!isset($success)): ?>
                 <form action="index.php?action=reset_password" method="post" id="resetPasswordForm" class="space-y-5">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                     <input type="hidden" name="token" value="<?php echo htmlspecialchars($_GET['token'] ?? ''); ?>">
                     
                     <div>

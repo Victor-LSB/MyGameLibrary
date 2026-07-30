@@ -21,6 +21,7 @@
             <?php endif; ?>
 
             <form action="index.php?action=update_profile" method="post" enctype="multipart/form-data" class="space-y-6">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                 
                 <div>
                     <label for="display_name" class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Nome de Exibição</label>
