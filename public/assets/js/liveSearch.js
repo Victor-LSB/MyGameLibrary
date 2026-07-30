@@ -113,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${genres}
                     </p>
                     <form action="index.php?action=add_game" method="post" class="mt-auto pt-4 border-t-2 border-zinc-800">
+                        <input type="hidden" name="csrf_token" value="${document.querySelector('meta[name="csrf-token"]')?.content || ''}">
                         <input type="hidden" name="external_id" value="${game.id}">
                         <input type="hidden" name="title" value="${safeName}">
                         <input type="hidden" name="cover" value="${game.background_image || ''}">
