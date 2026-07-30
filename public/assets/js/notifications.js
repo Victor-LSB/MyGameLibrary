@@ -69,6 +69,21 @@
         }
     }
 
+    // Monta a URL de destino da notificação, conforme o tipo
+    function notificationLink(notif) {
+        if (!notif.actor_username) return null;
+
+        if (notif.type === 'review_posted' && notif.related_id) {
+            return `index.php?action=details&id=${encodeURIComponent(notif.related_id)}&u=${encodeURIComponent(notif.actor_username)}`;
+        }
+
+        if (notif.type === 'new_follower') {
+            return `index.php?action=profile&u=${encodeURIComponent(notif.actor_username)}`;
+        }
+
+        return null;
+    }
+
     // Exibir notificações
     function displayNotifications(notifications) {
         if (notifications.length === 0) {
@@ -76,8 +91,13 @@
             return;
         }
 
-        notificationsList.innerHTML = notifications.map(notif => `
-            <div class="notification-item ${notif.is_read ? 'read' : 'unread'} flex items-start gap-3 p-4 ${notif.is_read ? '' : 'bg-violet-950/30'} hover:bg-zinc-800/50 transition-colors cursor-pointer" data-id="${notif.id}">
+        notificationsList.innerHTML = notifications.map(notif => {
+            const link = notificationLink(notif);
+            const tag = link ? 'a' : 'div';
+            const hrefAttr = link ? `href="${link}"` : '';
+
+            return `
+            <${tag} ${hrefAttr} class="notification-item ${notif.is_read ? 'read' : 'unread'} flex items-start gap-3 p-4 ${notif.is_read ? '' : 'bg-violet-950/30'} hover:bg-zinc-800/50 transition-colors cursor-pointer" data-id="${notif.id}">
                 ${notif.actor_avatar
                     ? `<img src="${notif.actor_avatar}" alt="${escapeHtml(notif.actor_name)}" class="notification-avatar w-9 h-9 rounded-sm object-cover shrink-0 bg-zinc-800">`
                     : `<div class="notification-avatar w-9 h-9 rounded-sm shrink-0 bg-zinc-800 flex items-center justify-center text-zinc-500 font-black uppercase text-sm">${escapeHtml((notif.actor_name || '?').charAt(0))}</div>`
@@ -91,24 +111,26 @@
                         ✓
                     </button>
                 ` : ''}
-            </div>
-        `).join('');
+            </${tag}>
+        `;
+        }).join('');
 
         // Event listeners para marcar individual como lido
         document.querySelectorAll('.notification-mark-read-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 const id = btn.dataset.id;
                 await markNotificationAsRead(id);
             });
         });
 
-        // Permite clicar na notificação para ir para o jogo/review (opcional)
+        // Clicar na notificação leva pro perfil/jogo relacionado e marca como lida
         document.querySelectorAll('.notification-item').forEach(item => {
             item.addEventListener('click', () => {
-                // Aqui você pode adicionar lógica para redirecionar
-                // por exemplo: window.location.href = `/game/${notif.related_id}`;
-                console.log('Clicou em notificação:', item.dataset.id);
+                if (item.classList.contains('unread')) {
+                    markNotificationAsRead(item.dataset.id);
+                }
             });
         });
     }

@@ -49,6 +49,7 @@ $routes = [
     'update_profile' => [ProfileController::class, 'update'],
     'follow_toggle'  => [FollowController::class, 'toggle'],
     'feed'           => [FeedController::class, 'index'],
+    'activity_toggle_like' => [FeedController::class, 'toggleLike'],
     'verify_email'   => [AuthController::class, 'verifyEmail'],
     'resend_verification' => [AuthController::class, 'resendVerification'],
     'resend_verification_public' => [AuthController::class, 'resendVerificationPublic'],

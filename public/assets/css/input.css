@@ -43,6 +43,46 @@
   .status-btn.is-inactive:hover {
     @apply scale-100 opacity-100 saturate-100 grayscale-0;
   }
+
+  .feed-icon-added {
+    @apply bg-amber-950 text-amber-400;
+  }
+
+  .feed-icon-playing {
+    @apply bg-blue-950 text-blue-400;
+  }
+
+  .feed-icon-completed {
+    @apply bg-emerald-950 text-emerald-400;
+  }
+
+  .feed-icon-dropped {
+    @apply bg-red-950 text-red-400;
+  }
+
+  .feed-icon-review {
+    @apply bg-violet-950 text-violet-400;
+  }
+
+  .feed-card {
+    @apply opacity-0;
+    animation: feedCardIn 0.35s ease-out forwards;
+  }
+
+  .feed-like-btn.is-liked {
+    @apply text-pink-400 bg-pink-950/40;
+  }
+}
+
+@keyframes feedCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Variáveis CSS customizadas */

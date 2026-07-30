@@ -58,6 +58,9 @@ class NotificationController {
                 n.message,
                 n.is_read,
                 n.created_at,
+                n.related_id,
+                u.username as actor_username,
+                u.display_name as actor_display_name,
                 u.username as actor_name,
                 u.avatar as actor_avatar
             FROM notifications n
