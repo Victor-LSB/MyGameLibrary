@@ -211,6 +211,42 @@ class FollowController {
     }
 
     /**
+     * Busca usuários por username ou nome de exibição (para a busca do navbar).
+     * Resultados com match no início do username aparecem primeiro.
+     */
+    public function searchUsers() {
+        header('Content-Type: application/json');
+
+        $query = trim($_GET['q'] ?? '');
+
+        if (mb_strlen($query) < 2) {
+            echo json_encode(['results' => []]);
+            return;
+        }
+
+        $like = '%' . $query . '%';
+        $prefix = $query . '%';
+
+        $stmt = $this->db->prepare("
+            SELECT u.id, u.username, u.display_name, u.avatar,
+                   COUNT(uf2.follower_id) as followers_count
+            FROM users u
+            LEFT JOIN user_follows uf2 ON uf2.following_id = u.id
+            WHERE u.id != ?
+              AND u.email_verified_at IS NOT NULL
+              AND (u.username LIKE ? OR u.display_name LIKE ?)
+            GROUP BY u.id
+            ORDER BY (u.username LIKE ?) DESC, followers_count DESC
+            LIMIT 10
+        ");
+        $stmt->execute([$this->userId, $like, $like, $prefix]);
+
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        echo json_encode(['results' => $results]);
+    }
+
+    /**
      * Sugestões de quem seguir: usuários com mais seguidores que $userId
      * ainda não segue (e que não são ele mesmo).
      */

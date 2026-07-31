@@ -11,11 +11,11 @@
     ];
 ?>
 <header class="bg-zinc-900 border-b-4 border-violet-600 shadow-md px-6 py-5 mb-8">
-    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
-        <a href="index.php?action=home" class="text-3xl font-black text-white tracking-tighter uppercase hover:text-violet-400 transition-colors shrink-0">MyGameLibrary</a>
+    <div class="max-w-screen-2xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+        <a href="index.php?action=home" class="text-2xl font-black text-white tracking-tighter uppercase hover:text-violet-400 transition-colors shrink-0">MyGameLibrary</a>
 
         <?php if (isset($_SESSION['user_id'])): ?>
-            <div class="flex flex-wrap items-center justify-center gap-3">
+            <div class="flex flex-wrap items-center justify-center gap-2">
                 <?php foreach ($navLinks as $key => $link): ?>
                     <a href="index.php?action=<?php echo $link['action']; ?>"
                        class="<?php echo $currentAction === $key ? 'bg-violet-600 hover:bg-violet-500' : 'bg-zinc-800 hover:bg-zinc-700'; ?> text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors border-b-2 border-zinc-950 hover:border-zinc-900">
@@ -46,9 +46,19 @@
                 </div>
 
                 <a href="index.php?action=logout" class="bg-zinc-800 hover:bg-red-600 hover:text-white text-zinc-300 px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm border-b-2 border-zinc-950 hover:border-red-800 transition-colors">Sair</a>
+
+                <div class="relative w-full sm:w-auto mt-2 sm:mt-0">
+                    <input type="text" id="userSearchInput" autocomplete="off" placeholder="Buscar usuários..."
+                           class="w-full sm:w-44 bg-zinc-800 border-2 border-zinc-800 focus:border-violet-500 text-white placeholder-zinc-500 text-sm rounded-sm px-3 py-2.5 focus:outline-none transition-colors">
+                    <div id="userSearchDropdown" class="hidden absolute left-0 sm:left-auto sm:right-0 top-12 w-72 bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-2xl max-h-96 overflow-y-auto z-50 divide-y divide-zinc-800"></div>
+                </div>
             </div>
         <?php else: ?>
             <a href="index.php?action=login" class="bg-violet-600 hover:bg-violet-500 text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors shrink-0">Iniciar Sessão</a>
         <?php endif; ?>
     </div>
 </header>
+
+<?php if (isset($_SESSION['user_id'])): ?>
+    <script src="./assets/js/userSearch.js"></script>
+<?php endif; ?>
