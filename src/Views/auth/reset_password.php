@@ -33,19 +33,20 @@
                     
                     <div>
                         <label for="new_password" class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Nova Senha</label>
-                        <input type="password" id="new_password" name="new_password" required minlength="6"
+                        <input type="password" id="new_password" name="new_password" required minlength="8"
                             class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium"
-                            placeholder="Mínimo 6 caracteres">
+                            placeholder="Mínimo 8 caracteres">
                         <p id="passwordStrength" class="text-xs text-zinc-400 mt-1.5">
                             <span id="strengthBar" class="inline-block w-12 h-1 bg-zinc-700 rounded-full"></span>
                             <span id="strengthText" class="ml-2">Fraca</span>
                         </p>
                         <p id="messageErrorPassword" class="text-red-500 text-xs font-bold mt-1.5 empty:hidden"></p>
+                        <?php require __DIR__ . '/../partials/password_requirements.php'; ?>
                     </div>
 
                     <div>
                         <label for="password_confirm" class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Confirmar Senha</label>
-                        <input type="password" id="password_confirm" name="password_confirm" required minlength="6"
+                        <input type="password" id="password_confirm" name="password_confirm" required minlength="8"
                             class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium">
                         <p id="messageErrorConfirmPassword" class="text-red-500 text-xs font-bold mt-1.5 empty:hidden"></p>
                     </div>
@@ -63,83 +64,6 @@
         </div>
     </main>
     
-    <script>
-        // Função para validar força da senha
-        const newPasswordInput = document.getElementById('new_password');
-        const confirmPasswordInput = document.getElementById('password_confirm');
-        const strengthBar = document.getElementById('strengthBar');
-        const strengthText = document.getElementById('strengthText');
-        const messageErrorPassword = document.getElementById('messageErrorPassword');
-        const messageErrorConfirmPassword = document.getElementById('messageErrorConfirmPassword');
-        const submitBtn = document.getElementById('submitBtn');
-
-        function calculatePasswordStrength(password) {
-            let strength = 0;
-            
-            if (password.length >= 6) strength++;
-            if (password.length >= 12) strength++;
-            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
-            if (/\d/.test(password)) strength++;
-            if (/[^a-zA-Z0-9]/.test(password)) strength++;
-            
-            return strength;
-        }
-
-        function updatePasswordStrength() {
-            const password = newPasswordInput.value;
-            const strength = calculatePasswordStrength(password);
-            
-            const colors = ['bg-red-700', 'bg-orange-600', 'bg-yellow-500', 'bg-lime-500', 'bg-emerald-500'];
-            const labels = ['Muito Fraca', 'Fraca', 'Média', 'Forte', 'Muito Forte'];
-            
-            strengthBar.className = `inline-block w-12 h-1 rounded-full ${colors[strength - 1] || 'bg-zinc-700'}`;
-            strengthText.textContent = strength > 0 ? labels[strength - 1] : 'Fraca';
-            
-            validatePasswordMatch();
-        }
-
-        function validatePasswordMatch() {
-            const newPassword = newPasswordInput.value;
-            const confirmPassword = confirmPasswordInput.value;
-            
-            if (newPassword.length > 0 && confirmPassword.length > 0) {
-                if (newPassword !== confirmPassword) {
-                    messageErrorConfirmPassword.textContent = 'As senhas não correspondem';
-                    confirmPasswordInput.classList.add('border-red-600');
-                    submitBtn.disabled = true;
-                } else {
-                    messageErrorConfirmPassword.textContent = '';
-                    confirmPasswordInput.classList.remove('border-red-600');
-                    submitBtn.disabled = false;
-                }
-            }
-        }
-
-        if (newPasswordInput) {
-            newPasswordInput.addEventListener('input', updatePasswordStrength);
-        }
-        
-        if (confirmPasswordInput) {
-            confirmPasswordInput.addEventListener('input', validatePasswordMatch);
-        }
-
-        // Validar no envio
-        document.getElementById('resetPasswordForm')?.addEventListener('submit', function(e) {
-            const newPassword = newPasswordInput.value;
-            const confirmPassword = confirmPasswordInput.value;
-            
-            if (newPassword.length < 6) {
-                e.preventDefault();
-                messageErrorPassword.textContent = 'A senha deve ter no mínimo 6 caracteres';
-                return;
-            }
-            
-            if (newPassword !== confirmPassword) {
-                e.preventDefault();
-                messageErrorConfirmPassword.textContent = 'As senhas não correspondem';
-                return;
-            }
-        });
-    </script>
+    <script src="./assets/js/passwordRequirements.js"></script>
 </body>
 </html>

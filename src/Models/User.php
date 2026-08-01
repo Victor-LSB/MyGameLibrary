@@ -86,6 +86,14 @@ class User {
         return $stmt->execute([$token, $expires_at, $email]);
     }
 
+    public function verifyPassword($user_id, $password) {
+        $sql = "SELECT password FROM " . $this->table . " WHERE id = ? LIMIT 1";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([$user_id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row && password_verify($password, $row['password']);
+    }
+
     public function updatePassword($user_id, $new_password) {
         $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
         $sql = "UPDATE " . $this->table . " SET password = ?, reset_token = NULL, reset_token_expires_at = NULL WHERE id = ?";

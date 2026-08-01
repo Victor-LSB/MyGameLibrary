@@ -4,6 +4,7 @@ use Victi\MyGameLibrary\Database\Database;
 use Victi\MyGameLibrary\Models\User;
 use Victi\MyGameLibrary\Models\Game;
 use Victi\MyGameLibrary\Services\Csrf;
+use Victi\MyGameLibrary\Services\PasswordPolicy;
 
 class ProfileController {
     private $db;
@@ -108,6 +109,69 @@ class ProfileController {
 
         $user = $this->userModel->getUserById($_SESSION['user_id']);
         include __DIR__ . '/../Views/profile/edit.php';
+    }
+
+    public function changePassword() {
+        $this->startSession();
+
+        if (!isset($_SESSION['user_id'])) {
+            header("Location: index.php?action=login");
+            exit();
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            include __DIR__ . '/../Views/profile/change_password.php';
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            Csrf::verifyOrFail();
+
+            $userId = $_SESSION['user_id'];
+            $currentPassword = filter_input(INPUT_POST, 'current_password', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
+            $newPassword = filter_input(INPUT_POST, 'new_password', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
+            $passwordConfirm = filter_input(INPUT_POST, 'password_confirm', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
+
+            if (empty($currentPassword) || empty($newPassword) || empty($passwordConfirm)) {
+                $error = 'Todos os campos são obrigatórios.';
+                include __DIR__ . '/../Views/profile/change_password.php';
+                return;
+            }
+
+            if (!$this->userModel->verifyPassword($userId, $currentPassword)) {
+                $error = 'Senha atual incorreta.';
+                include __DIR__ . '/../Views/profile/change_password.php';
+                return;
+            }
+
+            if ($newPassword !== $passwordConfirm) {
+                $error = 'As novas senhas não coincidem.';
+                include __DIR__ . '/../Views/profile/change_password.php';
+                return;
+            }
+
+            $passwordError = PasswordPolicy::validate($newPassword);
+            if ($passwordError !== null) {
+                $error = $passwordError;
+                include __DIR__ . '/../Views/profile/change_password.php';
+                return;
+            }
+
+            if ($newPassword === $currentPassword) {
+                $error = 'A nova senha deve ser diferente da senha atual.';
+                include __DIR__ . '/../Views/profile/change_password.php';
+                return;
+            }
+
+            if ($this->userModel->updatePassword($userId, $newPassword)) {
+                $success = 'Senha alterada com sucesso!';
+                include __DIR__ . '/../Views/profile/change_password.php';
+                return;
+            }
+
+            $error = 'Erro ao alterar a senha. Tente novamente.';
+            include __DIR__ . '/../Views/profile/change_password.php';
+        }
     }
 
     /**

@@ -42,20 +42,25 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
                         <label for="password" class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Senha</label>
-                        <input type="password" id="password" name="password" required
+                        <input type="password" id="password" name="password" required minlength="8"
                             class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium">
+                        <p id="passwordStrength" class="text-xs text-zinc-400 mt-1.5">
+                            <span id="strengthBar" class="inline-block w-12 h-1 bg-zinc-700 rounded-full"></span>
+                            <span id="strengthText" class="ml-2">Fraca</span>
+                        </p>
                         <p id="messageErrorPassword" class="text-red-500 text-xs font-bold mt-1.5 empty:hidden"></p>
+                        <?php require __DIR__ . '/../partials/password_requirements.php'; ?>
                     </div>
 
                     <div>
                         <label for="password_confirm" class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Confirmar Senha</label>
-                        <input type="password" id="password_confirm" name="password_confirm" required
+                        <input type="password" id="password_confirm" name="password_confirm" required minlength="8"
                             class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium">
                         <p id="messageErrorConfirmPassword" class="text-red-500 text-xs font-bold mt-1.5 empty:hidden"></p>
                     </div>
                 </div>
 
-                <button type="submit" class="w-full bg-violet-600 hover:bg-violet-500 text-white font-black uppercase tracking-widest py-4 rounded-sm transition-colors shadow-lg mt-8">
+                <button type="submit" id="submitBtn" class="w-full bg-violet-600 hover:bg-violet-500 text-white font-black uppercase tracking-widest py-4 rounded-sm transition-colors shadow-lg mt-8 disabled:opacity-50 disabled:cursor-not-allowed">
                     Registrar
                 </button>
                 
@@ -67,6 +72,7 @@
         </div>
     </main>
     
+    <script src="./assets/js/passwordRequirements.js"></script>
     <script src="./assets/js/validacaoForm.js"></script>
 </body>
 </html>

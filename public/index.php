@@ -47,6 +47,7 @@ $routes = [
     'profile'        => [ProfileController::class, 'view'],
     'edit_profile'   => [ProfileController::class, 'edit'],
     'update_profile' => [ProfileController::class, 'update'],
+    'change_password' => [ProfileController::class, 'changePassword'],
     'follow_toggle'  => [FollowController::class, 'toggle'],
     'search_users'   => [FollowController::class, 'searchUsers'],
     'feed'           => [FeedController::class, 'index'],

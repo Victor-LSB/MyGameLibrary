@@ -5,6 +5,7 @@ use Victi\MyGameLibrary\Database\Database;
 use Victi\MyGameLibrary\Models\User;
 use Victi\MyGameLibrary\Services\RateLimiter;
 use Victi\MyGameLibrary\Services\Csrf;
+use Victi\MyGameLibrary\Services\PasswordPolicy;
 
 class AuthController {
     private $db;
@@ -135,8 +136,9 @@ class AuthController {
                 return;
             }
 
-            if (strlen($password) < 6) {
-                $error = 'A senha deve ter no mínimo 6 caracteres.';
+            $passwordError = PasswordPolicy::validate($password);
+            if ($passwordError !== null) {
+                $error = $passwordError;
                 include __DIR__ . '/../Views/auth/register.php';
                 return;
             }
@@ -300,8 +302,9 @@ class AuthController {
                 return;
             }
 
-            if (strlen($new_password) < 6) {
-                $error = 'A senha deve ter no mínimo 6 caracteres.';
+            $passwordError = PasswordPolicy::validate($new_password);
+            if ($passwordError !== null) {
+                $error = $passwordError;
                 include __DIR__ . '/../Views/auth/reset_password.php';
                 return;
             }
