@@ -89,15 +89,32 @@
                 
             <?php foreach ($userGames as $game): ?>
                 <div class="gameItem bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl flex flex-col overflow-hidden group" id="game-<?php echo $game['id']; ?>">
-                    <a href="index.php?action=details&id=<?php echo $game['id']; ?>" class="block h-56 bg-zinc-950 border-b-2 border-zinc-800 overflow-hidden relative">
-                        <?php if (!empty($game['cover_image'])): ?>
-                            <img src="<?php echo htmlspecialchars($game['cover_image']); ?>" alt="<?php echo htmlspecialchars($game['title']); ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                        <?php else: ?>
-                            <div class="w-full h-full flex items-center justify-center text-zinc-700 font-bold uppercase text-center p-2"><?php echo htmlspecialchars($game['title']); ?></div>
-                        <?php endif; ?>
-                        
-                        <div class="absolute top-2 left-2 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-wider px-2 py-1 border border-zinc-700 rounded-sm gameStatus">Status: <?php echo htmlspecialchars($game['status'] ?? ''); ?></div>
-                    </a>
+                    <?php
+                        $isZerado = ($game['status'] ?? '') === 'Zerado';
+                        $isPlatinum = !empty($game['platinum_at']);
+                    ?>
+                    <div class="relative h-56 bg-zinc-950 border-b-2 border-zinc-800 overflow-hidden">
+                        <a href="index.php?action=details&id=<?php echo $game['id']; ?>" class="block h-full w-full">
+                            <?php if (!empty($game['cover_image'])): ?>
+                                <img src="<?php echo htmlspecialchars($game['cover_image']); ?>" alt="<?php echo htmlspecialchars($game['title']); ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                            <?php else: ?>
+                                <div class="w-full h-full flex items-center justify-center text-zinc-700 font-bold uppercase text-center p-2"><?php echo htmlspecialchars($game['title']); ?></div>
+                            <?php endif; ?>
+
+                            <div class="absolute top-2 left-2 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-wider px-2 py-1 border border-zinc-700 rounded-sm gameStatus">Status: <?php echo htmlspecialchars($game['status'] ?? ''); ?></div>
+                        </a>
+
+                        <button type="button"
+                            class="platinum-btn absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-sm border transition-colors <?php echo $isPlatinum ? 'bg-amber-400 border-amber-400 text-zinc-900' : ($isZerado ? 'bg-zinc-900/80 border-zinc-700 text-zinc-400 hover:text-amber-400 hover:border-amber-400' : 'bg-zinc-900/60 border-zinc-800 text-zinc-700 cursor-not-allowed'); ?>"
+                            data-game-id="<?php echo $game['id']; ?>"
+                            data-platinum="<?php echo $isPlatinum ? '1' : '0'; ?>"
+                            <?php echo $isZerado ? '' : 'disabled'; ?>
+                            title="<?php echo $isZerado ? ($isPlatinum ? 'Platinado — clique para desmarcar' : 'Marcar como platinado') : 'Disponível depois de marcar como Zerado'; ?>">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 pointer-events-none">
+                                <path d="M6 3h12v2h2a1 1 0 0 1 1 1v1a5 5 0 0 1-4.53 4.98A6.02 6.02 0 0 1 13 15.9V18h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.1a6.02 6.02 0 0 1-3.47-3.92A5 5 0 0 1 3 7V6a1 1 0 0 1 1-1h2V3Zm-2 4v0a3 3 0 0 0 2.4 2.94A9 9 0 0 1 6 7V6H4v1Zm14 0V6h-2v1a9 9 0 0 1-.4 2.94A3 3 0 0 0 18 7Z"/>
+                            </svg>
+                        </button>
+                    </div>
 
                     <div class="p-4 flex-1 flex flex-col">
                         <h3 class="font-bold text-white mb-3 line-clamp-2 leading-tight text-lg">

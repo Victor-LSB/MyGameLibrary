@@ -36,6 +36,7 @@ $routes = [
     'remove_custom_tag' => [GameController::class, 'removeCustomTag'],
     'delete_saved_tag' => [GameController::class, 'deleteSavedTag'],
     'change_status'  => [GameController::class, 'changeStatus'],
+    'toggle_platinum' => [GameController::class, 'togglePlatinum'],
     'change_rating'  => [GameController::class, 'changeRating'],
     'search'         => [GameController::class, 'search'],
     'ajax_search'    => [GameController::class, 'ajaxSearch'],

@@ -293,6 +293,67 @@ class GameController {
         }
     }
     
+    public function togglePlatinum() {
+        $this->startSession();
+        if (!isset($_SESSION['user_id'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Usuário não logado']);
+            exit();
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            Csrf::verifyOrFail();
+
+            $user_id = $_SESSION['user_id'];
+            $game_id = filter_input(INPUT_POST, 'game_id', FILTER_SANITIZE_NUMBER_INT);
+
+            if (!$game_id) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'ID do jogo inválido.']);
+                exit();
+            }
+
+            $gameInfo = $this->gameModel->getUserGameInfo($user_id, $game_id);
+
+            if (!$gameInfo) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Jogo não encontrado na sua biblioteca.']);
+                exit();
+            }
+
+            if (($gameInfo['status'] ?? null) !== 'Zerado') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Só é possível platinar um jogo que já está Zerado.']);
+                exit();
+            }
+
+            $newValue = empty($gameInfo['platinum_at']);
+
+            try {
+                $affected = $this->gameModel->setPlatinum($user_id, $game_id, $newValue);
+
+                if ($affected === 0) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Nenhum registro foi atualizado.']);
+                    exit();
+                }
+
+                if ($newValue) {
+                    $this->activityModel->log($user_id, 'status_changed', $game_id, 'Platinado');
+                }
+
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'platinum' => $newValue]);
+                exit();
+            } catch (\PDOException $e) {
+                error_log('togglePlatinum falhou: ' . $e->getMessage());
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Erro ao salvar no banco de dados.']);
+                exit();
+            }
+        }
+    }
+
     public function changeRating() {
         $this->startSession();
         if (!isset($_SESSION['user_id'])) {

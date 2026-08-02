@@ -60,6 +60,10 @@
     @apply bg-red-950 text-red-400;
   }
 
+  .feed-icon-platinum {
+    @apply bg-amber-950 text-amber-300;
+  }
+
   .feed-icon-review {
     @apply bg-violet-950 text-violet-400;
   }

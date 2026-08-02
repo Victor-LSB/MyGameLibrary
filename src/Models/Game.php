@@ -47,7 +47,7 @@ class Game {
     }
 
     public function getGamesByUserId($user_id, $status = null, $search = null, $tag = null) {
-        $sql = "SELECT g.*, ug.status, ug.rating, ug.completion_date, ug.time_spent_hours FROM games g JOIN user_games ug ON g.id = ug.game_id WHERE ug.user_id = ?";
+        $sql = "SELECT g.*, ug.status, ug.platinum_at, ug.rating, ug.completion_date, ug.time_spent_hours FROM games g JOIN user_games ug ON g.id = ug.game_id WHERE ug.user_id = ?";
         $params = [$user_id];
 
         if (!empty($search)) {
@@ -279,13 +279,27 @@ class Game {
     }
 
     public function updateGameStatus($user_id, $game_id, $status, $rating, $completion_date = null, $time_spent_hours = null) {
-        $sql = "UPDATE user_games SET status = ?, rating = ?, completion_date = ?, time_spent_hours = ? WHERE user_id = ? AND game_id = ?";
+        // Se o jogo deixar de estar Zerado, ele não pode continuar marcado como platinado.
+        $sql = "UPDATE user_games
+                SET status = ?, rating = ?, completion_date = ?, time_spent_hours = ?,
+                    platinum_at = IF(? = 'Zerado', platinum_at, NULL)
+                WHERE user_id = ? AND game_id = ?";
         $stmt = $this->conn->prepare($sql);
-        $stmt->execute([$status, $rating, $completion_date, $time_spent_hours, $user_id, $game_id]);
+        $stmt->execute([$status, $rating, $completion_date, $time_spent_hours, $status, $user_id, $game_id]);
 
         // Com PDO::MYSQL_ATTR_FOUND_ROWS ligado, rowCount() aqui reflete quantas
         // linhas BATERAM no WHERE (não só quantas mudaram de valor). Se vier 0,
         // o game_id/user_id não corresponde a nenhuma linha em user_games.
+        return $stmt->rowCount();
+    }
+
+    public function setPlatinum($user_id, $game_id, $platinum) {
+        // Só permite (des)platinar jogos que já estão marcados como Zerado.
+        $sql = "UPDATE user_games
+                SET platinum_at = ?
+                WHERE user_id = ? AND game_id = ? AND status = 'Zerado'";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([$platinum ? date('Y-m-d H:i:s') : null, $user_id, $game_id]);
         return $stmt->rowCount();
     }
 
@@ -296,7 +310,7 @@ class Game {
     }
 
     public function getUserGameInfo($user_id, $game_id) {
-        $sql = "SELECT g.id, g.external_id, g.title, g.cover_image, g.description, ug.status, ug.rating, ug.review, ug.completion_date, ug.time_spent_hours 
+        $sql = "SELECT g.id, g.external_id, g.title, g.cover_image, g.description, ug.status, ug.platinum_at, ug.rating, ug.review, ug.completion_date, ug.time_spent_hours 
             FROM games g 
             JOIN user_games ug ON g.id = ug.game_id 
             WHERE ug.user_id = ? AND g.id = ?";

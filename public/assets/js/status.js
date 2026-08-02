@@ -41,6 +41,20 @@ function updateStatusCard(gameId, newStatus) {
         btn.classList.toggle('is-active', isActive);
         btn.classList.toggle('is-inactive', !isActive);
     });
+
+    // O servidor limpa a platina automaticamente quando o status deixa de ser
+    // "Zerado", então o botão de troféu do card precisa refletir isso na hora.
+    const platinumBtn = cardGame.querySelector('.platinum-btn');
+    if (platinumBtn) {
+        const isZerado = newStatus === 'Zerado';
+        platinumBtn.disabled = !isZerado;
+        platinumBtn.dataset.platinum = '0';
+        platinumBtn.title = isZerado ? 'Marcar como platinado' : 'Disponível depois de marcar como Zerado';
+        platinumBtn.classList.remove('bg-amber-400', 'border-amber-400', 'text-zinc-900');
+        platinumBtn.classList.add(...(isZerado
+            ? ['bg-zinc-900/80', 'border-zinc-700', 'text-zinc-400']
+            : ['bg-zinc-900/60', 'border-zinc-800', 'text-zinc-700', 'cursor-not-allowed']));
+    }
 }
 
 function openCompletionModal(form) {
@@ -251,3 +265,54 @@ if (searchInput) {
         });
     });
 }
+
+const platinumButtons = document.querySelectorAll('.platinum-btn');
+const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+const csrfToken = csrfTokenMeta ? csrfTokenMeta.content : '';
+
+platinumButtons.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        if (btn.disabled) return;
+
+        const gameId = btn.dataset.gameId;
+        const dados = new FormData();
+        dados.set('csrf_token', csrfToken);
+        dados.set('game_id', gameId);
+
+        fetch('index.php?action=toggle_platinum', {
+            method: 'POST',
+            body: dados
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error('Erro ao atualizar platina: ' + response.statusText);
+            }
+            return response.json();
+        }).then(data => {
+            if (data.success) {
+                const isPlatinum = !!data.platinum;
+                btn.dataset.platinum = isPlatinum ? '1' : '0';
+                btn.title = isPlatinum ? 'Platinado — clique para desmarcar' : 'Marcar como platinado';
+                btn.classList.toggle('bg-amber-400', isPlatinum);
+                btn.classList.toggle('border-amber-400', isPlatinum);
+                btn.classList.toggle('text-zinc-900', isPlatinum);
+                btn.classList.toggle('bg-zinc-900/80', !isPlatinum);
+                btn.classList.toggle('border-zinc-700', !isPlatinum);
+                btn.classList.toggle('text-zinc-400', !isPlatinum);
+
+                Toast.fire({
+                    icon: 'success',
+                    title: isPlatinum ? 'Jogo platinado!' : 'Platina removida.'
+                });
+            } else {
+                throw new Error(data.message || 'Erro desconhecido ao atualizar platina');
+            }
+        }).catch(error => {
+            console.error('Erro:', error);
+            Toast.fire({
+                icon: 'error',
+                title: 'Erro ao atualizar platina',
+                text: error.message
+            });
+        });
+    });
+});
