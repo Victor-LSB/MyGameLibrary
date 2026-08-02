@@ -84,7 +84,7 @@
 
         article.innerHTML = `
             ${avatarHtml}
-            <div class="flex-1 min-w-0">
+            <div class="comment-body flex-1 min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
                     <a href="index.php?action=profile&u=${encodeURIComponent(comment.username)}" class="text-white text-sm font-bold hover:text-violet-400 transition-colors">
                         ${escapeHtml(comment.display_name || comment.username)}
@@ -111,7 +111,7 @@
 
         const fragment = replyFormTemplate.content.cloneNode(true);
         const form = fragment.querySelector('.comment-reply-form');
-        const content = article.querySelector(':scope > div');
+        const content = article.querySelector(':scope > .comment-body');
         content.appendChild(form);
         const textarea = form.querySelector('textarea');
         enableAutoGrow(textarea);
@@ -288,4 +288,33 @@
             submitBtn.disabled = false;
         }
     });
+
+    // Ao chegar via link com #comment-ID (ex: clicando numa notificação),
+    // garante que o comentário-alvo fique visível: se for uma resposta,
+    // o container de respostas começa fechado, então precisa ser aberto
+    // antes de rolar até ele.
+    function goToTargetComment() {
+        const hash = window.location.hash;
+        if (!hash.startsWith('#comment-')) return;
+
+        const target = document.querySelector(hash);
+        if (!target) return;
+
+        const repliesDiv = target.closest('.comment-replies');
+        if (repliesDiv && repliesDiv.classList.contains('hidden')) {
+            const toggleBtn = repliesDiv.previousElementSibling;
+            if (toggleBtn && toggleBtn.classList.contains('comment-toggle-replies-btn')) {
+                repliesDiv.classList.remove('hidden');
+                toggleBtn.dataset.expanded = 'true';
+                const chevron = toggleBtn.querySelector('.comment-toggle-chevron');
+                if (chevron) chevron.classList.add('rotate-180');
+            }
+        }
+
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        target.classList.add('ring-2', 'ring-violet-500');
+        setTimeout(() => target.classList.remove('ring-2', 'ring-violet-500'), 2500);
+    }
+
+    goToTargetComment();
 })();

@@ -82,9 +82,13 @@
         }
 
         if (notif.type === 'profile_comment' || notif.type === 'profile_comment_reply') {
-            // Nesses dois casos o perfil comentado é o do próprio usuário
-            // logado (é quem recebeu a notificação), não o do ator.
-            return `index.php?action=profile#comment-${encodeURIComponent(notif.related_id)}`;
+            // O perfil onde o comentário foi feito nem sempre é o do
+            // usuário logado: numa resposta, quem é notificado é o autor
+            // do comentário-pai, que pode ter comentado no perfil de
+            // outra pessoa. Por isso usamos o "profile_username" vindo
+            // do backend em vez de assumir sempre o próprio perfil.
+            if (!notif.profile_username) return null;
+            return `index.php?action=profile&u=${encodeURIComponent(notif.profile_username)}#comment-${encodeURIComponent(notif.related_id)}`;
         }
 
         return null;

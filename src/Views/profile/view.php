@@ -46,7 +46,7 @@
                 ?>
                 <article id="comment-<?php echo (int) $comment['id']; ?>" class="<?php echo $wrapClasses; ?>" data-comment-id="<?php echo (int) $comment['id']; ?>" data-author-id="<?php echo (int) $comment['author_id']; ?>">
                     <?php echo mgl_render_comment_avatar($comment, $isReply ? 'w-8 h-8' : 'w-10 h-10'); ?>
-                    <div class="flex-1 min-w-0">
+                    <div class="comment-body flex-1 min-w-0">
                         <div class="flex items-center gap-2 flex-wrap">
                             <a href="index.php?action=profile&u=<?php echo urlencode($comment['username']); ?>" class="text-white text-sm font-bold hover:text-violet-400 transition-colors">
                                 <?php echo htmlspecialchars($comment['display_name'] ?: $comment['username']); ?>

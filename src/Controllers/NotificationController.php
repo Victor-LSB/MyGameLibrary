@@ -62,9 +62,13 @@ class NotificationController {
                 u.username as actor_username,
                 u.display_name as actor_display_name,
                 u.username as actor_name,
-                u.avatar as actor_avatar
+                u.avatar as actor_avatar,
+                pu.username as profile_username
             FROM notifications n
             INNER JOIN users u ON u.id = n.actor_id
+            LEFT JOIN profile_comments pc ON pc.id = n.related_id
+                AND n.type IN ('profile_comment', 'profile_comment_reply')
+            LEFT JOIN users pu ON pu.id = pc.profile_user_id
             WHERE n.user_id = ?
             ORDER BY n.created_at DESC
             LIMIT 10
