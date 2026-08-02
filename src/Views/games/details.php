@@ -153,7 +153,7 @@
                                 <span class="block mt-2 text-xs text-zinc-500">Exemplo: RPG, Coop, Relaxante</span>
                             </label>
                             <div>
-                                <button type="submit" class="w-full sm:w-auto bg-violet-600 hover:bg-violet-500 text-white px-8 py-3 rounded-sm font-black uppercase tracking-widest text-sm transition-colors shadow-lg">Guardar Análise</button>
+                                <button type="submit" class="w-full sm:w-auto bg-violet-600 hover:bg-violet-500 text-white px-8 py-3 rounded-sm font-black uppercase tracking-widest text-sm transition-colors shadow-lg">Salvar Análise</button>
                             </div>
                         </form>
                     <?php else: ?>

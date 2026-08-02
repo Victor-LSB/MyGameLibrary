@@ -78,7 +78,7 @@ class AuthController {
             // No máximo 5 tentativas de login a cada 15 minutos por IP + email
             $rlKey = $this->rateLimiter->key('login', $this->clientIp(), $email);
             if ($this->rateLimiter->tooManyAttempts($rlKey, 5, 15)) {
-                $wait = $this->rateLimiter->minutesUntilReset($rlKey, 15);
+                $wait = $this->rateLimiter->minutesUntilReset($rlKey, 5);
                 $error = "Muitas tentativas de login. Tente novamente em {$wait} minuto(s).";
                 include __DIR__ . '/../Views/auth/login.php';
                 return;
