@@ -1,3 +1,15 @@
+<?php
+    // Essas variáveis vêm do GameController::index() (que faz include desta
+    // view, então elas já chegam definidas em tempo de execução). Os valores
+    // padrão abaixo são só pra deixar isso explícito pro analisador estático
+    // do editor e pra proteger a view caso seja incluída de outro lugar.
+    $current_page = $current_page ?? 1;
+    $total_pages = $total_pages ?? 1;
+    $total_games = $total_games ?? 0;
+    $search_query = $search_query ?? '';
+    $filter_status = $filter_status ?? '';
+    $filter_tag = $filter_tag ?? '';
+?>
 <?php require_once __DIR__ . '/../header.php'; ?>
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen selection:bg-violet-600 selection:text-white">
 
@@ -18,7 +30,12 @@
         <?php endif; ?>
 
         <div class="flex flex-col sm:flex-row justify-between items-end mb-6 gap-4">
-            <h2 class="text-2xl font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3">Minha Biblioteca</h2>
+            <h2 class="text-2xl font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3">
+                Minha Biblioteca
+                <?php if (!empty($userGames) || !empty($search_query) || !empty($filter_status) || !empty($filter_tag)): ?>
+                    <span class="text-zinc-500 text-base font-bold normal-case">(<?php echo (int) ($total_games ?? 0); ?> <?php echo ($total_games ?? 0) === 1 ? 'jogo' : 'jogos'; ?>)</span>
+                <?php endif; ?>
+            </h2>
         </div>
 
         <?php if (!empty($filter_tag)): ?>
@@ -65,6 +82,9 @@
                 <?php if (!empty($filter_tag)): ?>
                     <input type="hidden" name="tag" value="<?php echo htmlspecialchars($filter_tag ?? ''); ?>">
                 <?php endif; ?>
+                <?php if (!empty($filter_status)): ?>
+                    <input type="hidden" name="filter_status" value="<?php echo htmlspecialchars($filter_status ?? ''); ?>">
+                <?php endif; ?>
                 <input id="searchInput" type="text" name="search" placeholder="Buscar na biblioteca..."  autocomplete="off" value="<?php echo htmlspecialchars($search_query ?? ''); ?>" 
                     class="flex-1 bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 font-medium placeholder-zinc-600">
             </form>
@@ -73,6 +93,9 @@
                 <input type="hidden" name="action" value="home">
                 <?php if (!empty($filter_tag)): ?>
                     <input type="hidden" name="tag" value="<?php echo htmlspecialchars($filter_tag ?? ''); ?>">
+                <?php endif; ?>
+                <?php if (!empty($search_query)): ?>
+                    <input type="hidden" name="search" value="<?php echo htmlspecialchars($search_query ?? ''); ?>">
                 <?php endif; ?>
                 <select name="filter_status" class="filterStatus w-full bg-zinc-950 border-2 border-zinc-800 text-white font-medium rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 cursor-pointer appearance-none">
                     <option value="">Todos os status</option>
@@ -176,6 +199,16 @@
                             <form action="index.php?action=delete_game" method="post">
                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                                 <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
+                                <input type="hidden" name="page" value="<?php echo (int) ($current_page ?? 1); ?>">
+                                <?php if (!empty($search_query)): ?>
+                                    <input type="hidden" name="search" value="<?php echo htmlspecialchars($search_query ?? ''); ?>">
+                                <?php endif; ?>
+                                <?php if (!empty($filter_status)): ?>
+                                    <input type="hidden" name="filter_status" value="<?php echo htmlspecialchars($filter_status ?? ''); ?>">
+                                <?php endif; ?>
+                                <?php if (!empty($filter_tag)): ?>
+                                    <input type="hidden" name="tag" value="<?php echo htmlspecialchars($filter_tag ?? ''); ?>">
+                                <?php endif; ?>
                                 <button type="submit" class="w-full text-[11px] uppercase tracking-wider font-bold py-2 mt-1 text-zinc-400 bg-zinc-950 border border-zinc-800 rounded-sm hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors">Remover</button>
                             </form>
                         </div>
@@ -184,6 +217,33 @@
             <?php endforeach; ?>
             
             </div>
+
+            <?php if ($total_pages > 1): ?>
+                <?php
+                    $buildPageUrl = function ($targetPage) use ($search_query, $filter_status, $filter_tag) {
+                        $params = ['action' => 'home', 'page' => $targetPage];
+                        if (!empty($search_query)) $params['search'] = $search_query;
+                        if (!empty($filter_status)) $params['filter_status'] = $filter_status;
+                        if (!empty($filter_tag)) $params['tag'] = $filter_tag;
+                        return 'index.php?' . http_build_query($params);
+                    };
+                ?>
+                <div class="mt-8 flex items-center justify-center gap-3">
+                    <?php if ($current_page > 1): ?>
+                        <a href="<?php echo htmlspecialchars($buildPageUrl($current_page - 1)); ?>" class="bg-zinc-900 border-2 border-zinc-800 text-white px-4 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm hover:border-violet-500 transition-colors">← Anterior</a>
+                    <?php else: ?>
+                        <span class="bg-zinc-900 border-2 border-zinc-800 text-zinc-700 px-4 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm cursor-not-allowed">← Anterior</span>
+                    <?php endif; ?>
+
+                    <span class="text-zinc-400 text-sm font-bold uppercase tracking-wide px-2">Página <?php echo (int) $current_page; ?> de <?php echo (int) $total_pages; ?></span>
+
+                    <?php if ($current_page < $total_pages): ?>
+                        <a href="<?php echo htmlspecialchars($buildPageUrl($current_page + 1)); ?>" class="bg-zinc-900 border-2 border-zinc-800 text-white px-4 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm hover:border-violet-500 transition-colors">Próxima →</a>
+                    <?php else: ?>
+                        <span class="bg-zinc-900 border-2 border-zinc-800 text-zinc-700 px-4 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm cursor-not-allowed">Próxima →</span>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
         <?php else: ?>
             <div class="bg-zinc-900 border-2 border-zinc-800 rounded-sm p-16 text-center shadow-xl mt-8">
                 <div class="text-zinc-700 mb-4 text-6xl">👾</div>

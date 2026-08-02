@@ -45,7 +45,22 @@ class GameController {
         $filter_status = filter_input(INPUT_GET, 'filter_status', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         $filter_tag = filter_input(INPUT_GET, 'tag', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
-        $userGames = $this->gameModel->getGamesByUserId($user_id, $filter_status, $search_query, $filter_tag);
+        $per_page = 25;
+        $current_page = (int) (filter_input(INPUT_GET, 'page', FILTER_SANITIZE_NUMBER_INT) ?: 1);
+        if ($current_page < 1) {
+            $current_page = 1;
+        }
+
+        $total_games = $this->gameModel->countGamesByUserId($user_id, $filter_status, $search_query, $filter_tag);
+        $total_pages = max(1, (int) ceil($total_games / $per_page));
+
+        // Se a pessoa cair numa página que não existe mais (ex.: aplicou um
+        // filtro que reduziu o total), volta pra última página válida.
+        if ($current_page > $total_pages) {
+            $current_page = $total_pages;
+        }
+
+        $userGames = $this->gameModel->getGamesByUserId($user_id, $filter_status, $search_query, $filter_tag, $current_page, $per_page);
         $userTags = $this->gameModel->getUniqueTagsForUser($user_id);
         include __DIR__ . '/../Views/games/index.php';
     }
@@ -339,7 +354,7 @@ class GameController {
                 }
 
                 if ($newValue) {
-                    $this->activityModel->log($user_id, 'status_changed', $game_id, 'Platinado');
+                    $this->activityModel->log($user_id, 'status_changed', $game_id, 'Platina');
                 }
 
                 header('Content-Type: application/json');
@@ -432,7 +447,32 @@ class GameController {
                 $this->gameModel->deleteGameFromUser($_SESSION['user_id'], $game_id);
             }
         }
-        header("Location: index.php?action=home");
+
+        // Volta pra mesma página/filtro em que a pessoa estava, em vez de
+        // sempre jogar de volta pro início da biblioteca.
+        $redirectParams = ['action' => 'home'];
+
+        $page = filter_input(INPUT_POST, 'page', FILTER_SANITIZE_NUMBER_INT);
+        if ($page && (int) $page > 1) {
+            $redirectParams['page'] = (int) $page;
+        }
+
+        $search = filter_input(INPUT_POST, 'search', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        if (!empty($search)) {
+            $redirectParams['search'] = $search;
+        }
+
+        $filterStatus = filter_input(INPUT_POST, 'filter_status', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        if (!empty($filterStatus)) {
+            $redirectParams['filter_status'] = $filterStatus;
+        }
+
+        $tag = filter_input(INPUT_POST, 'tag', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        if (!empty($tag)) {
+            $redirectParams['tag'] = $tag;
+        }
+
+        header("Location: index.php?" . http_build_query($redirectParams));
         exit();
     }
 

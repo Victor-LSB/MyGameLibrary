@@ -46,22 +46,22 @@ class Game {
         return $stmt->fetch() !== false;
     }
 
-    public function getGamesByUserId($user_id, $status = null, $search = null, $tag = null) {
-        $sql = "SELECT g.*, ug.status, ug.platinum_at, ug.rating, ug.completion_date, ug.time_spent_hours FROM games g JOIN user_games ug ON g.id = ug.game_id WHERE ug.user_id = ?";
+    private function buildLibraryFilter($user_id, $status, $search, $tag) {
+        $where = "ug.user_id = ?";
         $params = [$user_id];
 
         if (!empty($search)) {
-            $sql .= " AND g.title LIKE ?";
+            $where .= " AND g.title LIKE ?";
             $params[] = '%' . $search . '%';
         }
 
         if (!empty($status)) {
-            $sql .= " AND ug.status = ?";
+            $where .= " AND ug.status = ?";
             $params[] = $status;
         }
 
         if (!empty($tag)) {
-            $sql .= " AND EXISTS (
+            $where .= " AND EXISTS (
                 SELECT 1
                 FROM game_tags gt
                 INNER JOIN tags t ON t.id = gt.tag_id
@@ -72,9 +72,37 @@ class Game {
             $params[] = $tag;
         }
 
+        return [$where, $params];
+    }
+
+    public function getGamesByUserId($user_id, $status = null, $search = null, $tag = null, $page = 1, $perPage = 24) {
+        [$whereSql, $params] = $this->buildLibraryFilter($user_id, $status, $search, $tag);
+
+        // Nunca confiar em page/perPage vindos de fora sem validar: aqui viram
+        // inteiros positivos antes de entrar direto na string do SQL (mesmo
+        // padrão de LIMIT já usado em Activity::getFeedForUser).
+        $perPage = max(1, (int) $perPage);
+        $page = max(1, (int) $page);
+        $offset = ($page - 1) * $perPage;
+
+        $sql = "SELECT g.*, ug.status, ug.platinum_at, ug.rating, ug.completion_date, ug.time_spent_hours
+                FROM games g JOIN user_games ug ON g.id = ug.game_id
+                WHERE $whereSql
+                ORDER BY ug.id DESC
+                LIMIT $perPage OFFSET $offset";
+
         $stmt = $this->conn->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function countGamesByUserId($user_id, $status = null, $search = null, $tag = null) {
+        [$whereSql, $params] = $this->buildLibraryFilter($user_id, $status, $search, $tag);
+
+        $sql = "SELECT COUNT(*) FROM games g JOIN user_games ug ON g.id = ug.game_id WHERE $whereSql";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
     }
 
     private function normalizeTags($tags) {

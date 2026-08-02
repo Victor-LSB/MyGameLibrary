@@ -1,7 +1,6 @@
 const formStatus = document.querySelectorAll('.formStatus');
 const ratingForm = document.querySelectorAll('.ratingForm');
 const searchInput = document.getElementById('searchInput');
-const gameList = document.querySelectorAll('.gameItem');
 const filterStatus = document.querySelector('.filterStatus');
 const completionModal = document.getElementById('completionModal');
 const completionForm = document.getElementById('completionForm');
@@ -241,28 +240,25 @@ ratingForm.forEach(function(form) {
 });
 
 if (filterStatus) {
-    filterStatus.addEventListener('change', function(event) {
-        event.preventDefault();
-        const selectedStatus = filterStatus.value;
-
-        gameList.forEach(function(game) {
-            const pStatus = game.querySelector('.gameStatus');
-            if (pStatus) {
-                const status = pStatus.textContent.replace('Status: ', '').trim();
-                game.style.display = (selectedStatus === '' || status === selectedStatus) ? 'block' : 'none';
-            }
-        });
+    // Antes filtrava só os cards já carregados na tela. Com paginação real
+    // no servidor, isso teria que valer pra biblioteca inteira — então agora
+    // o select manda a página recarregar com o filtro aplicado de verdade.
+    filterStatus.addEventListener('change', function() {
+        filterStatus.form.submit();
     });
 }
 
 if (searchInput) {
+    // Mesmo motivo do filtro de status: filtrar só o DOM local escondia
+    // resultados que estavam em outras páginas. Aqui a busca dispara um
+    // reload de verdade, com um pequeno atraso pra não recarregar a cada
+    // tecla digitada.
+    let searchDebounceTimer = null;
     searchInput.addEventListener('input', function() {
-        const termoPesquisa = searchInput.value.toLowerCase();
-
-        gameList.forEach(function(game) {
-            const titulo = game.querySelector('h3').textContent.toLowerCase();
-            game.style.display = titulo.includes(termoPesquisa) ? 'block' : 'none';
-        });
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(function() {
+            searchInput.form.submit();
+        }, 500);
     });
 }
 
