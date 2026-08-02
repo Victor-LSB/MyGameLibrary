@@ -13,6 +13,77 @@
     <?php $followingList = $followingList ?? []; ?>
     <?php $followersList = $followersList ?? []; ?>
     <?php $followSuggestions = $followSuggestions ?? []; ?>
+    <?php $profileComments = $profileComments ?? []; ?>
+    <?php
+        if (!function_exists('mgl_avatar_path')) {
+            function mgl_avatar_path($avatar) {
+                if (empty($avatar)) return null;
+                return str_starts_with($avatar, 'http') ? $avatar : './uploads/profile/' . basename($avatar);
+            }
+        }
+
+        if (!function_exists('mgl_render_comment_avatar')) {
+            function mgl_render_comment_avatar($user, $sizeClasses) {
+                $path = mgl_avatar_path($user['avatar'] ?? null);
+                if ($path) {
+                    return '<img src="' . htmlspecialchars($path) . '" alt="' . htmlspecialchars($user['username']) . '" class="' . $sizeClasses . ' rounded-sm object-cover shrink-0 bg-zinc-950">';
+                }
+                $initial = substr($user['username'] ?? '?', 0, 1);
+                return '<div class="' . $sizeClasses . ' rounded-sm shrink-0 bg-zinc-800 flex items-center justify-center text-zinc-500 font-black uppercase">' . htmlspecialchars($initial) . '</div>';
+            }
+        }
+
+        if (!function_exists('mgl_render_comment')) {
+            function mgl_render_comment($comment, $currentUserId, $profileUserId, $isReply = false) {
+                $isRemoved = $comment['removed_at'] !== null;
+                $isAuthor = $currentUserId !== null && (int) $currentUserId === (int) $comment['author_id'];
+                $isOwner = $currentUserId !== null && (int) $currentUserId === (int) $profileUserId;
+                $canDelete = !$isRemoved && ($isAuthor || $isOwner);
+                $canReply = !$isReply && !$isRemoved && $currentUserId !== null;
+                $wrapClasses = $isReply ? 'flex gap-3 py-3 pl-10' : 'flex gap-3 py-4';
+
+                ob_start();
+                ?>
+                <article id="comment-<?php echo (int) $comment['id']; ?>" class="<?php echo $wrapClasses; ?>" data-comment-id="<?php echo (int) $comment['id']; ?>" data-author-id="<?php echo (int) $comment['author_id']; ?>">
+                    <?php echo mgl_render_comment_avatar($comment, $isReply ? 'w-8 h-8' : 'w-10 h-10'); ?>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <a href="index.php?action=profile&u=<?php echo urlencode($comment['username']); ?>" class="text-white text-sm font-bold hover:text-violet-400 transition-colors">
+                                <?php echo htmlspecialchars($comment['display_name'] ?: $comment['username']); ?>
+                            </a>
+                            <time class="text-zinc-500 text-xs"><?php echo htmlspecialchars($comment['created_at']); ?></time>
+                        </div>
+                        <p class="comment-content text-zinc-300 text-sm mt-0.5 whitespace-pre-wrap break-words"><?php echo $isRemoved ? '<span class="italic text-zinc-600">Comentário removido.</span>' : htmlspecialchars($comment['content']); ?></p>
+                        <?php if ($canReply || $canDelete): ?>
+                            <div class="flex items-center gap-4 mt-2">
+                                <?php if ($canReply): ?>
+                                    <button type="button" class="comment-reply-btn text-zinc-500 hover:text-violet-400 text-xs font-bold uppercase tracking-wide transition-colors">Responder</button>
+                                <?php endif; ?>
+                                <?php if ($canDelete): ?>
+                                    <button type="button" class="comment-delete-btn text-zinc-500 hover:text-red-400 text-xs font-bold uppercase tracking-wide transition-colors">Apagar</button>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if (!$isReply): ?>
+                            <?php $replies = $comment['replies'] ?? []; $repliesCount = count($replies); ?>
+                            <button type="button" class="comment-toggle-replies-btn flex items-center gap-1.5 text-violet-400 hover:text-violet-300 text-xs font-bold uppercase tracking-wide transition-colors mt-4 <?php echo $repliesCount > 0 ? '' : 'hidden'; ?>" data-expanded="false">
+                                <svg class="comment-toggle-chevron w-3.5 h-3.5 transition-transform duration-200" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
+                                Respostas (<span class="comment-replies-count"><?php echo $repliesCount; ?></span>)
+                            </button>
+                            <div class="comment-replies mt-3 space-y-1 border-l-2 border-zinc-800 hidden">
+                                <?php foreach ($replies as $reply): ?>
+                                    <?php echo mgl_render_comment($reply, $currentUserId, $profileUserId, true); ?>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </article>
+                <?php
+                return ob_get_clean();
+            }
+        }
+    ?>
     <title>Perfil de <?php echo htmlspecialchars($profileUser['display_name'] ?: $profileUser['username']); ?> - MyGameLibrary</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" type="image/png" href="assets/icon/icong.png?v=1">
@@ -219,6 +290,42 @@
             </aside>
         </div>
 
+        <section id="profileComments" class="bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl p-6 sm:p-8 mt-10" data-profile-user-id="<?php echo (int) $profileUserId; ?>">
+            <h2 class="text-2xl font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3 mb-6">
+                Comentários (<span id="commentsCount"><?php echo count($profileComments); ?></span>)
+            </h2>
+
+            <?php if ($currentUserId !== null): ?>
+                <form id="newCommentForm" class="flex flex-col sm:flex-row gap-3 mb-8">
+                    <textarea name="content" maxlength="1000" rows="2" required placeholder="Deixe um comentário no perfil de <?php echo htmlspecialchars($profileUser['display_name'] ?: $profileUser['username']); ?>..." class="flex-1 bg-zinc-950 border-2 border-zinc-800 rounded-sm p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-violet-500 resize-none"></textarea>
+                    <button type="submit" class="shrink-0 bg-violet-600 hover:bg-violet-500 text-white px-6 py-2.5 rounded-sm font-black uppercase tracking-wide text-xs transition-colors self-start sm:self-end">Comentar</button>
+                </form>
+            <?php else: ?>
+                <p class="text-zinc-500 text-sm mb-8">
+                    <a href="index.php?action=login" class="text-violet-400 hover:underline">Faça login</a> para comentar neste perfil.
+                </p>
+            <?php endif; ?>
+
+            <div id="commentsList" class="divide-y divide-zinc-800">
+                <?php foreach ($profileComments as $comment): ?>
+                    <?php echo mgl_render_comment($comment, $currentUserId, $profileUserId); ?>
+                <?php endforeach; ?>
+            </div>
+            <p id="noCommentsMsg" class="text-zinc-500 text-sm py-6 text-center <?php echo !empty($profileComments) ? 'hidden' : ''; ?>">
+                Seja o primeiro a comentar por aqui.
+            </p>
+
+            <template id="replyFormTemplate">
+                <form class="comment-reply-form flex flex-col sm:flex-row gap-2 mt-3 pl-10">
+                    <textarea name="content" maxlength="1000" rows="1" required placeholder="Escreva uma resposta..." class="flex-1 bg-zinc-950 border-2 border-zinc-800 rounded-sm p-2 text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-violet-500 resize-none"></textarea>
+                    <div class="flex gap-2 shrink-0 self-start sm:self-end">
+                        <button type="submit" class="bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 rounded-sm font-black uppercase tracking-wide text-[10px] transition-colors">Responder</button>
+                        <button type="button" class="comment-reply-cancel bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-2 rounded-sm font-black uppercase tracking-wide text-[10px] transition-colors">Cancelar</button>
+                    </div>
+                </form>
+            </template>
+        </section>
+
     </main>
 
     <script>
@@ -242,6 +349,7 @@
 
     <script src="./assets/js/follow.js"></script>
     <script src="./assets/js/notifications.js"></script>
+    <script src="./assets/js/profile-comments.js"></script>
 
     <?php if (isset($_SESSION['profile_success'])): ?>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

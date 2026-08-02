@@ -81,6 +81,12 @@
             return `index.php?action=profile&u=${encodeURIComponent(notif.actor_username)}`;
         }
 
+        if (notif.type === 'profile_comment' || notif.type === 'profile_comment_reply') {
+            // Nesses dois casos o perfil comentado é o do próprio usuário
+            // logado (é quem recebeu a notificação), não o do ator.
+            return `index.php?action=profile#comment-${encodeURIComponent(notif.related_id)}`;
+        }
+
         return null;
     }
 

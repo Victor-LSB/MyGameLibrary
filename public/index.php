@@ -17,6 +17,7 @@ use Victi\MyGameLibrary\Controllers\AuthController;
 use Victi\MyGameLibrary\Controllers\DashboardController;
 use Victi\MyGameLibrary\Controllers\GameController;
 use Victi\MyGameLibrary\Controllers\ProfileController;
+use Victi\MyGameLibrary\Controllers\ProfileCommentController;
 use Victi\MyGameLibrary\Controllers\FollowController;
 use Victi\MyGameLibrary\Controllers\FeedController;
 use Victi\MyGameLibrary\Controllers\NotificationController;
@@ -49,6 +50,8 @@ $routes = [
     'edit_profile'   => [ProfileController::class, 'edit'],
     'update_profile' => [ProfileController::class, 'update'],
     'change_password' => [ProfileController::class, 'changePassword'],
+    'profile_comment_add' => [ProfileCommentController::class, 'add'],
+    'profile_comment_delete' => [ProfileCommentController::class, 'delete'],
     'follow_toggle'  => [FollowController::class, 'toggle'],
     'search_users'   => [FollowController::class, 'searchUsers'],
     'feed'           => [FeedController::class, 'index'],

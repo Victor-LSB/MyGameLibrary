@@ -49,7 +49,11 @@ function updateStatusCard(gameId, newStatus) {
         platinumBtn.disabled = !isZerado;
         platinumBtn.dataset.platinum = '0';
         platinumBtn.title = isZerado ? 'Marcar como platinado' : 'Disponível depois de marcar como Zerado';
-        platinumBtn.classList.remove('bg-amber-400', 'border-amber-400', 'text-zinc-900');
+        platinumBtn.classList.remove(
+            'bg-amber-400', 'border-amber-400', 'text-zinc-900',
+            'bg-zinc-900/80', 'border-zinc-700', 'text-zinc-400',
+            'bg-zinc-900/60', 'border-zinc-800', 'text-zinc-700', 'cursor-not-allowed'
+        );
         platinumBtn.classList.add(...(isZerado
             ? ['bg-zinc-900/80', 'border-zinc-700', 'text-zinc-400']
             : ['bg-zinc-900/60', 'border-zinc-800', 'text-zinc-700', 'cursor-not-allowed']));

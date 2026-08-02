@@ -3,6 +3,7 @@ namespace Victi\MyGameLibrary\Controllers;
 use Victi\MyGameLibrary\Database\Database;
 use Victi\MyGameLibrary\Models\User;
 use Victi\MyGameLibrary\Models\Game;
+use Victi\MyGameLibrary\Models\ProfileComment;
 use Victi\MyGameLibrary\Services\Csrf;
 use Victi\MyGameLibrary\Services\PasswordPolicy;
 
@@ -10,6 +11,7 @@ class ProfileController {
     private $db;
     private $userModel;
     private $gameModel;
+    private $commentModel;
 
     public function __construct() {
         $database = new Database();
@@ -18,6 +20,7 @@ class ProfileController {
         if ($this->db) {
             $this->userModel = new User($this->db);
             $this->gameModel = new Game($this->db);
+            $this->commentModel = new ProfileComment($this->db);
         }
     }
 
@@ -95,6 +98,8 @@ class ProfileController {
             $followController = new FollowController();
             $followSuggestions = $followController->getFollowSuggestions($currentUserId, 5);
         }
+
+        $profileComments = $this->commentModel->getByProfile($profileUserId);
 
         include __DIR__ . '/../Views/profile/view.php';
     }
