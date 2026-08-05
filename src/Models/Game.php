@@ -177,6 +177,41 @@ class Game {
         }
     }
 
+    /**
+     * Adiciona tags ao jogo sem apagar as que já existem (diferente de
+     * saveTagsForGame, que substitui a lista inteira). Usado no formulário
+     * de análise, onde o campo serve só para acrescentar novas tags.
+     */
+    public function addTagsForGame($user_id, $game_id, $tags) {
+        $cleanTags = $this->normalizeTags($tags);
+
+        if (empty($cleanTags)) {
+            return true;
+        }
+
+        try {
+            $this->conn->beginTransaction();
+
+            $insertSql = "INSERT IGNORE INTO game_tags (user_id, game_id, tag_id) VALUES (?, ?, ?)";
+            $insertStmt = $this->conn->prepare($insertSql);
+
+            foreach ($cleanTags as $tagName) {
+                $tagId = $this->getOrCreateTagId($user_id, $tagName);
+                $insertStmt->execute([$user_id, $game_id, $tagId]);
+            }
+
+            $this->conn->commit();
+            return true;
+        } catch (\Throwable $e) {
+            if ($this->conn->inTransaction()) {
+                $this->conn->rollBack();
+            }
+
+            error_log('Erro ao adicionar tags do jogo: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     public function deleteSavedTagsForGame($user_id, $game_id) {
         try {
             $this->conn->beginTransaction();

@@ -482,26 +482,75 @@ class GameController {
         exit();
     }
 
-    public function removeCustomTag() {
+    public function addTag() {
         $this->startSession();
+        header('Content-Type: application/json');
+
         if (!isset($_SESSION['user_id'])) {
-            header("Location: index.php?action=login");
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Não autenticado']);
             exit();
         }
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            Csrf::verifyOrFail();
-
-            $game_id = filter_input(INPUT_POST, 'game_id', FILTER_SANITIZE_NUMBER_INT);
-            $tag_id = filter_input(INPUT_POST, 'tag_id', FILTER_SANITIZE_NUMBER_INT);
-
-            if ($game_id && $tag_id) {
-                $this->gameModel->removeCustomTagFromGame($_SESSION['user_id'], $game_id, $tag_id);
-                $_SESSION['review_success'] = 'Tag removida com sucesso!';
-            }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Método inválido']);
+            exit();
         }
 
-        header("Location: index.php?action=details&id=" . urlencode((string) ($_POST['game_id'] ?? '')) . "&u=" . urlencode($_SESSION['username'] ?? ''));
+        Csrf::verifyOrFail();
+
+        $game_id = filter_input(INPUT_POST, 'game_id', FILTER_SANITIZE_NUMBER_INT);
+        $tags_string = $_POST['tags'] ?? '';
+        $tags_array = array_values(array_filter(array_map('trim', explode(',', $tags_string))));
+
+        if (!$game_id) {
+            echo json_encode(['success' => false, 'message' => 'ID do jogo inválido.']);
+            exit();
+        }
+
+        if (empty($tags_array)) {
+            echo json_encode(['success' => false, 'message' => 'Digite ao menos uma tag.']);
+            exit();
+        }
+
+        $this->gameModel->addTagsForGame($_SESSION['user_id'], $game_id, $tags_array);
+
+        $tags = $this->gameModel->getTagsForGame($_SESSION['user_id'], $game_id);
+
+        echo json_encode(['success' => true, 'tags' => $tags]);
+        exit();
+    }
+
+    public function removeCustomTag() {
+        $this->startSession();
+        header('Content-Type: application/json');
+
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Não autenticado']);
+            exit();
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Método inválido']);
+            exit();
+        }
+
+        Csrf::verifyOrFail();
+
+        $game_id = filter_input(INPUT_POST, 'game_id', FILTER_SANITIZE_NUMBER_INT);
+        $tag_id = filter_input(INPUT_POST, 'tag_id', FILTER_SANITIZE_NUMBER_INT);
+
+        if (!$game_id || !$tag_id) {
+            echo json_encode(['success' => false, 'message' => 'Dados inválidos.']);
+            exit();
+        }
+
+        $this->gameModel->removeCustomTagFromGame($_SESSION['user_id'], $game_id, $tag_id);
+
+        $tags = $this->gameModel->getTagsForGame($_SESSION['user_id'], $game_id);
+
+        echo json_encode(['success' => true, 'tags' => $tags]);
         exit();
     }
 
@@ -559,7 +608,7 @@ class GameController {
 
             if ($game_id) {
                 $this->gameModel->updateReviewWithCompletionData($review, $completion_date, $time_spent_hours, $_SESSION['user_id'], $game_id);
-                $this->gameModel->saveTagsForGame($_SESSION['user_id'], $game_id, $tags_array);
+                $this->gameModel->addTagsForGame($_SESSION['user_id'], $game_id, $tags_array);
 
                 // Notifica quem segue este usuário, se a análise tiver conteúdo de fato
                 if (trim((string) $review) !== '') {

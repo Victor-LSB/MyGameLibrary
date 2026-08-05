@@ -5,16 +5,24 @@
     $username_profile = $username_profile ?? '';
     $currentUserId = $currentUserId ?? null;
     $reviewComments = $reviewComments ?? [];
+    $gameTags = $gameTags ?? [];
 
-    $currentTags = '';
-    if (isset($gameTags) && is_array($gameTags) && !empty($gameTags)) {
-        $tagNames = [];
-        foreach ($gameTags as $tag) {
-            if (!empty($tag['name'])) {
-                $tagNames[] = $tag['name'];
-            }
+    if (!function_exists('mgl_render_game_tag_chip')) {
+        function mgl_render_game_tag_chip($tag, $isOwner) {
+            ob_start();
+            ?>
+            <div class="inline-flex items-center gap-1 rounded-full border border-violet-500/30 bg-violet-600/15 px-3 py-1.5 text-sm font-semibold text-violet-300" data-tag-id="<?php echo (int) $tag['id']; ?>">
+                <a href="index.php?action=home&tag=<?php echo urlencode($tag['name']); ?>" class="inline-flex items-center gap-2 hover:text-white transition-colors">
+                    <span>#</span>
+                    <span><?php echo htmlspecialchars($tag['name']); ?></span>
+                </a>
+                <?php if ($isOwner): ?>
+                    <button type="button" class="tag-remove-btn ml-2 text-xs font-black uppercase tracking-widest text-amber-200/80 hover:text-red-300 transition-colors" data-tag-id="<?php echo (int) $tag['id']; ?>" title="Remover tag">x</button>
+                <?php endif; ?>
+            </div>
+            <?php
+            return ob_get_clean();
         }
-        $currentTags = implode(', ', $tagNames);
     }
 
     if (!function_exists('mgl_review_avatar_path')) {
@@ -155,6 +163,19 @@
                                 <button type="submit" class="detail-status-btn w-full text-[10px] font-bold uppercase py-2 bg-amber-600 text-white rounded-sm hover:bg-amber-500 transition-all duration-200 <?php echo $currentStatus === 'Dropado' ? 'is-active' : 'is-inactive'; ?>">Dropado</button>
                             </form>
                         </div>
+
+                        <?php $isPlatinum = !empty($game['platinum_at']); $isZerado = $currentStatus === 'Zerado'; ?>
+                        <button type="button" id="detailPlatinumBtn"
+                            class="mt-2 w-full flex items-center justify-center gap-2 text-[10px] font-bold uppercase py-2 rounded-sm border transition-colors <?php echo $isPlatinum ? 'bg-amber-400 border-amber-400 text-zinc-900' : ($isZerado ? 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-amber-400 hover:border-amber-400' : 'bg-zinc-900/60 border-zinc-800 text-zinc-700 cursor-not-allowed'); ?>"
+                            data-game-id="<?php echo htmlspecialchars($game_id ?? ''); ?>"
+                            data-platinum="<?php echo $isPlatinum ? '1' : '0'; ?>"
+                            <?php echo $isZerado ? '' : 'disabled'; ?>
+                            title="<?php echo $isZerado ? ($isPlatinum ? 'Platinado — clique para desmarcar' : 'Marcar como platinado') : 'Disponível depois de marcar como Zerado'; ?>">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5 pointer-events-none">
+                                <path d="M6 3h12v2h2a1 1 0 0 1 1 1v1a5 5 0 0 1-4.53 4.98A6.02 6.02 0 0 1 13 15.9V18h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.1a6.02 6.02 0 0 1-3.47-3.92A5 5 0 0 1 3 7V6a1 1 0 0 1 1-1h2V3Zm-2 4v0a3 3 0 0 0 2.4 2.94A9 9 0 0 1 6 7V6H4v1Zm14 0V6h-2v1a9 9 0 0 1-.4 2.94A3 3 0 0 0 18 7Z"/>
+                            </svg>
+                            <?php echo $isPlatinum ? 'Platinado' : 'Marcar Platina'; ?>
+                        </button>
                     <?php else: ?>
                         <span class="text-xl font-bold <?php
                             echo isset($game['status']) ? match($game['status']) {
@@ -164,6 +185,15 @@
                                 default => 'text-white'
                             } : 'text-zinc-600';
                         ?> uppercase tracking-tight"><?php echo isset($game['status']) ? htmlspecialchars($game['status']) : 'N/A'; ?></span>
+
+                        <?php if (!empty($game['platinum_at'])): ?>
+                            <div class="mt-3 inline-flex items-center gap-1.5 bg-amber-400 text-zinc-900 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5">
+                                    <path d="M6 3h12v2h2a1 1 0 0 1 1 1v1a5 5 0 0 1-4.53 4.98A6.02 6.02 0 0 1 13 15.9V18h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.1a6.02 6.02 0 0 1-3.47-3.92A5 5 0 0 1 3 7V6a1 1 0 0 1 1-1h2V3Zm-2 4v0a3 3 0 0 0 2.4 2.94A9 9 0 0 1 6 7V6H4v1Zm14 0V6h-2v1a9 9 0 0 1-.4 2.94A3 3 0 0 0 18 7Z"/>
+                                </svg>
+                                Platinado
+                            </div>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
 
@@ -273,11 +303,6 @@
                                     <input type="number" name="time_spent_hours" min="0" step="0.25" value="<?php echo htmlspecialchars(isset($game['time_spent_hours']) ? (string) $game['time_spent_hours'] : ''); ?>" placeholder="Ex.: 15.5" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
                                 </label>
                             </div>
-                            <label class="block">
-                                <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Tags Personalizadas</span>
-                                <input type="text" name="tags" value="<?php echo htmlspecialchars($currentTags); ?>" placeholder="Adicionar tags separadas por vírgula" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
-                                <span class="block mt-2 text-xs text-zinc-500">Exemplo: RPG, Coop, Relaxante</span>
-                            </label>
                             <div>
                                 <button type="submit" class="w-full sm:w-auto bg-violet-600 hover:bg-violet-500 text-white px-8 py-3 rounded-sm font-black uppercase tracking-widest text-sm transition-colors shadow-lg">Salvar Análise</button>
                             </div>
@@ -293,26 +318,26 @@
                     <?php endif; ?>
                 </div>
 
-                <?php if (!empty($gameTags)): ?>
-                <div class="mt-6">
+                <?php if ($isOwner || !empty($gameTags)): ?>
+                <div class="mt-6" id="gameTagsSection" data-game-id="<?php echo htmlspecialchars($game_id ?? ''); ?>">
                     <h3 class="text-xl font-bold text-white mb-2 uppercase tracking-tight">Tags</h3>
-                    <div class="flex flex-wrap gap-2">
-                        <?php foreach ($gameTags as $tag): ?>
-                            <div class="inline-flex items-center gap-1 rounded-full border border-violet-500/30 bg-violet-600/15 px-3 py-1.5 text-sm font-semibold text-violet-300">
-                                <a href="index.php?action=home&tag=<?php echo urlencode($tag['name']); ?>" class="inline-flex items-center gap-2 hover:text-white transition-colors">
-                                    <span>#</span>
-                                    <span><?php echo htmlspecialchars($tag['name']); ?></span>
-                                </a>
-                                <?php if (isset($isOwner) && $isOwner): ?>
-                                    <form action="index.php?action=remove_custom_tag" method="POST" class="inline-flex">
-                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
-                                        <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($game_id ?? ''); ?>">
-                                        <input type="hidden" name="tag_id" value="<?php echo htmlspecialchars($tag['id']); ?>">
-                                        <button type="submit" class="ml-2 text-xs font-black uppercase tracking-widest text-amber-200/80 hover:text-red-300 transition-colors" title="Remover tag">x</button>
-                                    </form>
-                                <?php endif; ?>
-                            </div>
-                        <?php endforeach; ?>
+                    <div class="bg-zinc-950 border-2 border-zinc-800 rounded-sm p-5">
+                        <?php if ($isOwner): ?>
+                            <form id="addTagForm" class="flex flex-col sm:flex-row gap-3">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
+                                <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($game_id ?? ''); ?>">
+                                <input type="text" name="tags" id="addTagInput" placeholder="Adicionar tags separadas por vírgula" class="flex-1 bg-zinc-900 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
+                                <button type="submit" class="shrink-0 bg-violet-600 hover:bg-violet-500 text-white px-6 rounded-sm font-black uppercase tracking-wide text-xs transition-colors">Adicionar</button>
+                            </form>
+                            <span class="block mt-2 text-xs text-zinc-500">Exemplo: RPG, Coop, Relaxante</span>
+                        <?php endif; ?>
+
+                        <div class="flex flex-wrap gap-2 <?php echo $isOwner ? 'mt-4' : ''; ?>" id="gameTagsList">
+                            <?php foreach ($gameTags as $tag): ?>
+                                <?php echo mgl_render_game_tag_chip($tag, $isOwner); ?>
+                            <?php endforeach; ?>
+                        </div>
+                        <p id="noGameTagsMsg" class="text-zinc-500 text-sm <?php echo !empty($gameTags) ? 'hidden' : ''; ?>">Nenhuma tag adicionada ainda.</p>
                     </div>
                 </div>
                 <?php endif; ?>

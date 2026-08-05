@@ -158,4 +158,139 @@
             });
         });
     }
+
+    const platinumBtn = document.getElementById('detailPlatinumBtn');
+    if (platinumBtn) {
+        platinumBtn.addEventListener('click', function () {
+            if (platinumBtn.disabled) return;
+
+            const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+            const csrfToken = csrfTokenMeta ? csrfTokenMeta.content : '';
+
+            const dados = new FormData();
+            dados.set('csrf_token', csrfToken);
+            dados.set('game_id', platinumBtn.dataset.gameId);
+
+            fetch('index.php?action=toggle_platinum', {
+                method: 'POST',
+                body: dados
+            }).then(function (response) {
+                if (!response.ok) {
+                    throw new Error('Erro ao atualizar platina: ' + response.statusText);
+                }
+                return response.json();
+            }).then(function (data) {
+                if (!data.success) {
+                    throw new Error(data.message || 'Erro desconhecido ao atualizar platina');
+                }
+                notify('success', data.platinum ? 'Jogo platinado!' : 'Platina removida.');
+                window.location.reload();
+            }).catch(function (error) {
+                console.error('Erro:', error);
+                notify('error', 'Erro ao atualizar platina', error.message);
+            });
+        });
+    }
+
+    // Tags do jogo: adicionar e remover sem recarregar a página.
+    const tagsSection = document.getElementById('gameTagsSection');
+    if (tagsSection) {
+        const addTagForm = document.getElementById('addTagForm');
+        const tagsList = document.getElementById('gameTagsList');
+        const noTagsMsg = document.getElementById('noGameTagsMsg');
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function renderTags(tags) {
+            if (!tagsList) return;
+
+            tagsList.innerHTML = tags.map(function (tag) {
+                return '<div class="inline-flex items-center gap-1 rounded-full border border-violet-500/30 bg-violet-600/15 px-3 py-1.5 text-sm font-semibold text-violet-300" data-tag-id="' + tag.id + '">' +
+                    '<a href="index.php?action=home&tag=' + encodeURIComponent(tag.name) + '" class="inline-flex items-center gap-2 hover:text-white transition-colors">' +
+                        '<span>#</span><span>' + escapeHtml(tag.name) + '</span>' +
+                    '</a>' +
+                    '<button type="button" class="tag-remove-btn ml-2 text-xs font-black uppercase tracking-widest text-amber-200/80 hover:text-red-300 transition-colors" data-tag-id="' + tag.id + '" title="Remover tag">x</button>' +
+                '</div>';
+            }).join('');
+
+            if (noTagsMsg) {
+                noTagsMsg.classList.toggle('hidden', tags.length > 0);
+            }
+        }
+
+        if (addTagForm) {
+            addTagForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const input = document.getElementById('addTagInput');
+                if (!input || !input.value.trim()) return;
+
+                const dados = new FormData(addTagForm);
+                const submitBtn = addTagForm.querySelector('button[type="submit"]');
+                if (submitBtn) submitBtn.disabled = true;
+
+                fetch('index.php?action=add_tag', {
+                    method: 'POST',
+                    body: dados
+                }).then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('Erro ao adicionar tag: ' + response.statusText);
+                    }
+                    return response.json();
+                }).then(function (data) {
+                    if (!data.success) {
+                        throw new Error(data.message || 'Erro desconhecido ao adicionar tag');
+                    }
+                    renderTags(data.tags);
+                    input.value = '';
+                    notify('success', 'Tag adicionada com sucesso!');
+                }).catch(function (error) {
+                    console.error('Erro:', error);
+                    notify('error', 'Erro ao adicionar tag', error.message);
+                }).finally(function () {
+                    if (submitBtn) submitBtn.disabled = false;
+                });
+            });
+        }
+
+        if (tagsList) {
+            tagsList.addEventListener('click', function (event) {
+                const btn = event.target.closest('.tag-remove-btn');
+                if (!btn) return;
+
+                const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+                const csrfToken = csrfTokenMeta ? csrfTokenMeta.content : '';
+
+                const dados = new FormData();
+                dados.set('csrf_token', csrfToken);
+                dados.set('game_id', tagsSection.dataset.gameId);
+                dados.set('tag_id', btn.dataset.tagId);
+                btn.disabled = true;
+
+                fetch('index.php?action=remove_custom_tag', {
+                    method: 'POST',
+                    body: dados
+                }).then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('Erro ao remover tag: ' + response.statusText);
+                    }
+                    return response.json();
+                }).then(function (data) {
+                    if (!data.success) {
+                        throw new Error(data.message || 'Erro desconhecido ao remover tag');
+                    }
+                    renderTags(data.tags);
+                    notify('success', 'Tag removida com sucesso!');
+                }).catch(function (error) {
+                    console.error('Erro:', error);
+                    notify('error', 'Erro ao remover tag', error.message);
+                    btn.disabled = false;
+                });
+            });
+        }
+    }
 })();

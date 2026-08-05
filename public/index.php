@@ -41,6 +41,7 @@ $routes = [
     'add_game'       => [GameController::class, 'add'],
     'delete_game'    => [GameController::class, 'delete'],
     'remove_custom_tag' => [GameController::class, 'removeCustomTag'],
+    'add_tag' => [GameController::class, 'addTag'],
     'delete_saved_tag' => [GameController::class, 'deleteSavedTag'],
     'change_status'  => [GameController::class, 'changeStatus'],
     'toggle_platinum' => [GameController::class, 'togglePlatinum'],
