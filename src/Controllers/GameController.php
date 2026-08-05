@@ -239,8 +239,8 @@ class GameController {
             $completion_date_raw = $_POST['completion_date'] ?? null;
             if (!empty($completion_date_raw)) {
                 $dateTime = \DateTime::createFromFormat('Y-m-d\TH:i', $completion_date_raw) ?: \DateTime::createFromFormat('Y-m-d\TH:i:s', $completion_date_raw);
-                // Não permite marcar como concluído em uma data futura.
-                if ($dateTime && $dateTime <= new \DateTime()) {
+                // Não permite marcar como concluído em uma data futura (comparado ao horário do Brasil).
+                if ($dateTime && $dateTime <= new \DateTime('now', new \DateTimeZone('America/Sao_Paulo'))) {
                     $completion_date = $dateTime->format('Y-m-d');
                 }
             }

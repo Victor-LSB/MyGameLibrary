@@ -4,6 +4,11 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+// Garante que "hoje" seja calculado no fuso horário do Brasil, evitando que o
+// servidor (geralmente em UTC) libere datas de conclusão "futuras" que na
+// verdade ainda não chegaram no horário local do usuário.
+date_default_timezone_set('America/Sao_Paulo');
+
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../src/Controllers/DashboardController.php';
 require_once __DIR__ . '/../src/Controllers/NotificationController.php';
