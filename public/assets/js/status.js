@@ -71,7 +71,10 @@ function openCompletionModal(form) {
 
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    modalCompletionDate.value = now.toISOString().slice(0, 16);
+    const nowLocal = now.toISOString().slice(0, 16);
+    modalCompletionDate.value = nowLocal;
+    // Impede a escolha de uma data/hora futura para a conclusão.
+    modalCompletionDate.max = nowLocal;
     modalTimeSpentHours.value = '';
 
     completionModal.classList.remove('hidden');

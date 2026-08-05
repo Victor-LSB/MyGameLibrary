@@ -239,7 +239,8 @@ class GameController {
             $completion_date_raw = $_POST['completion_date'] ?? null;
             if (!empty($completion_date_raw)) {
                 $dateTime = \DateTime::createFromFormat('Y-m-d\TH:i', $completion_date_raw) ?: \DateTime::createFromFormat('Y-m-d\TH:i:s', $completion_date_raw);
-                if ($dateTime) {
+                // Não permite marcar como concluído em uma data futura.
+                if ($dateTime && $dateTime <= new \DateTime()) {
                     $completion_date = $dateTime->format('Y-m-d');
                 }
             }
@@ -533,7 +534,10 @@ class GameController {
         $completion_date_raw = $_POST['completion_date'] ?? '';
         $completion_date = null;
         if ($completion_date_raw !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $completion_date_raw)) {
-            $completion_date = $completion_date_raw;
+            // Não permite marcar como concluído em uma data futura.
+            if ($completion_date_raw <= date('Y-m-d')) {
+                $completion_date = $completion_date_raw;
+            }
         }
 
         $time_spent_raw = $_POST['time_spent_hours'] ?? '';

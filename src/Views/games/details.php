@@ -140,7 +140,7 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <label class="block">
                                     <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Data de conclusão</span>
-                                    <input type="date" name="completion_date" value="<?php echo htmlspecialchars($game['completion_date'] ?? ''); ?>" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
+                                    <input type="date" name="completion_date" max="<?php echo date('Y-m-d'); ?>" value="<?php echo htmlspecialchars($game['completion_date'] ?? ''); ?>" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
                                 </label>
                                 <label class="block">
                                     <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Tempo gasto (horas)</span>
