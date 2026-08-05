@@ -107,7 +107,8 @@
             </div>
         <?php else: ?>
 
-        <div class="bg-zinc-900 rounded-sm border-2 border-zinc-800 p-6 sm:p-8 flex flex-col md:flex-row gap-8 shadow-2xl">
+        <div class="bg-zinc-900 rounded-sm border-2 border-zinc-800 p-6 sm:p-8 shadow-2xl">
+        <div class="flex flex-col md:flex-row gap-8">
             
             <div class="w-full md:w-1/3 shrink-0 flex flex-col gap-4">
                 <div class="bg-zinc-950 border-4 border-zinc-800 rounded-sm overflow-hidden shadow-xl aspect-[3/4]">
@@ -292,32 +293,6 @@
                     <?php endif; ?>
                 </div>
 
-                <div class="mt-6" id="reviewComments" data-target-user-id="<?php echo (int) ($target_user_id ?? 0); ?>" data-game-id="<?php echo htmlspecialchars($game_id ?? ''); ?>">
-                    <h3 class="text-xl font-bold text-white mb-2 uppercase tracking-tight">
-                        Comentários (<span id="reviewCommentsCount"><?php echo count($reviewComments); ?></span>)
-                    </h3>
-
-                    <?php if ($currentUserId !== null): ?>
-                        <form id="newReviewCommentForm" class="flex flex-col sm:flex-row gap-3 mb-6">
-                            <textarea name="content" maxlength="1000" rows="2" required placeholder="Comente esta análise..." class="flex-1 bg-zinc-950 border-2 border-zinc-800 rounded-sm p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-violet-500 resize-none"></textarea>
-                            <button type="submit" class="shrink-0 bg-violet-600 hover:bg-violet-500 text-white px-6 py-2.5 rounded-sm font-black uppercase tracking-wide text-xs transition-colors self-start sm:self-end">Comentar</button>
-                        </form>
-                    <?php else: ?>
-                        <p class="text-zinc-500 text-sm mb-6">
-                            <a href="index.php?action=login" class="text-violet-400 hover:underline">Faça login</a> para comentar nesta análise.
-                        </p>
-                    <?php endif; ?>
-
-                    <div id="reviewCommentsList" class="divide-y divide-zinc-800">
-                        <?php foreach ($reviewComments as $comment): ?>
-                            <?php echo mgl_render_review_comment($comment, $currentUserId, $target_user_id ?? 0); ?>
-                        <?php endforeach; ?>
-                    </div>
-                    <p id="noReviewCommentsMsg" class="text-zinc-500 text-sm py-6 text-center <?php echo !empty($reviewComments) ? 'hidden' : ''; ?>">
-                        Seja o primeiro a comentar esta análise.
-                    </p>
-                </div>
-
                 <?php if (!empty($gameTags)): ?>
                 <div class="mt-6">
                     <h3 class="text-xl font-bold text-white mb-2 uppercase tracking-tight">Tags</h3>
@@ -344,7 +319,37 @@
 
             </div>
         </div>
-        
+
+        <div class="mt-8" id="reviewComments" data-target-user-id="<?php echo (int) ($target_user_id ?? 0); ?>" data-game-id="<?php echo htmlspecialchars($game_id ?? ''); ?>">
+            <h3 class="text-xl font-bold text-white mb-2 uppercase tracking-tight">
+                Comentários (<span id="reviewCommentsCount"><?php echo count($reviewComments); ?></span>)
+            </h3>
+
+            <div class="bg-zinc-950 border-2 border-zinc-800 rounded-sm p-5">
+                <?php if ($currentUserId !== null): ?>
+                    <form id="newReviewCommentForm" class="flex flex-col sm:flex-row gap-3">
+                        <textarea name="content" maxlength="1000" rows="2" required placeholder="Comente esta análise..." class="flex-1 bg-zinc-900 border-2 border-zinc-800 rounded-sm p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-violet-500 resize-none"></textarea>
+                        <button type="submit" class="shrink-0 bg-violet-600 hover:bg-violet-500 text-white px-6 rounded-sm font-black uppercase tracking-wide text-xs transition-colors">Comentar</button>
+                    </form>
+                <?php else: ?>
+                    <p class="text-zinc-500 text-sm">
+                        <a href="index.php?action=login" class="text-violet-400 hover:underline">Faça login</a> para comentar nesta análise.
+                    </p>
+                <?php endif; ?>
+
+                <div id="reviewCommentsList" class="divide-y divide-zinc-800 <?php echo $currentUserId !== null || !empty($reviewComments) ? 'mt-4' : ''; ?>">
+                    <?php foreach ($reviewComments as $comment): ?>
+                        <?php echo mgl_render_review_comment($comment, $currentUserId, $target_user_id ?? 0); ?>
+                    <?php endforeach; ?>
+                </div>
+                <p id="noReviewCommentsMsg" class="text-zinc-500 text-sm py-6 text-center <?php echo !empty($reviewComments) ? 'hidden' : ''; ?>">
+                    Seja o primeiro a comentar esta análise.
+                </p>
+            </div>
+        </div>
+
+        </div>
+
         <?php endif; ?>
     </main>
 
