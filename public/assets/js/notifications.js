@@ -91,6 +91,13 @@
             return `index.php?action=profile&u=${encodeURIComponent(notif.profile_username)}#comment-${encodeURIComponent(notif.related_id)}`;
         }
 
+        if (notif.type === 'review_comment' || notif.type === 'review_comment_reply') {
+            // Mesma lógica: a análise pode não ser a do usuário logado
+            // (resposta a um comentário seu numa análise de outra pessoa).
+            if (!notif.review_username || !notif.review_game_id) return null;
+            return `index.php?action=details&id=${encodeURIComponent(notif.review_game_id)}&u=${encodeURIComponent(notif.review_username)}#review-comment-${encodeURIComponent(notif.related_id)}`;
+        }
+
         return null;
     }
 

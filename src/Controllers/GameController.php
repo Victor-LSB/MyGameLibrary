@@ -5,6 +5,7 @@ use Victi\MyGameLibrary\Database\Database;
 use Victi\MyGameLibrary\Models\Game;
 use Victi\MyGameLibrary\Models\User;
 use Victi\MyGameLibrary\Models\Activity;
+use Victi\MyGameLibrary\Models\ReviewComment;
 use Victi\MyGameLibrary\Services\GameAPI;
 use Victi\MyGameLibrary\Services\Csrf;
 
@@ -147,6 +148,10 @@ class GameController {
 
         $game = $this->gameModel->getUserGameInfo($target_user_id, $game_id);
         $gameTags = $this->gameModel->getTagsForGame($target_user_id, $game_id);
+
+        $reviewCommentModel = new ReviewComment($this->db);
+        $reviewComments = $game ? $reviewCommentModel->getByReview($target_user_id, $game_id) : [];
+        $currentUserId = $_SESSION['user_id'] ?? null;
 
         include __DIR__ . '/../Views/games/details.php';
     }
