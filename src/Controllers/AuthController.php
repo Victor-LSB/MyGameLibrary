@@ -370,7 +370,7 @@ class AuthController {
 
         // No máximo 3 reenvios por hora por usuário
         $rlKey = $this->rateLimiter->key('resend_verification', $_SESSION['user_id']);
-        if ($this->rateLimiter->tooManyAttempts($rlKey, 3, 60)) {
+        if ($this->rateLimiter->tooManyAttempts($rlKey, 3, 15)) {
             $_SESSION['verification_notice'] = 'Muitos pedidos de reenvio. Tente novamente mais tarde.';
             header("Location: index.php?action=home");
             exit();
@@ -400,9 +400,9 @@ class AuthController {
             $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
 
             if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                // No máximo 3 reenvios por hora por IP + email
+                // No máximo 3 reenvios a cada 15 minutos por IP + email
                 $rlKey = $this->rateLimiter->key('resend_verification', $this->clientIp(), $email);
-                if (!$this->rateLimiter->tooManyAttempts($rlKey, 3, 60)) {
+                if (!$this->rateLimiter->tooManyAttempts($rlKey, 3, 15)) {
                     $this->rateLimiter->hit($rlKey);
                     $user = $this->userModel->getUserByEmail($email);
                     if ($user && empty($user['email_verified_at'])) {
