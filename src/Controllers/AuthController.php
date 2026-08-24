@@ -225,7 +225,7 @@ class AuthController {
             $this->rateLimiter->hit($rlKey);
 
             $token = bin2hex(random_bytes(50));
-            $expires_at = date('Y-m-d H:i:s', time() + 3600);
+            $expires_at = gmdate('Y-m-d H:i:s', time() + 86400);
             $this->userModel->savePasswordResetToken($email, $token, $expires_at);
 
             $baseUrl = $_ENV['APP_URL'] ?? getenv('APP_URL') ?? 'http://localhost/MyGameLibrary/public';
