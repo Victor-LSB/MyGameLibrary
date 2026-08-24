@@ -191,6 +191,7 @@ class AuthController {
     }
 
     public function forgotPassword() {
+        $this->startSession();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             Csrf::verifyOrFail();
 
@@ -256,6 +257,7 @@ class AuthController {
     }
 
     public function resetPassword() {
+        $this->startSession();
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $token = filter_input(INPUT_GET, 'token', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
 
