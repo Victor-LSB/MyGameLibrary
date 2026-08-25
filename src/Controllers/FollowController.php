@@ -6,6 +6,7 @@ use Victi\MyGameLibrary\Database\Database;
 use Victi\MyGameLibrary\Services\RateLimiter;
 use Victi\MyGameLibrary\Services\Csrf;
 use PDO;
+use Victi\MyGameLibrary\Services\Session;
 
 class FollowController {
     private $db;
@@ -26,9 +27,7 @@ class FollowController {
         }
 
         // Obter usuário da sessão
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        Session::start();
         
         $this->userId = $_SESSION['user_id'] ?? null;
 

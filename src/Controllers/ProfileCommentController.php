@@ -5,6 +5,7 @@ use Victi\MyGameLibrary\Database\Database;
 use Victi\MyGameLibrary\Models\ProfileComment;
 use Victi\MyGameLibrary\Models\User;
 use Victi\MyGameLibrary\Services\Csrf;
+use Victi\MyGameLibrary\Services\Session;
 
 class ProfileCommentController {
     private $db;
@@ -22,9 +23,7 @@ class ProfileCommentController {
     }
 
     private function startSession() {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        Session::start();
     }
 
     public function add() {

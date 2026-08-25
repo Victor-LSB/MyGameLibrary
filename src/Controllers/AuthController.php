@@ -6,6 +6,7 @@ use Victi\MyGameLibrary\Models\User;
 use Victi\MyGameLibrary\Services\RateLimiter;
 use Victi\MyGameLibrary\Services\Csrf;
 use Victi\MyGameLibrary\Services\PasswordPolicy;
+use Victi\MyGameLibrary\Services\Session;
 
 class AuthController {
     private $db;
@@ -55,9 +56,7 @@ class AuthController {
     }
 
     private function startSession() {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        Session::start();
     }
 
     public function login() {
@@ -225,7 +224,7 @@ class AuthController {
             $this->rateLimiter->hit($rlKey);
 
             $token = bin2hex(random_bytes(50));
-            $expires_at = gmdate('Y-m-d H:i:s', time() + 86400);
+            $expires_at = date('Y-m-d H:i:s', time() + 3600);
             $this->userModel->savePasswordResetToken($email, $token, $expires_at);
 
             $baseUrl = $_ENV['APP_URL'] ?? getenv('APP_URL') ?? 'http://localhost/MyGameLibrary/public';
@@ -370,7 +369,7 @@ class AuthController {
 
         // No máximo 3 reenvios por hora por usuário
         $rlKey = $this->rateLimiter->key('resend_verification', $_SESSION['user_id']);
-        if ($this->rateLimiter->tooManyAttempts($rlKey, 3, 15)) {
+        if ($this->rateLimiter->tooManyAttempts($rlKey, 3, 60)) {
             $_SESSION['verification_notice'] = 'Muitos pedidos de reenvio. Tente novamente mais tarde.';
             header("Location: index.php?action=home");
             exit();
@@ -400,9 +399,9 @@ class AuthController {
             $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
 
             if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                // No máximo 3 reenvios a cada 15 minutos por IP + email
+                // No máximo 3 reenvios por hora por IP + email
                 $rlKey = $this->rateLimiter->key('resend_verification', $this->clientIp(), $email);
-                if (!$this->rateLimiter->tooManyAttempts($rlKey, 3, 15)) {
+                if (!$this->rateLimiter->tooManyAttempts($rlKey, 3, 60)) {
                     $this->rateLimiter->hit($rlKey);
                     $user = $this->userModel->getUserByEmail($email);
                     if ($user && empty($user['email_verified_at'])) {

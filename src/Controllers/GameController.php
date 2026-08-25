@@ -8,6 +8,7 @@ use Victi\MyGameLibrary\Models\Activity;
 use Victi\MyGameLibrary\Models\ReviewComment;
 use Victi\MyGameLibrary\Services\GameAPI;
 use Victi\MyGameLibrary\Services\Csrf;
+use Victi\MyGameLibrary\Services\Session;
 
 class GameController {
     private $db;
@@ -29,9 +30,7 @@ class GameController {
     }
 
     private function startSession() {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        Session::start();
     }
 
     public function index() {

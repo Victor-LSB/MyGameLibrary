@@ -5,6 +5,7 @@ namespace Victi\MyGameLibrary\Controllers;
 use Victi\MyGameLibrary\Database\Database;
 use Victi\MyGameLibrary\Models\Activity;
 use Victi\MyGameLibrary\Services\Csrf;
+use Victi\MyGameLibrary\Services\Session;
 
 class FeedController {
     private $db;
@@ -17,9 +18,7 @@ class FeedController {
     }
 
     private function startSession() {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        Session::start();
     }
 
     public function index() {

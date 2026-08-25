@@ -6,6 +6,7 @@ use Victi\MyGameLibrary\Models\Game;
 use Victi\MyGameLibrary\Models\ProfileComment;
 use Victi\MyGameLibrary\Services\Csrf;
 use Victi\MyGameLibrary\Services\PasswordPolicy;
+use Victi\MyGameLibrary\Services\Session;
 
 class ProfileController {
     private $db;
@@ -25,9 +26,7 @@ class ProfileController {
     }
 
     private function startSession() {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        Session::start();
     }
 
     public function view() {

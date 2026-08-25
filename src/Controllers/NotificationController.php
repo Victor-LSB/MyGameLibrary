@@ -5,6 +5,7 @@ namespace Victi\MyGameLibrary\Controllers;
 use Victi\MyGameLibrary\Database\Database;
 use Victi\MyGameLibrary\Services\Csrf;
 use PDO;
+use Victi\MyGameLibrary\Services\Session;
 
 class NotificationController {
     private $db;
@@ -30,9 +31,7 @@ class NotificationController {
             }
         }
 
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        Session::start();
 
         $this->userId = $_SESSION['user_id'] ?? null;
 

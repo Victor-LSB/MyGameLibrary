@@ -3,6 +3,7 @@ namespace Victi\MyGameLibrary\Controllers;
 
 use Victi\MyGameLibrary\Database\Database;
 use PDO;
+use Victi\MyGameLibrary\Services\Session;
 
 class DashboardController {
     private $db;
@@ -13,9 +14,7 @@ class DashboardController {
     }
 
     private function startSession() {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        Session::start();
     }
 
     private function getPeriodConfig($period) {
