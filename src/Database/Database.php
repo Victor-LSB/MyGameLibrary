@@ -18,6 +18,7 @@ class Database {
 
                 $this->conn = new PDO("mysql:host={$host};dbname={$dbname};charset=utf8mb4", $user, $password);
                 $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $this->conn->exec("SET time_zone = '-03:00'");
             }
             return $this->conn;
         } catch (PDOException $e) {
