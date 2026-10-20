@@ -20,7 +20,7 @@
             <?php if (isset($success)): ?>
                 <div class="bg-emerald-950 border border-emerald-800 text-emerald-400 px-4 py-3 rounded-sm mb-6 font-medium text-sm text-center">
                     <?php echo htmlspecialchars($success); ?>
-                    <?php header("refresh:2;url=index.php?action=login");?>
+                    <?php header("refresh:6;url=index.php?action=login");?>
                 </div>
             <?php endif; ?>
 
@@ -60,6 +60,16 @@
                     </div>
                 </div>
 
+                <!-- Honeypot: invisível para humanos; bots costumam preencher tudo -->
+                <div style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;" aria-hidden="true">
+                    <label for="website">Não preencha este campo</label>
+                    <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+                </div>
+
+                <div class="flex justify-center pt-2">
+                    <?php echo \Victi\MyGameLibrary\Services\Turnstile::widget(); ?>
+                </div>
+
                 <button type="submit" id="submitBtn" class="w-full bg-violet-600 hover:bg-violet-500 text-white font-black uppercase tracking-widest py-4 rounded-sm transition-colors shadow-lg mt-8 disabled:opacity-50 disabled:cursor-not-allowed">
                     Registrar
                 </button>
@@ -72,6 +82,7 @@
         </div>
     </main>
     
+    <?php echo \Victi\MyGameLibrary\Services\Turnstile::script(); ?>
     <script src="./assets/js/passwordRequirements.js"></script>
     <script src="./assets/js/validacaoForm.js"></script>
 </body>

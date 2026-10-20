@@ -7,6 +7,9 @@ use Victi\MyGameLibrary\Services\RateLimiter;
 use Victi\MyGameLibrary\Services\Csrf;
 use Victi\MyGameLibrary\Services\PasswordPolicy;
 use Victi\MyGameLibrary\Services\Session;
+use Victi\MyGameLibrary\Services\ClientIp;
+use Victi\MyGameLibrary\Services\Turnstile;
+use Victi\MyGameLibrary\Services\EmailPolicy;
 
 class AuthController {
     private $db;
@@ -21,10 +24,11 @@ class AuthController {
     }
 
     /**
-     * IP do visitante (considerando proxy reverso, quando presente).
+     * IP real do visitante. Só confia no header do Cloudflare quando a conexão
+     * realmente veio do Cloudflare (X-Forwarded-For é forjável e não é usado).
      */
     private function clientIp() {
-        return $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        return ClientIp::get();
     }
 
     /**
@@ -118,8 +122,52 @@ class AuthController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             Csrf::verifyOrFail();
 
+            $ip = $this->clientIp();
+
+            // 1) Limites de tentativas (contam TODA tentativa, não só as bem-sucedidas),
+            //    checados antes de qualquer consulta ao banco ou chamada externa.
+            $attemptKey = $this->rateLimiter->key('register_attempt', $ip);
+            if ($this->rateLimiter->tooManyAttempts($attemptKey, 15, 60)) {
+                $error = 'Muitas tentativas de cadastro a partir deste endereço. Tente novamente mais tarde.';
+                include __DIR__ . '/../Views/auth/register.php';
+                return;
+            }
+            $this->rateLimiter->hit($attemptKey);
+
+            // Disjuntor global: se o site inteiro está sendo inundado de cadastros, segura.
+            $globalKey = $this->rateLimiter->key('register_global');
+            if ($this->rateLimiter->tooManyAttempts($globalKey, 60, 60)) {
+                $error = 'Cadastros temporariamente limitados. Tente novamente em alguns minutos.';
+                include __DIR__ . '/../Views/auth/register.php';
+                return;
+            }
+
+            // 2) Honeypot: campo escondido que humanos nunca preenchem.
+            //    Responde como se tivesse dado certo, para o bot não aprender o que o denunciou.
+            if (!empty($_POST['website'])) {
+                $this->rateLimiter->hit($globalKey);
+                $success = 'Usuário registrado com sucesso! Enviámos um e-mail de confirmação — você só poderá entrar depois de confirmá-lo.';
+                include __DIR__ . '/../Views/auth/register.php';
+                return;
+            }
+
+            // 3) Tempo mínimo entre abrir o formulário e enviar (bots enviam instantaneamente).
+            $openedAt = $_SESSION['register_form_at'] ?? 0;
+            if ($openedAt === 0 || (time() - $openedAt) < 3) {
+                $error = 'Envio rápido demais. Aguarde alguns segundos e tente novamente.';
+                include __DIR__ . '/../Views/auth/register.php';
+                return;
+            }
+
+            // 4) Turnstile validado no servidor.
+            if (!Turnstile::verify($_POST['cf-turnstile-response'] ?? '', $ip)) {
+                $error = 'Não foi possível validar a verificação de segurança. Tente novamente.';
+                include __DIR__ . '/../Views/auth/register.php';
+                return;
+            }
+
             $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
-            $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
+            $email = trim(filter_input(INPUT_POST, 'email', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '');
             $password = filter_input(INPUT_POST, 'password', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
             $passwordConfirm = filter_input(INPUT_POST, 'password_confirm', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
 
@@ -129,8 +177,16 @@ class AuthController {
                 return;
             }
 
+            // Mesma regra do validacaoForm.js, agora também no servidor
+            // (o JavaScript do navegador não vale nada contra um bot).
+            if (!preg_match('/^[a-zA-Z0-9_]{3,20}$/', $username)) {
+                $error = 'O nome de usuário deve ter de 3 a 20 caracteres (letras, números e underscore).';
+                include __DIR__ . '/../Views/auth/register.php';
+                return;
+            }
+
             if ($password !== $passwordConfirm) {
-                $error = '';
+                $error = 'As senhas não coincidem.';
                 include __DIR__ . '/../Views/auth/register.php';
                 return;
             }
@@ -142,8 +198,14 @@ class AuthController {
                 return;
             }
 
-            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 254) {
                 $error = 'Email inválido.';
+                include __DIR__ . '/../Views/auth/register.php';
+                return;
+            }
+
+            if (EmailPolicy::isBlocked($email)) {
+                $error = 'Este provedor de e-mail não é aceito. Use um e-mail pessoal ou institucional.';
                 include __DIR__ . '/../Views/auth/register.php';
                 return;
             }
@@ -160,8 +222,8 @@ class AuthController {
                 return;
             }
 
-            // No máximo 5 registos por hora a partir do mesmo IP (evita criação em massa de contas)
-            $rlKey = $this->rateLimiter->key('register', $this->clientIp());
+            // No máximo 5 contas por hora a partir do mesmo IP
+            $rlKey = $this->rateLimiter->key('register', $ip);
             if ($this->rateLimiter->tooManyAttempts($rlKey, 5, 60)) {
                 $error = 'Muitas contas criadas a partir deste endereço. Tente novamente mais tarde.';
                 include __DIR__ . '/../Views/auth/register.php';
@@ -170,13 +232,15 @@ class AuthController {
 
             if ($this->userModel->register($username, $email, $password)) {
                 $this->rateLimiter->hit($rlKey);
+                $this->rateLimiter->hit($globalKey);
+                unset($_SESSION['register_form_at']);
 
                 $newUser = $this->userModel->getUserByEmail($email);
                 if ($newUser) {
                     $this->sendVerificationEmail($email, $newUser['id']);
                 }
 
-                $success = 'Usuário registrado com sucesso! Enviámos um e-mail de confirmação — verifique a sua caixa de entrada. Já pode fazer login.';
+                $success = 'Usuário registrado com sucesso! Enviámos um e-mail de confirmação — você só poderá entrar depois de confirmá-lo.';
                 include __DIR__ . '/../Views/auth/register.php';
                 return;
             } else {
@@ -186,6 +250,8 @@ class AuthController {
             }
         }
 
+        // GET: marca o momento em que o formulário foi aberto.
+        $_SESSION['register_form_at'] = time();
         include __DIR__ . '/../Views/auth/register.php';
     }
 
@@ -194,7 +260,24 @@ class AuthController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             Csrf::verifyOrFail();
 
-            $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL) ?? '';
+            $ip = $this->clientIp();
+
+            // Limite por IP (qualquer e-mail) e por IP + e-mail, checados antes de tudo.
+            $ipKey = $this->rateLimiter->key('forgot_password_ip', $ip);
+            if ($this->rateLimiter->tooManyAttempts($ipKey, 10, 60)) {
+                $error = 'Muitos pedidos de recuperação de senha. Tente novamente mais tarde.';
+                include __DIR__ . '/../Views/auth/forgot_password.php';
+                return;
+            }
+            $this->rateLimiter->hit($ipKey);
+
+            if (!Turnstile::verify($_POST['cf-turnstile-response'] ?? '', $ip)) {
+                $error = 'Não foi possível validar a verificação de segurança. Tente novamente.';
+                include __DIR__ . '/../Views/auth/forgot_password.php';
+                return;
+            }
+
+            $email = trim(filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL) ?? '');
 
             if (empty($email)) {
                 $error = 'Email é obrigatório.';
@@ -208,14 +291,7 @@ class AuthController {
                 return;
             }
 
-            if (!$this->userModel->emailExists($email)) {
-                $error = 'Email não encontrado em nossa base de dados.';
-                include __DIR__ . '/../Views/auth/forgot_password.php';
-                return;
-            }
-
-            // No máximo 3 pedidos de recuperação por hora por IP + email
-            $rlKey = $this->rateLimiter->key('forgot_password', $this->clientIp(), $email);
+            $rlKey = $this->rateLimiter->key('forgot_password', $ip, $email);
             if ($this->rateLimiter->tooManyAttempts($rlKey, 3, 60)) {
                 $error = 'Muitos pedidos de recuperação de senha. Tente novamente mais tarde.';
                 include __DIR__ . '/../Views/auth/forgot_password.php';
@@ -223,34 +299,32 @@ class AuthController {
             }
             $this->rateLimiter->hit($rlKey);
 
-            $token = bin2hex(random_bytes(50));
-            $expires_at = date('Y-m-d H:i:s', time() + 3600);
-            $this->userModel->savePasswordResetToken($email, $token, $expires_at);
+            // Só envia se o e-mail existir, mas a resposta é SEMPRE a mesma,
+            // para não deixar bots descobrirem quais e-mails têm conta.
+            if ($this->userModel->emailExists($email)) {
+                $token = bin2hex(random_bytes(50));
+                $expires_at = date('Y-m-d H:i:s', time() + 3600);
+                $this->userModel->savePasswordResetToken($email, $token, $expires_at);
 
-            $baseUrl = $_ENV['APP_URL'] ?? getenv('APP_URL') ?? 'http://localhost/MyGameLibrary/public';
-            $reset_link = rtrim($baseUrl, '/') . "/index.php?action=reset_password&token=$token";
+                $baseUrl = $_ENV['APP_URL'] ?? getenv('APP_URL') ?? 'http://localhost/MyGameLibrary/public';
+                $reset_link = rtrim($baseUrl, '/') . "/index.php?action=reset_password&token=$token";
 
-            $apiKey = $_ENV['RESEND_API_KEY'] ?? getenv('RESEND_API_KEY');
+                $apiKey = $_ENV['RESEND_API_KEY'] ?? getenv('RESEND_API_KEY');
 
-            $resend = Resend::client($apiKey);
-
-
-            try {
-                $resend->emails->send([
-                    // Se ainda não verificou o domínio, use 'onboarding@resend.dev'
-                    'from' => 'My Game Library <suporte@mygamelibrary.com.br>', 
-                    'to' => [$email], // Variável com o e-mail do utilizador
-                    'subject' => 'Recuperação de Palavra-passe',
-                    'html' => '<p>Olá!</p><p>Clique no link abaixo para redefinir a sua palavra-passe:</p><p><a href="'.$reset_link.'">Redefinir Palavra-passe</a></p>',
-                ]);
-    
-                    // Sucesso: Redirecionar com mensagem de sucesso
-                    // ...
-    
+                try {
+                    $resend = Resend::client($apiKey);
+                    $resend->emails->send([
+                        'from' => 'My Game Library <suporte@mygamelibrary.com.br>',
+                        'to' => [$email],
+                        'subject' => 'Recuperação de Palavra-passe',
+                        'html' => '<p>Olá!</p><p>Clique no link abaixo para redefinir a sua palavra-passe:</p><p><a href="'.$reset_link.'">Redefinir Palavra-passe</a></p>',
+                    ]);
                 } catch (\Exception $e) {
-                    // Erro: Lidar com a exceção (ex: registar no log)
-                    echo "Erro ao enviar e-mail: " . $e->getMessage();
+                    error_log('Erro ao enviar e-mail de recuperação: ' . $e->getMessage());
                 }
+            }
+
+            $success = 'Se existir uma conta com este e-mail, enviámos um link para redefinir a senha.';
         }
         include __DIR__ . '/../Views/auth/forgot_password.php';
     }
@@ -399,10 +473,15 @@ class AuthController {
             $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? '';
 
             if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                // No máximo 3 reenvios por hora por IP + email
-                $rlKey = $this->rateLimiter->key('resend_verification', $this->clientIp(), $email);
-                if (!$this->rateLimiter->tooManyAttempts($rlKey, 3, 60)) {
+                // No máximo 3 reenvios por hora por IP + email, e 10 por hora por IP
+                // (sem o limite por IP, um bot trocando o e-mail a cada tentativa nunca seria barrado).
+                $ip = $this->clientIp();
+                $rlKey = $this->rateLimiter->key('resend_verification', $ip, $email);
+                $ipKey = $this->rateLimiter->key('resend_verification_ip', $ip);
+                if (!$this->rateLimiter->tooManyAttempts($rlKey, 3, 60)
+                    && !$this->rateLimiter->tooManyAttempts($ipKey, 10, 60)) {
                     $this->rateLimiter->hit($rlKey);
+                    $this->rateLimiter->hit($ipKey);
                     $user = $this->userModel->getUserByEmail($email);
                     if ($user && empty($user['email_verified_at'])) {
                         $this->sendVerificationEmail($user['email'], $user['id']);

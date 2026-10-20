@@ -1,8 +1,5 @@
 <?php
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
 // Garante que "hoje" seja calculado no fuso horário do Brasil, evitando que o
 // servidor (geralmente em UTC) libere datas de conclusão "futuras" que na
@@ -17,6 +14,18 @@ require_once __DIR__ . '/../src/Controllers/FeedController.php';
 
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
 $dotenv->load();
+
+// Erros detalhados na tela só em desenvolvimento (APP_ENV=local). Em produção
+// eles vazam caminhos de arquivos e detalhes internos; vão para o log.
+error_reporting(E_ALL);
+if (($_ENV['APP_ENV'] ?? 'production') === 'local') {
+    ini_set('display_errors', '1');
+    ini_set('display_startup_errors', '1');
+} else {
+    ini_set('display_errors', '0');
+    ini_set('display_startup_errors', '0');
+    ini_set('log_errors', '1');
+}
 
 use Victi\MyGameLibrary\Controllers\AuthController;
 use Victi\MyGameLibrary\Controllers\DashboardController;

@@ -41,6 +41,10 @@
                         <p id="messageErrorEmail" class="text-red-500 text-xs font-bold mt-1.5 empty:hidden"></p>
                     </div>
                     
+                    <div class="flex justify-center pt-2">
+                        <?php echo \Victi\MyGameLibrary\Services\Turnstile::widget(); ?>
+                    </div>
+
                     <button type="submit" class="w-full bg-violet-600 hover:bg-violet-500 text-white font-black uppercase tracking-widest py-4 rounded-sm transition-colors shadow-lg mt-8">
                         Enviar Link de Recuperação
                     </button>
@@ -53,5 +57,6 @@
             <?php endif; ?>
         </div>
     </main>
+    <?php echo \Victi\MyGameLibrary\Services\Turnstile::script(); ?>
 </body>
 </html>

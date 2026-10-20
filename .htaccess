@@ -1,0 +1,6 @@
+# Segunda camada de proteção: se o DocumentRoot do Apache for a raiz do repositório
+# (e não a pasta public/), isto impede o acesso web a arquivos sensíveis.
+# Se o DocumentRoot já é public/, este arquivo simplesmente nunca é lido.
+<IfModule mod_alias.c>
+    RedirectMatch 404 ^/(\.env|\.git|\.github|vendor/|src/|database/|scripts/|deploy/|node_modules/|composer\.(json|lock)|package(-lock)?\.json)
+</IfModule>
