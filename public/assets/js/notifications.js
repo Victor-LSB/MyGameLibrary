@@ -19,7 +19,16 @@
         e.stopPropagation();
         notificationPanel.classList.toggle('hidden');
         if (!notificationPanel.classList.contains('hidden')) {
+            // Avisa os outros dropdowns (perfil, busca, selects) para se fecharem
+            document.dispatchEvent(new CustomEvent('mgl:dropdown-open', { detail: { id: 'notifications' } }));
             loadNotifications();
+        }
+    });
+
+    // Fecha quando outro dropdown abre (ou ao apertar Esc)
+    document.addEventListener('mgl:dropdown-open', (e) => {
+        if (e.detail.id !== 'notifications') {
+            notificationPanel.classList.add('hidden');
         }
     });
 

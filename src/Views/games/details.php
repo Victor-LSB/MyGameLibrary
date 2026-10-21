@@ -489,12 +489,12 @@
     <?php if (!isset($_SESSION['review_success'])): ?>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <?php endif; ?>
-    <script src="./assets/js/details-status.js"></script>
+    <script src="<?php echo mgl_asset('assets/js/details-status.js'); ?>"></script>
     <?php endif; ?>
     <?php if (isset($game) && $game): ?>
-    <script src="./assets/js/review-comments.js"></script>
+    <script src="<?php echo mgl_asset('assets/js/review-comments.js'); ?>"></script>
     <?php endif; ?>
-    <script src="./assets/js/notifications.js"></script>
+    <script src="<?php echo mgl_asset('assets/js/notifications.js'); ?>"></script>
 <?php require __DIR__ . '/../partials/rawg_credit.php'; ?>
 </body>
 </html>

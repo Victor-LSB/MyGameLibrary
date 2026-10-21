@@ -347,9 +347,9 @@
         });
     </script>
 
-    <script src="./assets/js/follow.js"></script>
-    <script src="./assets/js/notifications.js"></script>
-    <script src="./assets/js/profile-comments.js"></script>
+    <script src="<?php echo mgl_asset('assets/js/follow.js'); ?>"></script>
+    <script src="<?php echo mgl_asset('assets/js/notifications.js'); ?>"></script>
+    <script src="<?php echo mgl_asset('assets/js/profile-comments.js'); ?>"></script>
 
     <?php if (isset($_SESSION['profile_success'])): ?>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

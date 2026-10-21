@@ -96,3 +96,37 @@
     --color-parchment: #e7dbc1;
   }
 }
+
+/* ---- Select customizado (assets/js/customSelect.js) ----
+   Fora de @layer de propósito: as classes são criadas via JavaScript e o
+   Tailwind as removeria do CSS final por não as encontrar nos arquivos PHP. */
+.cs-wrap { position: relative; display: inline-block; }
+.cs-wrap.cs-block { display: block; }
+.cs-native { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.cs-btn { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; text-align: left; }
+.cs-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.cs-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-chev { width: 1rem; height: 1rem; flex-shrink: 0; color: #a1a1aa; transition: transform 0.15s; }
+.cs-btn[aria-expanded="true"] { border-color: #8b5cf6; }
+.cs-btn[aria-expanded="true"] .cs-chev { transform: rotate(180deg); color: #c4b5fd; }
+.cs-list {
+    position: absolute; top: calc(100% + 4px); left: 0; z-index: 50;
+    min-width: 100%; width: max-content; max-width: min(20rem, calc(100vw - 2rem));
+    margin: 0; padding: 0; list-style: none;
+    background: #18181b; border: 2px solid #3f3f46; border-radius: 2px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6); overflow: hidden;
+}
+.cs-list.cs-right { left: auto; right: 0; }
+.cs-list[hidden] { display: none; }
+.cs-opt {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: 0.7rem 1rem; color: #d4d4d8; cursor: pointer;
+    font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    border-left: 4px solid transparent;
+}
+.cs-opt + .cs-opt { border-top: 1px solid #27272a; }
+.cs-opt:hover, .cs-opt.is-active { background: #27272a; color: #fff; }
+.cs-opt[aria-selected="true"] { border-left-color: #8b5cf6; color: #fff; }
+.cs-check { width: 1rem; height: 1rem; flex-shrink: 0; color: #a78bfa; visibility: hidden; }
+.cs-opt[aria-selected="true"] .cs-check { visibility: visible; }
+@media (prefers-reduced-motion: reduce) { .cs-chev { transition: none; } }

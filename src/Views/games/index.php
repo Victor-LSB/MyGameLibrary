@@ -97,7 +97,7 @@
                 <?php if (!empty($search_query)): ?>
                     <input type="hidden" name="search" value="<?php echo htmlspecialchars($search_query ?? ''); ?>">
                 <?php endif; ?>
-                <select name="filter_status" class="filterStatus w-full bg-zinc-950 border-2 border-zinc-800 text-white font-medium rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 cursor-pointer appearance-none">
+                <select name="filter_status" data-custom-select class="filterStatus w-full bg-zinc-950 border-2 border-zinc-800 text-white font-medium rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 cursor-pointer appearance-none">
                     <option value="">Todos os status</option>
                     <option value="Backlog" <?php if (!empty($filter_status) && $filter_status == 'Backlog') echo 'selected'; ?>>Backlog</option>
                     <option value="Jogando" <?php if (!empty($filter_status) && $filter_status == 'Jogando') echo 'selected'; ?>>Jogando</option>
@@ -288,8 +288,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="./assets/js/status.js"></script>
-    <script src="./assets/js/notifications.js"></script>
+    <script src="<?php echo mgl_asset('assets/js/status.js'); ?>"></script>
+    <script src="<?php echo mgl_asset('assets/js/notifications.js'); ?>"></script>
 <?php require __DIR__ . '/../partials/rawg_credit.php'; ?>
 </body>
 </html>

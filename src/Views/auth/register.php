@@ -83,7 +83,7 @@
     </main>
     
     <?php echo \Victi\MyGameLibrary\Services\Turnstile::script(); ?>
-    <script src="./assets/js/passwordRequirements.js"></script>
-    <script src="./assets/js/validacaoForm.js"></script>
+    <script src="<?php echo mgl_asset('assets/js/passwordRequirements.js'); ?>"></script>
+    <script src="<?php echo mgl_asset('assets/js/validacaoForm.js'); ?>"></script>
 </body>
 </html>

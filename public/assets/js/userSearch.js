@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     input.addEventListener('focus', () => {
         if (input.value.trim().length >= 2 && dropdown.innerHTML.trim() !== '') {
-            dropdown.classList.remove('hidden');
+            showDropdown();
         }
     });
 
@@ -60,9 +60,19 @@ document.addEventListener('DOMContentLoaded', () => {
         dropdown.classList.add('hidden');
     }
 
+    // Mostra o dropdown e avisa os outros (perfil, notificações, selects) para fecharem
+    function showDropdown() {
+        document.dispatchEvent(new CustomEvent('mgl:dropdown-open', { detail: { id: 'usersearch' } }));
+        dropdown.classList.remove('hidden');
+    }
+
+    document.addEventListener('mgl:dropdown-open', (e) => {
+        if (e.detail.id !== 'usersearch') hideDropdown();
+    });
+
     function showMessage(text) {
         dropdown.innerHTML = `<div class="p-4 text-center text-zinc-500 text-sm font-medium">${text}</div>`;
-        dropdown.classList.remove('hidden');
+        showDropdown();
     }
 
     async function fetchUsers(query) {
@@ -111,6 +121,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </a>`;
         }).join('');
 
-        dropdown.classList.remove('hidden');
+        showDropdown();
     }
 });

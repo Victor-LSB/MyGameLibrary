@@ -134,8 +134,8 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="./assets/js/dashboard.js"></script>
-    <script src="./assets/js/notifications.js"></script>
+    <script src="<?php echo mgl_asset('assets/js/dashboard.js'); ?>"></script>
+    <script src="<?php echo mgl_asset('assets/js/notifications.js'); ?>"></script>
 <?php require __DIR__ . '/partials/rawg_credit.php'; ?>
 </body>
 </html>

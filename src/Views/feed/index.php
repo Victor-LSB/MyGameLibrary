@@ -10,7 +10,7 @@
                     <h2 class="text-2xl font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3">Atividade de quem você segue</h2>
 
                     <?php if (!empty($activities)): ?>
-                        <select id="feedTypeFilter" class="bg-zinc-900 border-2 border-zinc-800 text-white text-xs font-bold uppercase tracking-wide rounded-sm px-3 py-2 focus:outline-none focus:border-violet-500 cursor-pointer">
+                        <select id="feedTypeFilter" data-custom-select class="bg-zinc-900 border-2 border-zinc-800 text-white text-xs font-bold uppercase tracking-wide rounded-sm px-3 py-2 focus:outline-none focus:border-violet-500 cursor-pointer">
                             <option value="">Todas as atividades</option>
                             <option value="game_added">Jogos adicionados</option>
                             <option value="status_changed">Mudanças de status</option>
@@ -132,8 +132,8 @@
         </div>
     </main>
 
-    <script src="./assets/js/notifications.js"></script>
-    <script src="./assets/js/feed.js"></script>
+    <script src="<?php echo mgl_asset('assets/js/notifications.js'); ?>"></script>
+    <script src="<?php echo mgl_asset('assets/js/feed.js'); ?>"></script>
 <?php require __DIR__ . '/../partials/rawg_credit.php'; ?>
 </body>
 </html>

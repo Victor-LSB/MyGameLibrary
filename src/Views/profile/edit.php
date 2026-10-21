@@ -80,7 +80,7 @@
         </div>
     </main>
 
-    <script src="./assets/js/notifications.js"></script>
-    <script src="./assets/js/imagePreview.js"></script>
+    <script src="<?php echo mgl_asset('assets/js/notifications.js'); ?>"></script>
+    <script src="<?php echo mgl_asset('assets/js/imagePreview.js'); ?>"></script>
 </body>
 </html>

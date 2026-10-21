@@ -64,6 +64,6 @@
         </div>
     </main>
     
-    <script src="./assets/js/passwordRequirements.js"></script>
+    <script src="<?php echo mgl_asset('assets/js/passwordRequirements.js'); ?>"></script>
 </body>
 </html>

@@ -96,22 +96,48 @@
 </header>
 
 <?php if (isset($_SESSION['user_id'])): ?>
-    <script src="./assets/js/userSearch.js"></script>
+    <script src="<?php echo mgl_asset('assets/js/userSearch.js'); ?>"></script>
+    <script src="<?php echo mgl_asset('assets/js/customSelect.js'); ?>"></script>
     <script>
+        // Só um dropdown aberto por vez: quem abre avisa os demais pelo evento "mgl:dropdown-open".
+        // Esc fecha todos.
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.dispatchEvent(new CustomEvent('mgl:dropdown-open', { detail: { id: '__all__' } }));
+            }
+        });
+
         (function () {
+            const ID = 'profile';
             const profileMenuButton = document.getElementById('profileMenuButton');
             const profileMenuPanel = document.getElementById('profileMenuPanel');
             if (!profileMenuButton || !profileMenuPanel) return;
 
+            profileMenuButton.setAttribute('aria-haspopup', 'true');
+            profileMenuButton.setAttribute('aria-expanded', 'false');
+
+            function close() {
+                profileMenuPanel.classList.add('hidden');
+                profileMenuButton.setAttribute('aria-expanded', 'false');
+            }
+
             profileMenuButton.addEventListener('click', (e) => {
                 e.stopPropagation();
-                profileMenuPanel.classList.toggle('hidden');
+                if (profileMenuPanel.classList.contains('hidden')) {
+                    document.dispatchEvent(new CustomEvent('mgl:dropdown-open', { detail: { id: ID } }));
+                    profileMenuPanel.classList.remove('hidden');
+                    profileMenuButton.setAttribute('aria-expanded', 'true');
+                } else {
+                    close();
+                }
             });
 
             document.addEventListener('click', (e) => {
-                if (!profileMenuButton.contains(e.target) && !profileMenuPanel.contains(e.target)) {
-                    profileMenuPanel.classList.add('hidden');
-                }
+                if (!profileMenuButton.contains(e.target) && !profileMenuPanel.contains(e.target)) close();
+            });
+
+            document.addEventListener('mgl:dropdown-open', (e) => {
+                if (e.detail.id !== ID) close();
             });
         })();
     </script>
