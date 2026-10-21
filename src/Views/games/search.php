@@ -86,5 +86,6 @@
     
     <script src="./assets/js/liveSearch.js"></script>
     <script src="./assets/js/notifications.js"></script>
+<?php require __DIR__ . '/../partials/rawg_credit.php'; ?>
 </body>
 </html>

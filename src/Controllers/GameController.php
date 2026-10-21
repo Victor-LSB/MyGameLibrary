@@ -33,9 +33,31 @@ class GameController {
         Session::start();
     }
 
+    /**
+     * Capas para a landing. Cache de 1h em arquivo para não consultar o banco a cada visita.
+     */
+    private function popularGamesForLanding(): array {
+        $cacheFile = sys_get_temp_dir() . '/mgl_popular_games.json';
+        if (is_file($cacheFile) && (time() - filemtime($cacheFile)) < 3600) {
+            $cached = json_decode((string) @file_get_contents($cacheFile), true);
+            if (is_array($cached)) {
+                return $cached;
+            }
+        }
+        try {
+            $games = $this->gameModel->getPopularGames(6);
+        } catch (\Throwable $e) {
+            error_log('Landing: erro ao buscar jogos populares: ' . $e->getMessage());
+            return [];
+        }
+        @file_put_contents($cacheFile, json_encode($games), LOCK_EX);
+        return $games;
+    }
+
     public function index() {
         $this->startSession();
         if (!isset($_SESSION['user_id'])) {
+            $popularGames = $this->popularGamesForLanding();
             include __DIR__ . '/../Views/landing.php';
             exit();
         }

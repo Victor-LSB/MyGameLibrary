@@ -61,6 +61,20 @@ require_once __DIR__ . '/header.php';
             </div>
         </section>
 
+        <?php if (!empty($popularGames) && count($popularGames) >= 3): ?>
+        <!-- Capas: jogos mais registrados nas bibliotecas -->
+        <section class="max-w-6xl mx-auto px-6 pb-20">
+            <h2 class="text-sm font-bold text-zinc-500 mb-4">Os jogos que mais aparecem nas bibliotecas</h2>
+            <ul class="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                <?php foreach ($popularGames as $g): ?>
+                    <li class="aspect-[3/4] bg-zinc-900 border border-zinc-800 rounded-sm overflow-hidden">
+                        <img src="<?php echo htmlspecialchars($g['cover_image']); ?>" alt="Capa de <?php echo htmlspecialchars($g['title']); ?>" title="<?php echo htmlspecialchars($g['title']); ?>" width="300" height="400" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover">
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </section>
+        <?php endif; ?>
+
         <!-- O que você faz -->
         <section class="border-t border-zinc-800 bg-zinc-900/40">
             <div class="max-w-6xl mx-auto px-6 py-20 grid lg:grid-cols-12 gap-12">
@@ -170,5 +184,6 @@ require_once __DIR__ . '/header.php';
         });
     })();
     </script>
+<?php require __DIR__ . '/partials/rawg_credit.php'; ?>
 </body>
 </html>

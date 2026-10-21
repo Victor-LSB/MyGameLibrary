@@ -360,5 +360,6 @@
         });
     </script>
     <?php unset($_SESSION['profile_success']); endif; ?>
+<?php require __DIR__ . '/../partials/rawg_credit.php'; ?>
 </body>
 </html>

@@ -9,6 +9,21 @@ class Game {
         $this->conn = $db;
     }
 
+    /**
+     * Jogos mais adicionados às bibliotecas (só título e capa; nenhum dado de usuário).
+     * Usado na landing page.
+     */
+    public function getPopularGames($limit = 6) {
+        $limit = max(1, min(12, (int) $limit));
+        $sql = "SELECT g.id, g.title, g.cover_image, COUNT(ug.game_id) AS total
+                FROM games g JOIN user_games ug ON g.id = ug.game_id
+                WHERE g.cover_image IS NOT NULL AND g.cover_image LIKE 'https://%'
+                GROUP BY g.id, g.title, g.cover_image
+                ORDER BY total DESC, g.id DESC
+                LIMIT $limit";
+        return $this->conn->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function addGame($external_id, $title, $platform, $genre, $release_date, $cover_image) {
         $sql = "INSERT INTO games (external_id, title, platform, genre, release_date, cover_image) VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = $this->conn->prepare($sql);

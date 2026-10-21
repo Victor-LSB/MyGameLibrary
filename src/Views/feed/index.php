@@ -134,5 +134,6 @@
 
     <script src="./assets/js/notifications.js"></script>
     <script src="./assets/js/feed.js"></script>
+<?php require __DIR__ . '/../partials/rawg_credit.php'; ?>
 </body>
 </html>
