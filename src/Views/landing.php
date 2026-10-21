@@ -1,6 +1,8 @@
 <?php
 $pageTitle = 'MyGameLibrary — o diário da sua biblioteca de jogos';
 $metaDescription = 'Organize seu backlog, registre o que zerou, avalie seus jogos e acompanhe o que seus amigos estão jogando.';
+$demoGame = !empty($popularGames) ? $popularGames[0] : null;
+$demoTitle = $demoGame['title'] ?? 'Hollow Knight';
 require_once __DIR__ . '/header.php';
 ?>
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen selection:bg-violet-600 selection:text-white">
@@ -38,12 +40,16 @@ require_once __DIR__ . '/header.php';
                 <div class="bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-2xl p-5" id="demo">
                     <div class="flex gap-4">
                         <div id="demoCover" class="relative w-28 sm:w-32 shrink-0 aspect-[3/4] rounded-sm bg-gradient-to-br from-violet-600 via-violet-900 to-zinc-950 border border-zinc-700 flex items-end p-3 transition motion-reduce:transition-none">
-                            <span class="text-white/90 font-black text-3xl leading-none tracking-tighter">HK</span>
+                            <?php if ($demoGame): ?>
+                                <img src="<?php echo htmlspecialchars($demoGame['cover_image']); ?>" alt="Capa de <?php echo htmlspecialchars($demoTitle); ?>" width="300" height="400" referrerpolicy="no-referrer" class="absolute inset-0 w-full h-full object-cover rounded-sm">
+                            <?php else: ?>
+                                <span class="text-white/90 font-black text-3xl leading-none tracking-tighter">HK</span>
+                            <?php endif; ?>
                             <span id="demoPlat" class="hidden absolute -top-2 -right-2 bg-amber-400 text-zinc-950 text-xs font-black px-2 py-1 rounded-sm shadow-lg">Platina</span>
                         </div>
                         <div class="min-w-0 flex-1">
                             <p class="text-xs font-bold text-zinc-500">Exemplo</p>
-                            <h2 class="text-xl font-black text-white tracking-tight leading-tight">Hollow Knight</h2>
+                            <h2 class="text-xl font-black text-white tracking-tight leading-tight"><?php echo htmlspecialchars($demoTitle); ?></h2>
                             <p id="demoStatus" class="mt-2 inline-block text-xs font-black px-2 py-1 rounded-sm bg-zinc-700 text-zinc-100">Backlog</p>
                             <p id="demoHint" class="mt-3 text-sm text-zinc-400 leading-snug">Está na fila. Escolha um status ao lado para ver o que muda.</p>
                         </div>
