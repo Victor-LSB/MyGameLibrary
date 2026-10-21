@@ -36,7 +36,7 @@ class GameController {
     public function index() {
         $this->startSession();
         if (!isset($_SESSION['user_id'])) {
-            include __DIR__ . '/../Views/auth/login.php';
+            include __DIR__ . '/../Views/landing.php';
             exit();
         }
 
