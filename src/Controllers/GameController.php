@@ -50,7 +50,10 @@ class GameController {
             error_log('Landing: erro ao buscar jogos populares: ' . $e->getMessage());
             return [];
         }
-        @file_put_contents($cacheFile, json_encode($games), LOCK_EX);
+        // Só guarda em cache quando há resultado; vazio será tentado de novo na próxima visita.
+        if (!empty($games)) {
+            @file_put_contents($cacheFile, json_encode($games), LOCK_EX);
+        }
         return $games;
     }
 

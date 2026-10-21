@@ -17,11 +17,17 @@ class Game {
         $limit = max(1, min(12, (int) $limit));
         $sql = "SELECT g.id, g.title, g.cover_image, COUNT(ug.game_id) AS total
                 FROM games g JOIN user_games ug ON g.id = ug.game_id
-                WHERE g.cover_image IS NOT NULL AND g.cover_image LIKE 'https://%'
+                WHERE g.cover_image IS NOT NULL
+                  AND (g.cover_image LIKE 'https://%' OR g.cover_image LIKE 'http://%')
                 GROUP BY g.id, g.title, g.cover_image
                 ORDER BY total DESC, g.id DESC
                 LIMIT $limit";
-        return $this->conn->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $this->conn->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        // Páginas em HTTPS bloqueiam imagens http://, então sobe o protocolo.
+        foreach ($rows as &$row) {
+            $row['cover_image'] = preg_replace('#^http://#i', 'https://', $row['cover_image']);
+        }
+        return $rows;
     }
 
     public function addGame($external_id, $title, $platform, $genre, $release_date, $cover_image) {
