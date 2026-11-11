@@ -822,29 +822,69 @@ class GameAPI {
         return true;
     }
 
-    // Corpos das buscas extras: uma por palavra "âncora" (as mais longas, que são as mais
-    // distintivas e as que menos provavelmente têm erro).
-    private function tolerantSearchBodies($query) {
+    // Palavras da busca (sem stopwords, sem números, 3+ letras), na forma usada para comparar
+    private function tolerantWords($query) {
         $normalized = $this->foldAccents($this->normalizeForMatch($query));
-        $words = array_values(array_unique(array_filter(
+        return array_values(array_unique(array_filter(
             $this->significantWords($normalized),
             fn($w) => mb_strlen($w) >= 3 && !ctype_digit($w)
         )));
+    }
+
+    // FASE 1: uma busca por palavra "âncora" (as mais longas, que são as mais distintivas e
+    // as que menos provavelmente têm erro). Se a busca é uma palavra só, já foi feita
+    // antes (a normal), então não repete.
+    private function tolerantAnchorBodies($query) {
+        $words = $this->tolerantWords($query);
         usort($words, fn($a, $b) => mb_strlen($b) - mb_strlen($a));
         $words = array_slice($words, 0, 3);
 
-        $bodies = [];
-        if (count($words) === 1 && mb_strlen($words[0]) >= 5) {
-            // Uma palavra só e ela provavelmente tem o erro: busca o COMEÇO dela
-            // ("witchr" -> nomes que contêm "witc")
-            $prefix = mb_substr($words[0], 0, mb_strlen($words[0]) - min(2, mb_strlen($words[0]) - 4));
-            $bodies[] = 'fields ' . $this->igdbListFields . '; '
-                . 'where name ~ *"' . $this->apicalypseString($prefix) . '"*; limit 100;';
-        } else {
-            foreach ($words as $w) {
-                $bodies[] = 'search "' . $this->apicalypseString($w) . '"; '
-                    . 'fields ' . $this->igdbListFields . '; limit 100;';
+        $normalizedQuery = $this->foldAccents($this->normalizeForMatch($query));
+        if (count($words) === 1 && $words[0] === $normalizedQuery) {
+            return [];
+        }
+
+        return array_map(
+            fn($w) => 'search "' . $this->apicalypseString($w) . '"; fields ' . $this->igdbListFields . '; limit 100;',
+            $words
+        );
+    }
+
+    // FASE 2 (só se a fase 1 não achou nada decente): a palavra mais longa que não aparece
+    // em NENHUM candidato provavelmente tem o erro de digitação. Como o erro pode estar em
+    // qualquer lugar da palavra, busca pelo COMEÇO e pelo FIM dela (um dos dois quase
+    // sempre fica antes/depois do erro): "mineceraft" -> nomes com "mine" e nomes com "raft".
+    // Ordenado por popularidade, para o jogo certo cair dentro do limite de 100.
+    private function tolerantAffixBodies($query, array $pool) {
+        $poolTokens = [];
+        foreach ($this->filterIgdbGameTypes($pool) as $g) {
+            foreach (preg_split('/\s+/u', $this->foldAccents($this->normalizeForMatch($g['name'] ?? '')), -1, PREG_SPLIT_NO_EMPTY) as $t) {
+                $poolTokens[$t] = true;
             }
+        }
+
+        $unmatched = array_filter($this->tolerantWords($query), function ($w) use ($poolTokens) {
+            if (mb_strlen($w) < 4) return false;
+            foreach (array_keys($poolTokens) as $t) {
+                if ($this->tokenSimilarity($w, (string) $t) > 0.0) return false;
+            }
+            return true;
+        });
+        if (empty($unmatched)) {
+            return [];
+        }
+
+        usort($unmatched, fn($a, $b) => mb_strlen($b) - mb_strlen($a));
+        $word = $unmatched[0];
+        $len = mb_strlen($word);
+        $k = $len >= 11 ? 5 : ($len >= 6 ? 4 : 3);
+
+        $affixes = array_unique([mb_substr($word, 0, $k), mb_substr($word, -$k)]);
+        $bodies = [];
+        foreach ($affixes as $affix) {
+            $bodies[] = 'fields ' . $this->igdbListFields . '; '
+                . 'where name ~ *"' . $this->apicalypseString($affix) . '"* & total_rating_count != null; '
+                . 'sort total_rating_count desc; limit 100;';
         }
         return $bodies;
     }
@@ -936,13 +976,25 @@ class GameAPI {
         return $results;
     }
 
-    private function applyTolerantSearch(array $payload, array $primaryGames, $query) {
-        $pool = $primaryGames;
-        foreach ($this->igdbMultiRequest($this->tolerantSearchBodies($query)) as $list) {
+    private function mergeIgdbLists(array $pool, array $lists) {
+        foreach ($lists as $list) {
             $pool = array_merge($pool, $list);
         }
+        return $pool;
+    }
 
+    private function applyTolerantSearch(array $payload, array $primaryGames, $query) {
+        $pool = $primaryGames;
+
+        // Fase 1: busca pelas palavras âncora
+        $pool = $this->mergeIgdbLists($pool, $this->igdbMultiRequest($this->tolerantAnchorBodies($query)));
         $results = $this->rankTolerantCandidates($pool, $query);
+
+        // Fase 2: nada decente ainda -> busca por começo/fim da palavra que parece errada
+        if (empty($results)) {
+            $pool = $this->mergeIgdbLists($pool, $this->igdbMultiRequest($this->tolerantAffixBodies($query, $pool)));
+            $results = $this->rankTolerantCandidates($pool, $query);
+        }
 
         // Se a busca tolerante também não achou nada decente, mantém o que já tinha
         if (!empty($results)) {
