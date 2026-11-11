@@ -25,6 +25,9 @@ class GameAPI {
     // perder jogos que vêm com game_type nulo.
     private $igdbExcludedTypes = [1, 2, 3, 5, 6, 7, 13, 14];
 
+    // Campos pedidos à IGDB nas buscas por lista (normal e tolerante)
+    private $igdbListFields = 'name,first_release_date,genres.name,platforms.name,cover.image_id,screenshots.image_id,total_rating_count,follows,game_type,version_parent';
+
     public function __construct() {
         $this->twitchClientId = trim($_ENV['TWITCH_CLIENT_ID'] ?? '');
         $this->twitchClientSecret = trim($_ENV['TWITCH_CLIENT_SECRET'] ?? '');
@@ -413,8 +416,7 @@ class GameAPI {
 
     private function igdbSearchBody($query) {
         return 'search "' . $this->apicalypseString($query) . '"; '
-            . 'fields name,first_release_date,genres.name,platforms.name,cover.image_id,'
-            . 'screenshots.image_id,total_rating_count,follows,game_type,version_parent; '
+            . 'fields ' . $this->igdbListFields . '; '
             . 'limit 25;';
     }
 
@@ -431,6 +433,12 @@ class GameAPI {
         [$igdbPayload, $steamSearchPayload] = $this->fetchIgdbAndSteamSearchConcurrently($query);
 
         $payload = $this->processIgdbSearchPayload($igdbPayload, $query);
+
+        // A IGDB respondeu, mas nada parece com o que foi digitado (provável erro de
+        // digitação, ex: "belsmont" em vez de "belmont"): tenta a busca tolerante
+        if ($payload !== null && $this->shouldTryTolerantSearch($payload['results'], $query)) {
+            $payload = $this->applyTolerantSearch($payload, $igdbPayload, $query);
+        }
 
         // IGDB fora do ar, com timeout, rate-limited etc.: cai pro fallback da Steam
         // em vez de devolver busca vazia/erro pro usuário
@@ -505,6 +513,16 @@ class GameAPI {
         return [$igdbGames, is_array($steamPayload) ? $steamPayload : null];
     }
 
+    // Remove DLC/mod/bundle etc. e edições duplicadas (version_parent preenchido)
+    private function filterIgdbGameTypes(array $games) {
+        return array_values(array_filter($games, function ($g) {
+            if (!is_array($g) || empty($g['id'])) return false;
+            if (in_array($g['game_type'] ?? null, $this->igdbExcludedTypes, true)) return false;
+            if (!empty($g['version_parent'])) return false;
+            return true;
+        }));
+    }
+
     // Recebe a lista crua da IGDB (ou null) e devolve null se não for confiável,
     // ou ['results' => [...]] já filtrado/pronto pra exibição.
     // Obs: uma lista vazia [] é uma resposta válida ("a IGDB não achou nada") e NÃO cai
@@ -514,13 +532,7 @@ class GameAPI {
             return null; // formato inesperado (ex: objeto de erro) -> trata como falha
         }
 
-        // Remove DLC/mod/bundle etc. e edições duplicadas (version_parent preenchido)
-        $games = array_values(array_filter($games, function ($g) {
-            if (!is_array($g)) return false;
-            if (in_array($g['game_type'] ?? null, $this->igdbExcludedTypes, true)) return false;
-            if (!empty($g['version_parent'])) return false;
-            return true;
-        }));
+        $games = $this->filterIgdbGameTypes($games);
 
         $trimmed = array_map(fn($game) => $this->trimGameForList($this->normalizeGameData($game)), $games);
 
@@ -706,6 +718,237 @@ class GameAPI {
             'background_image' => $data['header_image'] ?? null,
             'released' => $this->normalizeSteamDate($data['release_date']['date'] ?? null),
         ]);
+    }
+
+    // ---------- Busca tolerante a erros de digitação ----------
+    // A busca da IGDB exige as palavras escritas certas. Quando nada do resultado normal
+    // parece com o que foi digitado, buscamos pelas palavras que provavelmente estão certas
+    // (ex: "castlevania" em "castlevania belsmont curse") e ranqueamos os candidatos aqui,
+    // comparando palavra por palavra com tolerância a letras trocadas/faltando/sobrando.
+    // Limite conhecido: precisa de pelo menos uma palavra (ou o começo dela) escrita certa.
+
+    // Troca letras acentuadas por equivalentes simples (só para comparar; não depende de intl)
+    private function foldAccents($text) {
+        return strtr($text, [
+            'á' => 'a', 'à' => 'a', 'â' => 'a', 'ã' => 'a', 'ä' => 'a', 'å' => 'a',
+            'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e',
+            'í' => 'i', 'ì' => 'i', 'î' => 'i', 'ï' => 'i',
+            'ó' => 'o', 'ò' => 'o', 'ô' => 'o', 'õ' => 'o', 'ö' => 'o',
+            'ú' => 'u', 'ù' => 'u', 'û' => 'u', 'ü' => 'u',
+            'ç' => 'c', 'ñ' => 'n',
+        ]);
+    }
+
+    // Distância de edição (Damerau-Levenshtein simplificada): inserir, apagar, trocar
+    // uma letra ou inverter duas letras vizinhas ("wtich" -> "witch") custa 1.
+    private function editDistance($a, $b) {
+        $a = preg_split('//u', $a, -1, PREG_SPLIT_NO_EMPTY);
+        $b = preg_split('//u', $b, -1, PREG_SPLIT_NO_EMPTY);
+        $n = count($a);
+        $m = count($b);
+        if ($n === 0) return $m;
+        if ($m === 0) return $n;
+
+        $d = [];
+        for ($i = 0; $i <= $n; $i++) $d[$i][0] = $i;
+        for ($j = 0; $j <= $m; $j++) $d[0][$j] = $j;
+
+        for ($i = 1; $i <= $n; $i++) {
+            for ($j = 1; $j <= $m; $j++) {
+                $cost = $a[$i - 1] === $b[$j - 1] ? 0 : 1;
+                $d[$i][$j] = min($d[$i - 1][$j] + 1, $d[$i][$j - 1] + 1, $d[$i - 1][$j - 1] + $cost);
+                if ($i > 1 && $j > 1 && $a[$i - 1] === $b[$j - 2] && $a[$i - 2] === $b[$j - 1]) {
+                    $d[$i][$j] = min($d[$i][$j], $d[$i - 2][$j - 2] + 1);
+                }
+            }
+        }
+        return $d[$n][$m];
+    }
+
+    // 0..1: quão bem a palavra digitada ($q) casa com uma palavra do nome ($n)
+    private function tokenSimilarity($q, $n) {
+        if ($q === $n) return 1.0;
+
+        $lq = mb_strlen($q);
+        // números ("3") e palavras curtas só valem se forem exatamente iguais;
+        // senão "dark souls 2" casaria com "dark souls 3"
+        if ($lq < 4 || ctype_digit($q) || ctype_digit($n)) return 0.0;
+
+        // palavra ainda sendo digitada ("belmo" -> "belmont")
+        if (mb_strpos($n, $q) === 0) return 0.9;
+
+        $sim = 1 - $this->editDistance($q, $n) / max($lq, mb_strlen($n));
+        return $sim >= 0.75 ? $sim : 0.0;
+    }
+
+    // 0..1: média, sobre as palavras digitadas, da melhor correspondência no nome do jogo.
+    // 1.0 = todas as palavras digitadas aparecem (exatas) no nome.
+    private function fuzzyScore($name, $query) {
+        $qTokens = $this->significantWords($this->foldAccents($this->normalizeForMatch($query)));
+        $nTokens = preg_split('/\s+/u', $this->foldAccents($this->normalizeForMatch($name)), -1, PREG_SPLIT_NO_EMPTY);
+        if (empty($qTokens) || empty($nTokens)) {
+            return 0.0;
+        }
+
+        $sum = 0.0;
+        $numberMissing = false;
+        foreach ($qTokens as $q) {
+            $best = 0.0;
+            foreach ($nTokens as $n) {
+                $best = max($best, $this->tokenSimilarity($q, $n));
+                if ($best === 1.0) break;
+            }
+            // "dark souls 3" não pode casar com "Dark Souls II": o número decide qual jogo é
+            if ($best === 0.0 && ctype_digit($q)) {
+                $numberMissing = true;
+            }
+            $sum += $best;
+        }
+        $score = $sum / count($qTokens);
+
+        return $numberMissing ? $score * 0.5 : $score;
+    }
+
+    // Só vale a pena gastar requisições extras se NENHUM resultado atual parece com a busca
+    private function shouldTryTolerantSearch(array $results, $query) {
+        if (mb_strlen(trim($query)) < 4) {
+            return false;
+        }
+        foreach ($results as $game) {
+            if ($this->fuzzyScore($game['name'] ?? '', $query) >= 0.85) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Corpos das buscas extras: uma por palavra "âncora" (as mais longas, que são as mais
+    // distintivas e as que menos provavelmente têm erro).
+    private function tolerantSearchBodies($query) {
+        $normalized = $this->foldAccents($this->normalizeForMatch($query));
+        $words = array_values(array_unique(array_filter(
+            $this->significantWords($normalized),
+            fn($w) => mb_strlen($w) >= 3 && !ctype_digit($w)
+        )));
+        usort($words, fn($a, $b) => mb_strlen($b) - mb_strlen($a));
+        $words = array_slice($words, 0, 3);
+
+        $bodies = [];
+        if (count($words) === 1 && mb_strlen($words[0]) >= 5) {
+            // Uma palavra só e ela provavelmente tem o erro: busca o COMEÇO dela
+            // ("witchr" -> nomes que contêm "witc")
+            $prefix = mb_substr($words[0], 0, mb_strlen($words[0]) - min(2, mb_strlen($words[0]) - 4));
+            $bodies[] = 'fields ' . $this->igdbListFields . '; '
+                . 'where name ~ *"' . $this->apicalypseString($prefix) . '"*; limit 100;';
+        } else {
+            foreach ($words as $w) {
+                $bodies[] = 'search "' . $this->apicalypseString($w) . '"; '
+                    . 'fields ' . $this->igdbListFields . '; limit 100;';
+            }
+        }
+        return $bodies;
+    }
+
+    // Dispara várias queries da IGDB ao mesmo tempo. Devolve uma lista de arrays de jogos
+    // (as que falharam são ignoradas — a busca tolerante é um "extra", nunca derruba a busca).
+    private function igdbMultiRequest(array $bodies) {
+        $token = $this->getIgdbToken();
+        if ($token === null || empty($bodies)) {
+            return [];
+        }
+
+        $multiHandle = curl_multi_init();
+        $handles = [];
+        foreach ($bodies as $body) {
+            $ch = $this->buildIgdbHandle($body, $token, 3, 2);
+            curl_multi_add_handle($multiHandle, $ch);
+            $handles[] = $ch;
+        }
+
+        $running = null;
+        do {
+            curl_multi_exec($multiHandle, $running);
+            if ($running > 0) {
+                curl_multi_select($multiHandle);
+            }
+        } while ($running > 0);
+
+        $lists = [];
+        foreach ($handles as $ch) {
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            if ($code === 401) {
+                $this->invalidateIgdbToken();
+            }
+            if (!curl_errno($ch) && $code < 400) {
+                $decoded = json_decode((string) curl_multi_getcontent($ch), true);
+                if (is_array($decoded) && array_is_list($decoded)) {
+                    $lists[] = $decoded;
+                }
+            } else {
+                error_log('GameAPI: busca tolerante falhou (HTTP ' . $code . ')');
+            }
+            curl_multi_remove_handle($multiHandle, $ch);
+            curl_close($ch);
+        }
+        curl_multi_close($multiHandle);
+
+        return $lists;
+    }
+
+    // Junta os candidatos (sem repetir), dá nota de semelhança com a busca e devolve os
+    // melhores já no formato final da lista. Nota mínima 0.66 (ex: 2 de 3 palavras casam;
+    // para busca de uma palavra só, 0.75).
+    private function rankTolerantCandidates(array $games, $query) {
+        $qWordCount = count($this->significantWords($this->normalizeForMatch($query)));
+        $minScore = $qWordCount <= 1 ? 0.75 : 0.66;
+
+        $seen = [];
+        $scored = [];
+        foreach ($this->filterIgdbGameTypes($games) as $g) {
+            $id = (int) $g['id'];
+            if (isset($seen[$id])) continue;
+            $seen[$id] = true;
+
+            $score = $this->fuzzyScore($g['name'] ?? '', $query);
+            if ($score < $minScore) continue;
+
+            $nameWords = count(preg_split('/\s+/u', $this->normalizeForMatch($g['name'] ?? ''), -1, PREG_SPLIT_NO_EMPTY));
+            $extraWords = max(0, $nameWords - $qWordCount);
+
+            $scored[] = [
+                // palavras sobrando no nome pesam pouco (máx. 0.1): só ajudam a colocar
+                // "Castlevania" na frente de "Castlevania: Symphony of the Night"
+                'score' => $score - min(0.1, 0.02 * $extraWords),
+                'pop' => (int) ($g['total_rating_count'] ?? 0) + (int) ($g['follows'] ?? 0),
+                'game' => $g,
+            ];
+        }
+
+        // mais parecido primeiro; empate decide pelo mais popular
+        usort($scored, fn($a, $b) => [$b['score'], $b['pop']] <=> [$a['score'], $a['pop']]);
+
+        $results = [];
+        foreach (array_slice($scored, 0, 10) as $row) {
+            $item = $this->trimGameForList($this->normalizeGameData($row['game']));
+            unset($item['_added']);
+            $results[] = $item;
+        }
+        return $results;
+    }
+
+    private function applyTolerantSearch(array $payload, array $primaryGames, $query) {
+        $pool = $primaryGames;
+        foreach ($this->igdbMultiRequest($this->tolerantSearchBodies($query)) as $list) {
+            $pool = array_merge($pool, $list);
+        }
+
+        $results = $this->rankTolerantCandidates($pool, $query);
+
+        // Se a busca tolerante também não achou nada decente, mantém o que já tinha
+        if (!empty($results)) {
+            $payload['results'] = $results;
+        }
+        return $payload;
     }
 
     // ---------- Usado por scripts/update_covers.php (manutenção) ----------
