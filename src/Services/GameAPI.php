@@ -708,6 +708,99 @@ class GameAPI {
         ]);
     }
 
+    // ---------- Usado por scripts/update_covers.php (manutenção) ----------
+
+    // Converte um id da IGDB no valor que fica em games.external_id
+    public function toExternalId($igdbId) {
+        return (int) $igdbId + $this->igdbIdOffset;
+    }
+
+    // Devolve [igdbId => urlDaCapa] para uma lista de ids da IGDB (só os que têm capa).
+    // Lança RuntimeException se a IGDB falhar, para o script parar em vez de gravar errado.
+    public function getCoverUrlsByIgdbIds(array $igdbIds) {
+        $igdbIds = array_values(array_unique(array_map('intval', $igdbIds)));
+        $covers = [];
+
+        foreach (array_chunk($igdbIds, 100) as $chunk) {
+            $body = 'fields cover.image_id; where id = (' . implode(',', $chunk) . '); limit 500;';
+            $games = $this->igdbRequest($body, 10, 3);
+            if (!is_array($games)) {
+                throw new \RuntimeException('Falha ao consultar a IGDB (ver error_log).');
+            }
+            foreach ($games as $g) {
+                $url = $this->igdbImageUrl($g['cover']['image_id'] ?? null, 't_cover_big_2x');
+                if ($url !== null && isset($g['id'])) {
+                    $covers[(int) $g['id']] = $url;
+                }
+            }
+            usleep(300000); // respeita o limite de 4 req/s da IGDB
+        }
+
+        return $covers;
+    }
+
+    // Procura na IGDB o jogo que corresponde a um título já salvo no banco (ids antigos da
+    // RAWG ou da Steam não têm ligação direta com a IGDB). Devolve
+    // ['igdb_id' => int, 'name' => string, 'cover' => url] ou null se não achou com segurança.
+    // Lança RuntimeException se a IGDB falhar.
+    public function findIgdbMatchByTitle($title, $releaseDate = null) {
+        $body = 'search "' . $this->apicalypseString($title) . '"; '
+            . 'fields name,first_release_date,cover.image_id,total_rating_count,game_type,version_parent; limit 10;';
+        $games = $this->igdbRequest($body, 8, 3);
+        if (!is_array($games)) {
+            throw new \RuntimeException('Falha ao consultar a IGDB (ver error_log).');
+        }
+
+        return $this->pickBestIgdbMatch($games, $title, $releaseDate);
+    }
+
+    // Só aceita candidato com NOME IGUAL ao do banco (ignorando maiúsculas, pontuação e
+    // número romano) e com capa. Se houver mais de um com o mesmo nome (ex: "Prey" 2006 e
+    // 2017), o ano de lançamento desempata; se não der pra desempatar, devolve null em vez
+    // de arriscar a capa errada.
+    private function pickBestIgdbMatch(array $games, $title, $releaseDate) {
+        $normTitle = $this->normalizeForMatch($title);
+        $year = $releaseDate ? (int) substr((string) $releaseDate, 0, 4) : null;
+
+        $candidates = [];
+        foreach ($games as $g) {
+            if (!is_array($g) || empty($g['id'])) continue;
+            if (in_array($g['game_type'] ?? null, $this->igdbExcludedTypes, true)) continue;
+            if (!empty($g['version_parent'])) continue;
+            if (empty($g['cover']['image_id'])) continue;
+            if ($this->normalizeForMatch($g['name'] ?? '') !== $normTitle) continue;
+            $candidates[] = $g;
+        }
+
+        if (empty($candidates)) {
+            return null;
+        }
+
+        if ($year) {
+            $sameYear = array_values(array_filter($candidates, function ($g) use ($year) {
+                return isset($g['first_release_date'])
+                    && abs((int) gmdate('Y', (int) $g['first_release_date']) - $year) <= 1;
+            }));
+            if (!empty($sameYear)) {
+                $candidates = $sameYear;
+            } elseif (count($candidates) > 1) {
+                return null; // vários com o mesmo nome e nenhum do ano certo
+            }
+        } elseif (count($candidates) > 1) {
+            return null;
+        }
+
+        // Entre os que sobraram, o mais avaliado (mais "popular") ganha
+        usort($candidates, fn($a, $b) => ($b['total_rating_count'] ?? 0) <=> ($a['total_rating_count'] ?? 0));
+        $best = $candidates[0];
+
+        return [
+            'igdb_id' => (int) $best['id'],
+            'name' => $best['name'],
+            'cover' => $this->igdbImageUrl($best['cover']['image_id'], 't_cover_big_2x'),
+        ];
+    }
+
     public function translateHTML($htmlText, $sourceLang = 'EN', $targetLang = 'PT-BR') {
         if (empty($htmlText)) return $htmlText;
 
