@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             return `
             <div class="bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl flex flex-col overflow-hidden group">
-                <div class="h-48 sm:h-56 bg-zinc-950 border-b-2 border-zinc-800 overflow-hidden relative">
+                <div class="aspect-[3/4] bg-zinc-950 border-b-2 border-zinc-800 overflow-hidden relative">
                     ${cover}
                     <div class="absolute top-2 right-2 bg-zinc-900 text-zinc-300 text-[10px] font-black uppercase tracking-widest px-2 py-1 border border-zinc-700 rounded-sm">
                         ${year}

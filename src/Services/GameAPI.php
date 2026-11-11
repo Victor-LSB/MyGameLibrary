@@ -134,19 +134,18 @@ class GameAPI {
         return !empty($loose) ? $loose : $results;
     }
 
-    // URL de imagem da IGDB. t_screenshot_big (16:9) corta melhor no card do que a capa
-    // vertical (t_cover_big) — igual ao que já era feito com a RAWG/Steam. Se o jogo não
-    // tiver screenshot, usa a capa.
+    // URL de imagem da IGDB. Usa a capa oficial (retrato 3:4, t_cover_big_2x = 528x748,
+    // nítida em telas retina). Se o jogo não tiver capa, cai para uma screenshot.
     private function igdbImageUrl($imageId, $size) {
         return $imageId ? "https://images.igdb.com/igdb/image/upload/{$size}/{$imageId}.jpg" : null;
     }
 
     private function igdbBackgroundImage(array $game) {
-        $shot = $game['screenshots'][0]['image_id'] ?? null;
-        if ($shot) {
-            return $this->igdbImageUrl($shot, 't_screenshot_big');
+        $cover = $game['cover']['image_id'] ?? null;
+        if ($cover) {
+            return $this->igdbImageUrl($cover, 't_cover_big_2x');
         }
-        return $this->igdbImageUrl($game['cover']['image_id'] ?? null, 't_cover_big');
+        return $this->igdbImageUrl($game['screenshots'][0]['image_id'] ?? null, 't_screenshot_big');
     }
 
     // Converte um jogo cru da IGDB para o mesmo formato que as views/JS já esperam

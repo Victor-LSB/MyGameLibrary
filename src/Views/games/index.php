@@ -116,7 +116,7 @@
                         $isZerado = ($game['status'] ?? '') === 'Zerado';
                         $isPlatinum = !empty($game['platinum_at']);
                     ?>
-                    <div class="relative h-56 bg-zinc-950 border-b-2 border-zinc-800 overflow-hidden">
+                    <div class="relative aspect-[3/4] bg-zinc-950 border-b-2 border-zinc-800 overflow-hidden">
                         <a href="index.php?action=details&id=<?php echo $game['id']; ?>" class="block h-full w-full">
                             <?php if (!empty($game['cover_image'])): ?>
                                 <img src="<?php echo htmlspecialchars($game['cover_image']); ?>" alt="<?php echo htmlspecialchars($game['title']); ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">

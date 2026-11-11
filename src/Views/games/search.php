@@ -26,7 +26,7 @@
                 <?php foreach ($results as $game): ?>
                     <?php $cover = $game['background_image'] ?? ''; ?>
                     <div class="bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl flex flex-col overflow-hidden group">
-                        <div class="h-48 sm:h-56 bg-zinc-950 border-b-2 border-zinc-800 overflow-hidden relative">
+                        <div class="aspect-[3/4] bg-zinc-950 border-b-2 border-zinc-800 overflow-hidden relative">
                             <?php if (!empty($cover)): ?>
                                 <img src="<?php echo htmlspecialchars($cover); ?>" alt="<?php echo htmlspecialchars($game['name']); ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                             <?php else: ?>

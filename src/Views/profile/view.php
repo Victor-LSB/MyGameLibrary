@@ -169,7 +169,7 @@
                         <?php foreach ($recentGames as $game): ?>
                             <div class="bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl flex flex-col overflow-hidden group">
                                 <!-- AQUI ESTÁ A CORREÇÃO: O link agora carrega o ID do jogo e o nome de utilizador dono do perfil (&u=...) -->
-                                <a href="index.php?action=details&id=<?php echo $game['id']; ?>&u=<?php echo urlencode($profileUser['username']); ?>" class="block h-40 sm:h-56 bg-zinc-950 border-b-2 border-zinc-800 overflow-hidden relative">
+                                <a href="index.php?action=details&id=<?php echo $game['id']; ?>&u=<?php echo urlencode($profileUser['username']); ?>" class="block aspect-[3/4] bg-zinc-950 border-b-2 border-zinc-800 overflow-hidden relative">
                                     <?php if (!empty($game['cover_image'])): ?>
                                         <img src="<?php echo htmlspecialchars($game['cover_image']); ?>" alt="<?php echo htmlspecialchars($game['title']); ?>" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 bg-zinc-950">
                                     <?php else: ?>
