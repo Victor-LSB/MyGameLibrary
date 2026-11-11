@@ -495,6 +495,6 @@
     <script src="<?php echo mgl_asset('assets/js/review-comments.js'); ?>"></script>
     <?php endif; ?>
     <script src="<?php echo mgl_asset('assets/js/notifications.js'); ?>"></script>
-<?php require __DIR__ . '/../partials/rawg_credit.php'; ?>
+<?php require __DIR__ . '/../partials/igdb_credit.php'; ?>
 </body>
 </html>

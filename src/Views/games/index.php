@@ -290,6 +290,6 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="<?php echo mgl_asset('assets/js/status.js'); ?>"></script>
     <script src="<?php echo mgl_asset('assets/js/notifications.js'); ?>"></script>
-<?php require __DIR__ . '/../partials/rawg_credit.php'; ?>
+<?php require __DIR__ . '/../partials/igdb_credit.php'; ?>
 </body>
 </html>

@@ -134,6 +134,6 @@
 
     <script src="<?php echo mgl_asset('assets/js/notifications.js'); ?>"></script>
     <script src="<?php echo mgl_asset('assets/js/feed.js'); ?>"></script>
-<?php require __DIR__ . '/../partials/rawg_credit.php'; ?>
+<?php require __DIR__ . '/../partials/igdb_credit.php'; ?>
 </body>
 </html>

@@ -2,19 +2,32 @@
 namespace Victi\MyGameLibrary\Services;
 
 class GameAPI {
-    private $apiKey;
-    private $baseUrl = 'https://api.rawg.io/api/games';
+    // IGDB usa o OAuth da Twitch (client credentials): você cria um app em
+    // https://dev.twitch.tv/console, e usa Client ID + Client Secret para gerar um
+    // access token (válido ~60 dias). O token é guardado em cache em disco.
+    private $twitchClientId;
+    private $twitchClientSecret;
+    private $igdbUrl = 'https://api.igdb.com/v4/games';
     private $cacheDir;
     private $cacheTtl = 300; // 5 minutos: buscas repetidas (ex: "the", "witcher", "the witcher") saem do cache
 
-    // Offset somado ao appid da Steam para gerar um "id" que nunca colide com um id da RAWG
-    // (hoje a RAWG não chega nem perto disso) e continua sendo só dígitos, já que o resto do
-    // código sanitiza external_id com FILTER_SANITIZE_NUMBER_INT. getGameDetails() usa esse
-    // mesmo offset pra saber, só olhando o número, se deve buscar na RAWG ou na Steam.
+    // Os ids guardados em games.external_id precisam continuar sendo só dígitos e nunca colidir
+    // entre fontes. Faixas:
+    //   < 500.000.000          -> ids antigos da RAWG (jogos já salvos no banco; a RAWG não é mais consultada)
+    //   500.000.000 .. 899.999.999 -> id da IGDB + igdbIdOffset
+    //   >= 900.000.000         -> appid da Steam + steamIdOffset (fallback)
+    // getGameDetails() olha só o número para saber em qual API buscar.
+    private $igdbIdOffset = 500000000;
     private $steamIdOffset = 900000000;
 
+    // game_type da IGDB que NÃO queremos na busca (DLC, expansão, bundle, mod, episódio,
+    // temporada, pack, update). Filtrado no PHP em vez de no "where" da query para não
+    // perder jogos que vêm com game_type nulo.
+    private $igdbExcludedTypes = [1, 2, 3, 5, 6, 7, 13, 14];
+
     public function __construct() {
-        $this->apiKey = $_ENV['RAWG_API_KEY'] ?? '';
+        $this->twitchClientId = trim($_ENV['TWITCH_CLIENT_ID'] ?? '');
+        $this->twitchClientSecret = trim($_ENV['TWITCH_CLIENT_SECRET'] ?? '');
         $this->cacheDir = dirname(__DIR__, 2) . '/storage/cache/game_search';
         if (!is_dir($this->cacheDir)) {
             @mkdir($this->cacheDir, 0775, true);
@@ -121,27 +134,44 @@ class GameAPI {
         return !empty($loose) ? $loose : $results;
     }
 
-    // Mantém só os campos que a tela de busca realmente usa, deixando o JSON
-    // bem menor e mais rápido de transferir/renderizar
+    // URL de imagem da IGDB. t_screenshot_big (16:9) corta melhor no card do que a capa
+    // vertical (t_cover_big) — igual ao que já era feito com a RAWG/Steam. Se o jogo não
+    // tiver screenshot, usa a capa.
+    private function igdbImageUrl($imageId, $size) {
+        return $imageId ? "https://images.igdb.com/igdb/image/upload/{$size}/{$imageId}.jpg" : null;
+    }
+
+    private function igdbBackgroundImage(array $game) {
+        $shot = $game['screenshots'][0]['image_id'] ?? null;
+        if ($shot) {
+            return $this->igdbImageUrl($shot, 't_screenshot_big');
+        }
+        return $this->igdbImageUrl($game['cover']['image_id'] ?? null, 't_cover_big');
+    }
+
+    // Converte um jogo cru da IGDB para o mesmo formato que as views/JS já esperam
+    // (id, name, background_image, released, genres[], platforms[]).
     private function trimGameForList(array $game) {
+        $released = isset($game['first_release_date']) ? gmdate('Y-m-d', (int) $game['first_release_date']) : null;
+
         return [
-            'id' => $game['id'] ?? null,
+            'id' => isset($game['id']) ? (int) $game['id'] + $this->igdbIdOffset : null,
             'name' => $game['name'] ?? '',
-            'background_image' => $game['background_image'] ?? null,
-            'released' => $game['released'] ?? null,
+            'background_image' => $this->igdbBackgroundImage($game),
+            'released' => $released,
             'genres' => array_map(fn($g) => ['name' => $g['name'] ?? ''], $game['genres'] ?? []),
-            'platforms' => array_map(fn($p) => ['platform' => ['name' => $p['platform']['name'] ?? '']], $game['platforms'] ?? []),
-            // Usado só para filtrar resultados ruins (fangames, demos, mods obscuros);
+            'platforms' => array_map(fn($p) => ['platform' => ['name' => $p['name'] ?? '']], $game['platforms'] ?? []),
+            // Usado só para filtrar resultados ruins (fangames, entradas vazias);
             // não é usado na tela, removido antes de devolver a resposta
-            '_added' => $game['added'] ?? 0,
+            '_added' => (int) ($game['total_rating_count'] ?? 0) + (int) ($game['follows'] ?? 0),
         ];
     }
 
-    // Tira da lista jogos com engajamento praticamente nulo na RAWG (fangames, demos
+    // Tira da lista jogos com engajamento praticamente nulo na IGDB, medido por avaliações + seguidores (fangames, demos
     // caseiras, mods, entradas de teste), que "batem" com o texto buscado mas não são
     // o que o usuário está procurando. Se filtrar demais (busca por algo bem de nicho),
     // recua e devolve a lista original pra não sumir com resultados válidos.
-    private function filterLowQualityResults(array $results, $minAdded = 10) {
+    private function filterLowQualityResults(array $results, $minAdded = 3) {
         $filtered = array_values(array_filter($results, fn($g) => ($g['_added'] ?? 0) >= $minAdded));
 
         if (count($filtered) < 3) {
@@ -190,14 +220,20 @@ class GameAPI {
         return is_array($decoded) ? $decoded : null;
     }
 
+    // true quando o id está na faixa da IGDB (ver comentário em $igdbIdOffset)
+    private function isIgdbId($id) {
+        $id = (int) $id;
+        return $id >= $this->igdbIdOffset && $id < $this->steamIdOffset;
+    }
+
     // true quando o id já veio "deslocado" pelo offset da Steam (ver comentário
-    // em $steamIdOffset), ou seja, é um appid da Steam e não um id da RAWG.
+    // em $steamIdOffset), ou seja, é um appid da Steam e não um id da IGDB.
     private function isSteamId($id) {
         return (int) $id >= $this->steamIdOffset;
     }
 
     // "21 Aug, 2012" (formato que a Steam devolve com l=english) -> "2012-08-21",
-    // pra ficar no mesmo formato ISO que a RAWG usa (a tela mostra só o ano,
+    // pra ficar no mesmo formato ISO que a IGDB usa (a tela mostra só o ano,
     // com substr($released, 0, 4), então precisa começar com o ano).
     private function normalizeSteamDate($rawDate) {
         if (empty($rawDate)) {
@@ -250,7 +286,7 @@ class GameAPI {
         return implode(', ', $normalizedGenres);
     }
 
-    private function normalizeRawgGameData(array $gameData) {
+    private function normalizeGameData(array $gameData) {
         if (!empty($gameData['genres']) && is_array($gameData['genres'])) {
             $gameData['genres'] = array_values(array_filter(array_map(function ($genre) {
                 $name = is_array($genre) ? ($genre['name'] ?? '') : $genre;
@@ -263,6 +299,126 @@ class GameAPI {
         return $gameData;
     }
 
+    // ---------- Token da Twitch (OAuth client credentials) ----------
+
+    private function tokenCachePath() {
+        return dirname($this->cacheDir) . '/igdb_token.json';
+    }
+
+    // Devolve um access token válido (do cache em disco ou novo), ou null se falhar.
+    private function getIgdbToken() {
+        if ($this->twitchClientId === '' || $this->twitchClientSecret === '') {
+            error_log('GameAPI: TWITCH_CLIENT_ID / TWITCH_CLIENT_SECRET não configurados no .env');
+            return null;
+        }
+
+        $path = $this->tokenCachePath();
+        if (is_file($path)) {
+            $cached = json_decode((string) @file_get_contents($path), true);
+            // margem de 1 dia antes de expirar
+            if (is_array($cached) && !empty($cached['token']) && ($cached['expires_at'] ?? 0) > time() + 86400) {
+                return $cached['token'];
+            }
+        }
+
+        $ch = curl_init('https://id.twitch.tv/oauth2/token');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => http_build_query([
+                'client_id' => $this->twitchClientId,
+                'client_secret' => $this->twitchClientSecret,
+                'grant_type' => 'client_credentials',
+            ]),
+            CURLOPT_TIMEOUT => 5,
+            CURLOPT_CONNECTTIMEOUT => 3,
+        ]);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_errno($ch) ? curl_error($ch) : null;
+        curl_close($ch);
+
+        $decoded = $response ? json_decode($response, true) : null;
+        if ($curlError !== null || $httpCode >= 400 || empty($decoded['access_token'])) {
+            error_log('GameAPI: falha ao obter token da Twitch (HTTP ' . $httpCode . ') ' . ($curlError ?? ''));
+            return null;
+        }
+
+        @file_put_contents($path, json_encode([
+            'token' => $decoded['access_token'],
+            'expires_at' => time() + (int) ($decoded['expires_in'] ?? 0),
+        ]), LOCK_EX);
+        @chmod($path, 0600);
+
+        return $decoded['access_token'];
+    }
+
+    private function invalidateIgdbToken() {
+        @unlink($this->tokenCachePath());
+    }
+
+    // Escapa o texto digitado para ir dentro de aspas na query Apicalypse da IGDB
+    private function apicalypseString($text) {
+        return str_replace(['\\', '"'], ['\\\\', '\\"'], (string) $text);
+    }
+
+    // Monta o handle cURL de uma query Apicalypse (POST com o corpo em texto puro)
+    private function buildIgdbHandle($body, $token, $timeout = 3, $connectTimeout = 2) {
+        $ch = curl_init($this->igdbUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $body,
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_CONNECTTIMEOUT => $connectTimeout,
+            CURLOPT_ENCODING => 'gzip,deflate',
+            CURLOPT_HTTPHEADER => [
+                'Client-ID: ' . $this->twitchClientId,
+                'Authorization: Bearer ' . $token,
+                'Accept: application/json',
+                'Content-Type: text/plain',
+                'User-Agent: MyGameLibrary/1.0',
+            ],
+        ]);
+        return $ch;
+    }
+
+    // Faz uma query na IGDB e devolve o array decodificado (lista de jogos) ou null se falhou.
+    // Se a IGDB responder 401 (token revogado/expirado), descarta o token em cache e
+    // tenta UMA vez de novo com um token novo.
+    private function igdbRequest($body, $timeout = 5, $connectTimeout = 3, $retry = true) {
+        $token = $this->getIgdbToken();
+        if ($token === null) {
+            return null;
+        }
+
+        $ch = $this->buildIgdbHandle($body, $token, $timeout, $connectTimeout);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_errno($ch) ? curl_error($ch) : null;
+        curl_close($ch);
+
+        if ($httpCode === 401 && $retry) {
+            $this->invalidateIgdbToken();
+            return $this->igdbRequest($body, $timeout, $connectTimeout, false);
+        }
+
+        if ($curlError !== null || $httpCode >= 400 || $response === false) {
+            error_log('GameAPI igdbRequest falhou (HTTP ' . $httpCode . '): ' . ($curlError ?? ''));
+            return null;
+        }
+
+        $decoded = json_decode($response, true);
+        return is_array($decoded) ? $decoded : null;
+    }
+
+    private function igdbSearchBody($query) {
+        return 'search "' . $this->apicalypseString($query) . '"; '
+            . 'fields name,first_release_date,genres.name,platforms.name,cover.image_id,'
+            . 'screenshots.image_id,total_rating_count,follows,game_type,version_parent; '
+            . 'limit 25;';
+    }
+
     public function searchGames($query) {
 
         // 1) Cache primeiro: se alguém já buscou isso nos últimos minutos, devolve na hora sem tocar em nenhuma API
@@ -271,22 +427,19 @@ class GameAPI {
             return $cached;
         }
 
-        // RAWG e o storesearch da Steam saem AO MESMO TEMPO (curl_multi). Antes a Steam só
-        // era chamada depois da RAWG dar timeout (3s) e falhar — daí a soma dos tempos batia
-        // uns 10s com a RAWG fora do ar. Disparando os dois juntos, o pior caso vira o maior
-        // dos dois tempos, não a soma.
-        [$rawgPayload, $steamSearchPayload] = $this->fetchRawgAndSteamSearchConcurrently($query);
+        // IGDB e o storesearch da Steam saem AO MESMO TEMPO (curl_multi). Assim, com a IGDB
+        // fora do ar, o pior caso vira o maior dos dois tempos, não a soma.
+        [$igdbPayload, $steamSearchPayload] = $this->fetchIgdbAndSteamSearchConcurrently($query);
 
-        $payload = $this->processRawgSearchPayload($rawgPayload, $query);
+        $payload = $this->processIgdbSearchPayload($igdbPayload, $query);
 
-        // RAWG fora do ar, com timeout, rate-limited etc.: cai pro fallback da Steam
+        // IGDB fora do ar, com timeout, rate-limited etc.: cai pro fallback da Steam
         // em vez de devolver busca vazia/erro pro usuário
         if ($payload === null) {
             $payload = $this->searchGamesSteam($query, $steamSearchPayload);
         }
 
-        // Só guarda em cache respostas válidas (evita cachear erro/timeout), sejam
-        // elas da RAWG ou do fallback da Steam
+        // Só guarda em cache respostas válidas (evita cachear erro/timeout)
         if (is_array($payload) && isset($payload['results']) && is_array($payload['results'])) {
             $this->saveToCache($query, $payload);
         }
@@ -294,24 +447,19 @@ class GameAPI {
         return $payload;
     }
 
-    // Dispara a busca da RAWG e o storesearch da Steam ao mesmo tempo e espera os dois.
-    // Devolve [rawgPayload, steamSearchPayload], cada um null se aquela chamada falhou/expirou.
-    private function fetchRawgAndSteamSearchConcurrently($query) {
-        $rawgUrl = "https://api.rawg.io/api/games?key={$this->apiKey}&search=" . urlencode($query) . "&page_size=15";
+    // Dispara a busca da IGDB e o storesearch da Steam ao mesmo tempo e espera os dois.
+    // Devolve [igdbGames, steamSearchPayload], cada um null se aquela chamada falhou/expirou.
+    private function fetchIgdbAndSteamSearchConcurrently($query) {
+        $token = $this->getIgdbToken(); // quase sempre vem do cache em disco, sem rede
         $steamUrl = 'https://store.steampowered.com/api/storesearch/?term=' . urlencode($query) . '&l=english&cc=us';
 
         $multiHandle = curl_multi_init();
 
-        $rawgCh = curl_init();
-        curl_setopt_array($rawgCh, [
-            CURLOPT_URL => $rawgUrl,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 3,
-            CURLOPT_CONNECTTIMEOUT => 2,
-            CURLOPT_ENCODING => 'gzip,deflate',
-            CURLOPT_HTTPHEADER => ['Accept: application/json', 'User-Agent: MyGameLibrary/1.0'],
-        ]);
-        curl_multi_add_handle($multiHandle, $rawgCh);
+        $igdbCh = null;
+        if ($token !== null) {
+            $igdbCh = $this->buildIgdbHandle($this->igdbSearchBody($query), $token, 3, 2);
+            curl_multi_add_handle($multiHandle, $igdbCh);
+        }
 
         $steamCh = curl_init();
         curl_setopt_array($steamCh, [
@@ -331,49 +479,62 @@ class GameAPI {
             }
         } while ($running > 0);
 
-        $rawgOk = !curl_errno($rawgCh) && curl_getinfo($rawgCh, CURLINFO_HTTP_CODE) < 400;
+        $igdbGames = null;
+        if ($igdbCh !== null) {
+            $igdbCode = curl_getinfo($igdbCh, CURLINFO_HTTP_CODE);
+            if ($igdbCode === 401) {
+                $this->invalidateIgdbToken(); // a próxima busca gera um token novo
+            }
+            if (!curl_errno($igdbCh) && $igdbCode < 400) {
+                $decoded = json_decode((string) curl_multi_getcontent($igdbCh), true);
+                $igdbGames = is_array($decoded) ? $decoded : null;
+            } else {
+                error_log('GameAPI: busca na IGDB falhou (HTTP ' . $igdbCode . ') ' . curl_error($igdbCh));
+            }
+            curl_multi_remove_handle($multiHandle, $igdbCh);
+            curl_close($igdbCh);
+        }
+
         $steamOk = !curl_errno($steamCh) && curl_getinfo($steamCh, CURLINFO_HTTP_CODE) < 400;
-
-        $rawgResponse = $rawgOk ? curl_multi_getcontent($rawgCh) : null;
         $steamResponse = $steamOk ? curl_multi_getcontent($steamCh) : null;
-
-        curl_multi_remove_handle($multiHandle, $rawgCh);
         curl_multi_remove_handle($multiHandle, $steamCh);
-        curl_close($rawgCh);
         curl_close($steamCh);
         curl_multi_close($multiHandle);
 
-        $rawgPayload = $rawgResponse ? json_decode($rawgResponse, true) : null;
         $steamPayload = $steamResponse ? json_decode($steamResponse, true) : null;
 
-        return [
-            is_array($rawgPayload) ? $rawgPayload : null,
-            is_array($steamPayload) ? $steamPayload : null,
-        ];
+        return [$igdbGames, is_array($steamPayload) ? $steamPayload : null];
     }
 
-    // Recebe o payload cru da RAWG (ou null) e devolve null se ele não for confiável,
-    // ou já filtrado/pronto pra exibição se for.
-    private function processRawgSearchPayload($payload, $query) {
-        if ($payload === null || !isset($payload['results']) || !is_array($payload['results'])) {
-            return null;
+    // Recebe a lista crua da IGDB (ou null) e devolve null se não for confiável,
+    // ou ['results' => [...]] já filtrado/pronto pra exibição.
+    // Obs: uma lista vazia [] é uma resposta válida ("a IGDB não achou nada") e NÃO cai
+    // no fallback da Steam.
+    private function processIgdbSearchPayload($games, $query) {
+        if ($games === null || !array_is_list($games)) {
+            return null; // formato inesperado (ex: objeto de erro) -> trata como falha
         }
 
-        $trimmed = array_map(
-            fn($game) => $this->trimGameForList($this->normalizeRawgGameData($game)),
-            $payload['results']
-        );
+        // Remove DLC/mod/bundle etc. e edições duplicadas (version_parent preenchido)
+        $games = array_values(array_filter($games, function ($g) {
+            if (!is_array($g)) return false;
+            if (in_array($g['game_type'] ?? null, $this->igdbExcludedTypes, true)) return false;
+            if (!empty($g['version_parent'])) return false;
+            return true;
+        }));
+
+        $trimmed = array_map(fn($game) => $this->trimGameForList($this->normalizeGameData($game)), $games);
 
         $relevant = $this->filterByRelevance($trimmed, $query);
-        $payload['results'] = array_slice($this->filterLowQualityResults($relevant), 0, 10);
+        $results = array_slice($this->filterLowQualityResults($relevant), 0, 10);
 
-        return $payload;
+        return ['results' => $results];
     }
 
-    // Fallback usando a Steam Store API (storesearch + appdetails) quando a RAWG está indisponível.
+    // Fallback usando a Steam Store API (storesearch + appdetails) quando a IGDB está indisponível.
     // storesearch/appdetails são endpoints públicos da loja da Steam, não precisam de STEAM_API_KEY
     // (essa chave é da Web API oficial, usada por outros endpoints que não existem aqui).
-    // $searchPayload: se já veio de fetchRawgAndSteamSearchConcurrently(), reaproveita em vez de
+    // $searchPayload: se já veio de fetchIgdbAndSteamSearchConcurrently(), reaproveita em vez de
     // bater na Steam de novo (só chama de novo se for usado fora de searchGames(), ex. testes).
     private function searchGamesSteam($query, $searchPayload = null) {
         if ($searchPayload === null) {
@@ -417,7 +578,7 @@ class GameAPI {
                 // header_image é o banner com o LOGO do jogo escrito nele — como o card
                 // corta em formato quase quadrado, o corte comia o nome (ex: "DARK SOULS"
                 // virando "K SOUL"). Uma screenshot não tem texto e corta bem melhor,
-                // igual à RAWG (que também usa screenshot como capa da lista).
+                // igual à IGDB (que também usa screenshot como capa da lista).
                 'background_image' => $details['screenshots'][0]['path_full']
                     ?? ($details['header_image'] ?? ($item['tiny_image'] ?? null)),
                 'released' => $this->normalizeSteamDate($details['release_date']['date'] ?? null),
@@ -478,19 +639,43 @@ class GameAPI {
 
     public function getGameDetails($gameID) {
         // Id "deslocado" pelo offset da Steam = veio de um resultado do fallback
-        // (buscado enquanto a RAWG estava fora do ar), então busca na Steam também
+        // (buscado enquanto a IGDB estava fora do ar), então busca na Steam também
         if ($this->isSteamId($gameID)) {
             return $this->getGameDetailsSteam((int) $gameID - $this->steamIdOffset);
         }
 
-        $url = "https://api.rawg.io/api/games/" . $gameID . "?key=" . $this->apiKey;
-        $payload = $this->fetchUrl($url, 5, 3);
+        // Id antigo da RAWG (jogo que já existia antes da migração): não há mais como
+        // consultar a RAWG. Na prática esse caminho nem é usado, porque o controller só
+        // chama getGameDetails() para jogos que ainda NÃO estão no banco.
+        if (!$this->isIgdbId($gameID)) {
+            return null;
+        }
 
-        // Se a RAWG cair bem nesse instante (raro: geralmente já caiu na busca antes),
-        // não dá pra "adivinhar" um appid da Steam pra esse id — só devolve null e o
-        // jogo é salvo sem descrição/gêneros vindos da API, que é o que já acontecia
-        // antes quando essa chamada falhava.
-        return $payload !== null ? $this->normalizeRawgGameData($payload) : null;
+        return $this->getGameDetailsIgdb((int) $gameID - $this->igdbIdOffset);
+    }
+
+    private function getGameDetailsIgdb($igdbId) {
+        $body = 'fields name,summary,storyline,first_release_date,genres.name,cover.image_id,screenshots.image_id; '
+            . 'where id = ' . (int) $igdbId . '; limit 1;';
+        $games = $this->igdbRequest($body, 5, 3);
+
+        if (!is_array($games) || empty($games[0]) || !is_array($games[0])) {
+            // Se a IGDB cair bem nesse instante, devolve null e o jogo é salvo sem
+            // descrição/gêneros vindos da API (mesmo comportamento de antes).
+            return null;
+        }
+
+        $game = $games[0];
+
+        return $this->normalizeGameData([
+            'id' => (int) $game['id'] + $this->igdbIdOffset,
+            'name' => $game['name'] ?? '',
+            // A IGDB devolve texto puro em inglês; vai pro translateHTML como antes
+            'description' => $game['summary'] ?? ($game['storyline'] ?? ''),
+            'genres' => array_map(fn($g) => ['name' => $g['name'] ?? ''], $game['genres'] ?? []),
+            'background_image' => $this->igdbBackgroundImage($game),
+            'released' => isset($game['first_release_date']) ? gmdate('Y-m-d', (int) $game['first_release_date']) : null,
+        ]);
     }
 
     // Mesmo propósito do getGameDetails de cima, mas puxando da Steam Store API
@@ -512,11 +697,11 @@ class GameAPI {
             }
         }
 
-        return $this->normalizeRawgGameData([
+        return $this->normalizeGameData([
             'id' => $appId + $this->steamIdOffset,
             'name' => $data['name'] ?? '',
             // A Steam separa descrição curta/longa; usamos a longa (equivalente ao
-            // campo "description" que a RAWG devolve e que vai pro translateHTML)
+            // campo "description" que a IGDB devolve e que vai pro translateHTML)
             'description' => $data['detailed_description'] ?? ($data['short_description'] ?? ''),
             'genres' => $genres,
             'background_image' => $data['header_image'] ?? null,
