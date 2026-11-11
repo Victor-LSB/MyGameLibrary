@@ -770,9 +770,16 @@ class GameAPI {
         if ($q === $n) return 1.0;
 
         $lq = mb_strlen($q);
-        // números ("3") e palavras curtas só valem se forem exatamente iguais;
-        // senão "dark souls 2" casaria com "dark souls 3"
-        if ($lq < 4 || ctype_digit($q) || ctype_digit($n)) return 0.0;
+        // números ("3") só valem se forem exatamente iguais; senão "dark souls 2"
+        // casaria com "dark souls 3". Palavras de 1-2 letras também.
+        if ($lq < 3 || ctype_digit($q) || ctype_digit($n)) return 0.0;
+
+        // Palavras de 3 letras: tolera UMA letra a mais/menos/trocada ("ing" -> "ring"),
+        // mas com nota menor, porque 3 letras é pouca informação. Sozinha não passa do
+        // mínimo; só ajuda quando as outras palavras da busca casam bem.
+        if ($lq === 3) {
+            return (abs(mb_strlen($n) - 3) <= 1 && $this->editDistance($q, $n) === 1) ? 0.75 : 0.0;
+        }
 
         // palavra ainda sendo digitada ("belmo" -> "belmont")
         if (mb_strpos($n, $q) === 0) return 0.9;
@@ -792,10 +799,15 @@ class GameAPI {
 
         $sum = 0.0;
         $numberMissing = false;
-        foreach ($qTokens as $q) {
+        $lastIndex = count($qTokens) - 1;
+        foreach ($qTokens as $index => $q) {
             $best = 0.0;
             foreach ($nTokens as $n) {
                 $best = max($best, $this->tokenSimilarity($q, $n));
+                // a ÚLTIMA palavra pode estar sendo digitada ainda ("elden ri" -> "ring")
+                if ($index === $lastIndex && mb_strlen($q) >= 2 && !ctype_digit($q) && mb_strpos($n, $q) === 0) {
+                    $best = max($best, 0.9);
+                }
                 if ($best === 1.0) break;
             }
             // "dark souls 3" não pode casar com "Dark Souls II": o número decide qual jogo é
@@ -837,6 +849,11 @@ class GameAPI {
     private function tolerantAnchorBodies($query) {
         $words = $this->tolerantWords($query);
         usort($words, fn($a, $b) => mb_strlen($b) - mb_strlen($a));
+        // "ing" em "elden ing" é só ruído como busca: se há palavra de 4+ letras, usa só elas
+        $longWords = array_values(array_filter($words, fn($w) => mb_strlen($w) >= 4));
+        if (!empty($longWords)) {
+            $words = $longWords;
+        }
         $words = array_slice($words, 0, 3);
 
         $normalizedQuery = $this->foldAccents($this->normalizeForMatch($query));
