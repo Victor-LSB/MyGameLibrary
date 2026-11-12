@@ -1,0 +1,68 @@
+/* Recorte de avatar/banner (modal + pré-visualização).
+   CSS próprio (não depende do build do Tailwind). Cores = paleta zinc/violet do site. */
+
+html.mgl-crop-open { overflow: hidden; }
+
+.mgl-crop-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; align-items: center; justify-content: center;
+    padding: 12px; background: rgba(0, 0, 0, .85);
+}
+.mgl-crop-overlay[hidden] { display: none; }
+
+.mgl-crop-modal {
+    width: 100%; max-width: 640px; max-height: 100%;
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 20px; background: #18181b; border: 2px solid #27272a; border-radius: 2px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, .8);
+}
+.mgl-crop-title {
+    margin: 0; color: #fff; font-size: 18px; font-weight: 900;
+    text-transform: uppercase; letter-spacing: -.02em;
+}
+.mgl-crop-help { margin: 0; color: #71717a; font-size: 12px; }
+
+.mgl-crop-stage {
+    position: relative; width: 100%; height: min(55vh, 440px);
+    background: #09090b; border: 1px solid #27272a; overflow: hidden;
+}
+.mgl-crop-stage img { display: block; max-width: 100%; }
+
+.mgl-crop-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.mgl-crop-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
+
+.mgl-btn {
+    appearance: none; cursor: pointer; border: 0; border-radius: 2px;
+    padding: 10px 16px; font: inherit; font-size: 12px; font-weight: 900;
+    text-transform: uppercase; letter-spacing: .1em; color: #fff; background: #7c3aed;
+    transition: background-color .15s;
+}
+.mgl-btn:hover { background: #8b5cf6; }
+.mgl-btn:disabled { opacity: .5; cursor: not-allowed; }
+.mgl-btn:focus-visible { outline: 2px solid #c4b5fd; outline-offset: 2px; }
+.mgl-btn-ghost { background: #27272a; color: #d4d4d8; }
+.mgl-btn-ghost:hover { background: #3f3f46; }
+.mgl-btn-tool { padding: 8px 12px; min-width: 40px; }
+
+/* Caixa de recorte: linhas e alças brancas, como no exemplo */
+.mgl-crop-stage .cropper-view-box { outline: 1px solid rgba(255, 255, 255, .9); outline-color: rgba(255, 255, 255, .9); }
+.mgl-crop-stage .cropper-line { background-color: #fff; opacity: .25; }
+.mgl-crop-stage .cropper-dashed { border-color: #fff; opacity: .5; }
+.mgl-crop-stage .cropper-point { background-color: #fff; opacity: 1; transform: scale(1.7); }
+.mgl-crop-stage .cropper-center::before,
+.mgl-crop-stage .cropper-center::after { background-color: #fff; }
+
+/* Pré-visualização depois de aplicar o recorte */
+.mgl-preview { margin: 16px 0; }
+.mgl-preview-label { display: block; margin-bottom: 8px; font-size: 12px; color: #71717a; }
+.mgl-preview-frame { overflow: hidden; background: #09090b; border: 2px solid #8b5cf6; border-radius: 2px; box-shadow: 0 4px 6px rgba(0, 0, 0, .4); }
+.mgl-preview-frame img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.mgl-preview-avatar { width: 128px; aspect-ratio: 1 / 1; }
+.mgl-preview-banner { width: 100%; aspect-ratio: 3 / 1; }
+.mgl-preview-note { margin: 8px 0 0; font-size: 12px; color: #a1a1aa; }
+.mgl-preview-readjust { margin-top: 10px; }
+
+@media (max-width: 480px) {
+    .mgl-crop-modal { padding: 14px; }
+    .mgl-crop-actions .mgl-btn { flex: 1; }
+}
