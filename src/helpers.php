@@ -68,3 +68,84 @@ if (!function_exists('mgl_day_label')) {
         return $label;
     }
 }
+
+if (!function_exists('mgl_genre_pt')) {
+    /**
+     * Traduz o nome de um gênero (como o IGDB devolve, guardado em minúsculas) para português.
+     * Gênero desconhecido volta como veio, só com a primeira letra maiúscula.
+     */
+    function mgl_genre_pt(string $genre): string {
+        $key = mb_strtolower(trim(html_entity_decode($genre, ENT_QUOTES, 'UTF-8')));
+        $map = [
+            'adventure'                       => 'Aventura',
+            'arcade'                          => 'Arcade',
+            'card & board game'               => 'Cartas e tabuleiro',
+            'fighting'                        => 'Luta',
+            "hack and slash/beat 'em up"      => 'Hack and slash',
+            'indie'                           => 'Indie',
+            'moba'                            => 'MOBA',
+            'music'                           => 'Música',
+            'pinball'                         => 'Pinball',
+            'platform'                        => 'Plataforma',
+            'point-and-click'                 => 'Point-and-click',
+            'puzzle'                          => 'Quebra-cabeça',
+            'quiz/trivia'                     => 'Quiz',
+            'racing'                          => 'Corrida',
+            'real time strategy (rts)'        => 'Estratégia em tempo real',
+            'role-playing (rpg)'              => 'RPG',
+            'shooter'                         => 'Tiro',
+            'simulator'                       => 'Simulação',
+            'sport'                           => 'Esporte',
+            'strategy'                        => 'Estratégia',
+            'tactical'                        => 'Tático',
+            'turn-based strategy (tbs)'       => 'Estratégia por turnos',
+            'visual novel'                    => 'Visual novel',
+        ];
+
+        if (isset($map[$key])) return $map[$key];
+        return $key === '' ? '' : mb_strtoupper(mb_substr($key, 0, 1)) . mb_substr($key, 1);
+    }
+}
+
+if (!function_exists('mgl_month_pt')) {
+    function mgl_month_pt(int $month): string {
+        $months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+        return $months[$month - 1] ?? '';
+    }
+}
+
+if (!function_exists('mgl_weekday_short_pt')) {
+    function mgl_weekday_short_pt(int $weekday): string {
+        $days = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+        return $days[$weekday] ?? '';
+    }
+}
+
+if (!function_exists('mgl_date_range_pt')) {
+    /**
+     * "5 a 11 de novembro", "28 de outubro a 3 de novembro" ou, para um dia só, "11 de novembro".
+     * Acrescenta o ano quando o intervalo não está no ano atual ou atravessa anos.
+     */
+    function mgl_date_range_pt(string $start, string $end): string {
+        $s = new DateTime($start);
+        $e = new DateTime($end);
+        $thisYear = (int) date('Y');
+        $sameYear = $s->format('Y') === $e->format('Y');
+
+        $fmt = function (DateTime $d, bool $withYear, bool $withMonth = true): string {
+            $out = (int) $d->format('j');
+            if ($withMonth) $out .= ' de ' . mgl_month_pt((int) $d->format('n'));
+            if ($withYear) $out .= ' de ' . $d->format('Y');
+            return $out;
+        };
+
+        if ($start === $end) {
+            return $fmt($e, (int) $e->format('Y') !== $thisYear);
+        }
+        if ($sameYear && $s->format('n') === $e->format('n')) {
+            return $fmt($s, false, false) . ' a ' . $fmt($e, (int) $e->format('Y') !== $thisYear);
+        }
+        $showYear = !$sameYear || (int) $e->format('Y') !== $thisYear;
+        return $fmt($s, !$sameYear) . ' a ' . $fmt($e, $showYear);
+    }
+}
