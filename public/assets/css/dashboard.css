@@ -11,7 +11,8 @@
   --d-faint: #71717a;
   --d-accent: #7c3aed;
 
-  max-width: 62rem;
+  /* mesma largura do menu do topo (max-w-screen-2xl), para alinhar com o logo */
+  max-width: 96rem;
   margin: 0 auto;
   padding: 2rem 1.5rem 0;
 }
@@ -112,8 +113,8 @@
 
 .dash-cols {
   display: grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
-  gap: 2rem;
+  grid-template-columns: minmax(0, 1fr) 24rem;
+  gap: 3rem;
   align-items: start;
 }
 
@@ -320,7 +321,7 @@
   border-radius: 2px;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 960px) {
   .dash-cols {
     grid-template-columns: minmax(0, 1fr);
   }
