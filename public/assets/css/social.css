@@ -238,7 +238,7 @@
 }
 
 .feed-day-title {
-  margin: 1.5rem 0 0;
+  margin: 1.5rem 0 0.5rem;
   color: var(--s-faint);
   font-size: 0.8125rem;
   font-weight: 600;
@@ -248,36 +248,33 @@
   margin-top: 1rem;
 }
 
-/* Item padrão: linha solta, sem caixa. A capa é o destaque. */
+/* Cada dia é um painel de fundo um pouco mais claro que a página */
+.feed-day__panel {
+  padding: 0 1rem;
+  background: var(--s-surface);
+  border: 1px solid var(--s-line);
+  border-radius: 6px;
+}
+
+/* Item: linha dentro do painel, separada por um fio fino */
 .feed-item {
   display: grid;
   grid-template-columns: 3.5rem minmax(0, 1fr);
   gap: 1rem;
   padding: 1rem 0;
-  border-bottom: 1px solid var(--s-line-soft);
 }
 
-.feed-day .feed-item:last-child {
-  border-bottom: 0;
-  padding-bottom: 0.5rem;
+.feed-item + .feed-item {
+  border-top: 1px solid var(--s-line);
 }
 
 .feed-item--group {
   grid-template-columns: minmax(0, 1fr);
 }
 
-/* Análise: única que ganha caixa, porque é o conteúdo que mais pede atenção */
+/* Análise: dentro do painel segue como linha, com capa maior */
 .feed-item--review {
   grid-template-columns: 4.5rem minmax(0, 1fr);
-  margin: 0.75rem 0;
-  padding: 1rem;
-  background: var(--s-surface);
-  border: 1px solid var(--s-line);
-  border-radius: 4px;
-}
-
-.feed-day .feed-item--review:last-child {
-  border-bottom: 1px solid var(--s-line);
 }
 
 .feed-cover {

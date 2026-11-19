@@ -55,10 +55,10 @@
 
                                 // Separador de dia: abre uma seção nova quando o dia muda
                                 if ($group['day'] !== $currentDay) {
-                                    if ($dayOpen) echo '</section>';
+                                    if ($dayOpen) echo '</div></section>';
                                     $currentDay = $group['day'];
                                     $dayOpen = true;
-                                    echo '<section class="feed-day"><h2 class="feed-day-title">' . htmlspecialchars(mgl_day_label($first['created_at'])) . '</h2>';
+                                    echo '<section class="feed-day"><h2 class="feed-day-title">' . htmlspecialchars(mgl_day_label($first['created_at'])) . '</h2><div class="feed-day__panel">';
                                 }
 
                                 // Quem fez e o que fez
@@ -177,7 +177,7 @@
                                 </div>
                             </article>
                         <?php endforeach; ?>
-                        <?php if ($dayOpen) echo '</section>'; ?>
+                        <?php if ($dayOpen) echo '</div></section>'; ?>
                     </div>
 
                     <p id="feedFilterEmpty" class="feed-filter-empty" hidden>Nada desse tipo por aqui ainda.</p>
