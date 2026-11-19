@@ -10,8 +10,12 @@
     <?php $profileUserId = $profileUserId ?? ($profileUser['id'] ?? null); ?>
     <?php $isFollowing = $isFollowing ?? false; ?>
     <?php $followsMe = $followsMe ?? false; ?>
-    <?php $followingList = $followingList ?? []; ?>
-    <?php $followersList = $followersList ?? []; ?>
+    <?php $followingCount = $followingCount ?? 0; ?>
+    <?php $followersCount = $followersCount ?? 0; ?>
+    <?php $mutualCount = $mutualCount ?? 0; ?>
+    <?php $commonCount = $commonCount ?? 0; ?>
+    <?php $friendsTotal = $friendsTotal ?? 0; ?>
+    <?php $friendsPreview = $friendsPreview ?? []; ?>
     <?php $followSuggestions = $followSuggestions ?? []; ?>
     <?php $profileComments = $profileComments ?? []; ?>
     <?php
@@ -86,6 +90,7 @@
     ?>
     <title>Perfil de <?php echo htmlspecialchars($profileUser['display_name'] ?: $profileUser['username']); ?> - MyGameLibrary</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="<?php echo mgl_asset('assets/css/social.css'); ?>">
     <link rel="icon" type="image/png" href="assets/icon/icong.png?v=1">
 </head>
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen pb-12 selection:bg-violet-600 selection:text-white">
@@ -202,90 +207,83 @@
             </div>
 
             <aside class="w-full lg:w-72 shrink-0">
-                <div class="flex items-stretch gap-1 mb-6 border-l-4 border-violet-500 pl-3">
-                    <button type="button" data-tab-target="followingTab" class="follow-tab-btn flex-1 text-left text-sm sm:text-base font-black text-white uppercase tracking-tight pb-1 border-b-2 border-violet-500 transition-colors whitespace-nowrap">
-                        Seguindo (<?php echo count($followingList); ?>)
-                    </button>
-                    <button type="button" data-tab-target="followersTab" class="follow-tab-btn flex-1 text-left text-sm sm:text-base font-black text-zinc-500 uppercase tracking-tight pb-1 border-b-2 border-transparent transition-colors whitespace-nowrap">
-                        Seguidores (<?php echo count($followersList); ?>)
-                    </button>
-                </div>
+                <section class="friends-card" aria-labelledby="friendsTitle">
+                    <h2 id="friendsTitle" class="friends-card__title">Amigos</h2>
 
-                <div id="followingTab" class="follow-tab-panel bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl divide-y divide-zinc-800 max-h-[32rem] overflow-y-auto">
-                    <?php if (!empty($followingList)): ?>
-                        <?php foreach ($followingList as $friend): ?>
-                            <a href="index.php?action=profile&u=<?php echo urlencode($friend['username']); ?>" class="flex items-center gap-3 p-3 hover:bg-zinc-800/60 transition-colors">
-                                <?php if (!empty($friend['avatar'])): ?>
-                                    <?php
-                                        $friendAvatarVal = $friend['avatar'];
-                                        $friendAvatarPath = str_starts_with($friendAvatarVal, 'http') ? $friendAvatarVal : './uploads/profile/' . basename($friendAvatarVal);
-                                    ?>
-                                    <img src="<?php echo htmlspecialchars($friendAvatarPath); ?>" alt="<?php echo htmlspecialchars($friend['username']); ?>" class="w-10 h-10 rounded-sm object-cover shrink-0 bg-zinc-950">
-                                <?php else: ?>
-                                    <div class="w-10 h-10 rounded-sm shrink-0 bg-zinc-800 flex items-center justify-center text-zinc-500 font-black uppercase">
-                                        <?php echo substr($friend['username'], 0, 1); ?>
-                                    </div>
-                                <?php endif; ?>
-                                <div class="min-w-0">
-                                    <p class="text-white text-sm font-bold truncate"><?php echo htmlspecialchars($friend['display_name'] ?: $friend['username']); ?></p>
-                                    <p class="text-zinc-500 text-xs truncate">@<?php echo htmlspecialchars($friend['username']); ?></p>
-                                </div>
-                            </a>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <p class="text-zinc-500 text-sm p-4 text-center">Ainda não segue ninguém.</p>
-                    <?php endif; ?>
-                </div>
+                    <div class="friends-stats">
+                        <button type="button" class="friends-stat" data-friends-open="followers">
+                            <strong data-count="followers"><?php echo (int) $followersCount; ?></strong>
+                            Seguidores
+                        </button>
+                        <button type="button" class="friends-stat" data-friends-open="following">
+                            <strong data-count="following"><?php echo (int) $followingCount; ?></strong>
+                            Seguindo
+                        </button>
+                        <button type="button" class="friends-stat" data-friends-open="mutual">
+                            <strong data-count="mutual"><?php echo (int) $mutualCount; ?></strong>
+                            Mútuos
+                        </button>
+                    </div>
 
-                <div id="followersTab" class="follow-tab-panel hidden bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl divide-y divide-zinc-800 max-h-[32rem] overflow-y-auto">
-                    <?php if (!empty($followersList)): ?>
-                        <?php foreach ($followersList as $friend): ?>
-                            <a href="index.php?action=profile&u=<?php echo urlencode($friend['username']); ?>" class="flex items-center gap-3 p-3 hover:bg-zinc-800/60 transition-colors">
-                                <?php if (!empty($friend['avatar'])): ?>
-                                    <?php
-                                        $friendAvatarVal = $friend['avatar'];
-                                        $friendAvatarPath = str_starts_with($friendAvatarVal, 'http') ? $friendAvatarVal : './uploads/profile/' . basename($friendAvatarVal);
-                                    ?>
-                                    <img src="<?php echo htmlspecialchars($friendAvatarPath); ?>" alt="<?php echo htmlspecialchars($friend['username']); ?>" class="w-10 h-10 rounded-sm object-cover shrink-0 bg-zinc-950">
-                                <?php else: ?>
-                                    <div class="w-10 h-10 rounded-sm shrink-0 bg-zinc-800 flex items-center justify-center text-zinc-500 font-black uppercase">
-                                        <?php echo substr($friend['username'], 0, 1); ?>
-                                    </div>
-                                <?php endif; ?>
-                                <div class="min-w-0">
-                                    <p class="text-white text-sm font-bold truncate"><?php echo htmlspecialchars($friend['display_name'] ?: $friend['username']); ?></p>
-                                    <p class="text-zinc-500 text-xs truncate">@<?php echo htmlspecialchars($friend['username']); ?></p>
-                                </div>
-                            </a>
-                        <?php endforeach; ?>
+                    <?php if (!empty($friendsPreview)): ?>
+                        <?php $moreFriends = max(0, (int) $friendsTotal - count($friendsPreview)); ?>
+                        <ul class="facepile" aria-label="Alguns amigos">
+                            <?php foreach ($friendsPreview as $previewUser): ?>
+                                <?php $previewAvatar = mgl_avatar_path($previewUser['avatar'] ?? null); ?>
+                                <li>
+                                    <a href="index.php?action=profile&u=<?php echo urlencode($previewUser['username']); ?>" title="<?php echo htmlspecialchars($previewUser['display_name'] ?: $previewUser['username']); ?>">
+                                        <?php if ($previewAvatar): ?>
+                                            <img src="<?php echo htmlspecialchars($previewAvatar); ?>" alt="<?php echo htmlspecialchars($previewUser['username']); ?>" loading="lazy">
+                                        <?php else: ?>
+                                            <span class="facepile__initial"><?php echo htmlspecialchars(substr($previewUser['username'], 0, 1)); ?></span>
+                                        <?php endif; ?>
+                                    </a>
+                                </li>
+                            <?php endforeach; ?>
+                            <?php if ($moreFriends > 0): ?>
+                                <li>
+                                    <button type="button" class="facepile__more" data-friends-open="followers" aria-label="Ver mais <?php echo $moreFriends; ?> pessoas">+<?php echo $moreFriends; ?></button>
+                                </li>
+                            <?php endif; ?>
+                        </ul>
+
+                        <?php if (!$isOwner && $currentUserId !== null && $commonCount > 0): ?>
+                            <button type="button" class="friends-card__common" data-friends-open="common">
+                                <?php echo (int) $commonCount; ?> <?php echo $commonCount === 1 ? 'pessoa em comum' : 'pessoas em comum'; ?> com você
+                            </button>
+                        <?php endif; ?>
+
+                        <button type="button" class="friends-card__all" data-friends-open="followers">Ver todos</button>
                     <?php else: ?>
-                        <p class="text-zinc-500 text-sm p-4 text-center">Ainda não tem seguidores.</p>
+                        <p class="friends-card__empty" style="margin-top: 1rem;">
+                            <?php echo $isOwner
+                                ? 'Quando você começar a seguir alguém, ou alguém seguir você, aparece aqui.'
+                                : 'Ainda não há conexões neste perfil.'; ?>
+                        </p>
                     <?php endif; ?>
-                </div>
+                </section>
 
                 <?php if ($isOwner && !empty($followSuggestions)): ?>
-                    <h2 class="text-lg font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3 mt-8 mb-4">Sugestões para seguir</h2>
-                    <div class="bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl divide-y divide-zinc-800">
+                    <section class="friends-suggest" aria-labelledby="suggestTitle">
+                        <h2 id="suggestTitle" class="feed-aside__title">Quem seguir</h2>
                         <?php foreach ($followSuggestions as $suggestion): ?>
-                            <a href="index.php?action=profile&u=<?php echo urlencode($suggestion['username']); ?>" class="flex items-center gap-3 p-3 hover:bg-zinc-800/60 transition-colors">
-                                <?php if (!empty($suggestion['avatar'])): ?>
-                                    <?php
-                                        $suggAvatarVal = $suggestion['avatar'];
-                                        $suggAvatarPath = str_starts_with($suggAvatarVal, 'http') ? $suggAvatarVal : './uploads/profile/' . basename($suggAvatarVal);
-                                    ?>
-                                    <img src="<?php echo htmlspecialchars($suggAvatarPath); ?>" alt="<?php echo htmlspecialchars($suggestion['username']); ?>" class="w-10 h-10 rounded-sm object-cover shrink-0 bg-zinc-950">
-                                <?php else: ?>
-                                    <div class="w-10 h-10 rounded-sm shrink-0 bg-zinc-800 flex items-center justify-center text-zinc-500 font-black uppercase">
-                                        <?php echo substr($suggestion['username'], 0, 1); ?>
+                            <?php $suggAvatar = mgl_avatar_path($suggestion['avatar'] ?? null); ?>
+                            <div class="person">
+                                <a href="index.php?action=profile&u=<?php echo urlencode($suggestion['username']); ?>" class="person__who">
+                                    <?php if ($suggAvatar): ?>
+                                        <img src="<?php echo htmlspecialchars($suggAvatar); ?>" alt="" class="person__avatar" loading="lazy">
+                                    <?php else: ?>
+                                        <div class="person__avatar person__avatar--initial"><?php echo htmlspecialchars(substr($suggestion['username'], 0, 1)); ?></div>
+                                    <?php endif; ?>
+                                    <div class="person__text">
+                                        <span class="person__name"><?php echo htmlspecialchars($suggestion['display_name'] ?: $suggestion['username']); ?></span>
+                                        <span class="person__sub"><?php echo (int) $suggestion['followers_count']; ?> seguidor<?php echo $suggestion['followers_count'] == 1 ? '' : 'es'; ?></span>
                                     </div>
-                                <?php endif; ?>
-                                <div class="min-w-0">
-                                    <p class="text-white text-sm font-bold truncate"><?php echo htmlspecialchars($suggestion['display_name'] ?: $suggestion['username']); ?></p>
-                                    <p class="text-zinc-500 text-xs truncate"><?php echo (int) $suggestion['followers_count']; ?> seguidor<?php echo $suggestion['followers_count'] == 1 ? '' : 'es'; ?></p>
-                                </div>
-                            </a>
+                                </a>
+                                <button type="button" class="fbtn fbtn--follow" data-follow-user="<?php echo (int) $suggestion['id']; ?>" data-following="false" aria-pressed="false">Seguir</button>
+                            </div>
                         <?php endforeach; ?>
-                    </div>
+                    </section>
                 <?php endif; ?>
             </aside>
         </div>
@@ -328,25 +326,36 @@
 
     </main>
 
-    <script>
-        // Alterna entre as abas "Seguindo" e "Seguidores" sem recarregar a página
-        document.querySelectorAll('.follow-tab-btn').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                document.querySelectorAll('.follow-tab-btn').forEach(function (b) {
-                    b.classList.remove('text-white', 'border-violet-500');
-                    b.classList.add('text-zinc-500', 'border-transparent');
-                });
-                btn.classList.remove('text-zinc-500', 'border-transparent');
-                btn.classList.add('text-white', 'border-violet-500');
+    <div id="friendsModal" class="fmodal" hidden role="dialog" aria-modal="true" aria-labelledby="friendsModalTitle"
+         data-username="<?php echo htmlspecialchars($profileUser['username']); ?>"
+         data-owner="<?php echo $isOwner ? '1' : '0'; ?>"
+         data-follows-me="<?php echo $followsMe ? '1' : '0'; ?>">
+        <div class="fmodal__backdrop" data-fmodal-close></div>
+        <div class="fmodal__panel" tabindex="-1">
+            <div class="fmodal__head">
+                <h2 id="friendsModalTitle" class="fmodal__title"><?php echo $isOwner ? 'Seus amigos' : 'Amigos de ' . htmlspecialchars($profileUser['display_name'] ?: $profileUser['username']); ?></h2>
+                <button type="button" class="fmodal__close" data-fmodal-close aria-label="Fechar">&times;</button>
+            </div>
+            <div class="fmodal__tabs" role="tablist">
+                <button type="button" class="fmodal__tab" role="tab" data-tab="followers" aria-selected="true">Seguidores <span class="fmodal__tab-count" data-count="followers"><?php echo (int) $followersCount; ?></span></button>
+                <button type="button" class="fmodal__tab" role="tab" data-tab="following" aria-selected="false">Seguindo <span class="fmodal__tab-count" data-count="following"><?php echo (int) $followingCount; ?></span></button>
+                <button type="button" class="fmodal__tab" role="tab" data-tab="mutual" aria-selected="false">Mútuos <span class="fmodal__tab-count" data-count="mutual"><?php echo (int) $mutualCount; ?></span></button>
+                <?php if (!$isOwner && $currentUserId !== null): ?>
+                    <button type="button" class="fmodal__tab" role="tab" data-tab="common" aria-selected="false">Em comum <span class="fmodal__tab-count"><?php echo (int) $commonCount; ?></span></button>
+                <?php endif; ?>
+            </div>
+            <div class="fmodal__search">
+                <input type="search" placeholder="Buscar por nome ou @usuário" aria-label="Buscar nesta lista" maxlength="50" autocomplete="off">
+            </div>
+            <div class="fmodal__body">
+                <ul class="fmodal__list" aria-live="polite"></ul>
+                <p class="fmodal__status" hidden></p>
+                <button type="button" class="fmodal__more" hidden>Carregar mais</button>
+            </div>
+        </div>
+    </div>
 
-                document.querySelectorAll('.follow-tab-panel').forEach(function (panel) {
-                    panel.classList.add('hidden');
-                });
-                document.getElementById(btn.dataset.tabTarget).classList.remove('hidden');
-            });
-        });
-    </script>
-
+    <script src="<?php echo mgl_asset('assets/js/friends.js'); ?>"></script>
     <script src="<?php echo mgl_asset('assets/js/follow.js'); ?>"></script>
     <script src="<?php echo mgl_asset('assets/js/notifications.js'); ?>"></script>
     <script src="<?php echo mgl_asset('assets/js/profile-comments.js'); ?>"></script>

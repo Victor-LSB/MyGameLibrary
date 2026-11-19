@@ -47,6 +47,11 @@
                     followBtn.classList.add('bg-zinc-700', 'hover:bg-zinc-600');
                 }
 
+                // Avisa o resto da página (contador de seguidores do card de amigos)
+                document.dispatchEvent(new CustomEvent('mgl:profile-follow-changed', {
+                    detail: { following: !isFollowing },
+                }));
+
                 // Mostrar mensagem de sucesso
                 showNotification(data.message, 'success');
 

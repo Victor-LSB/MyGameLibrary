@@ -1,80 +1,80 @@
-// feed.js - Curtidas e filtro por tipo no feed de atividades
+// feed.js - curtidas e filtro por tipo no feed de atividades
 
 (function () {
+    'use strict';
+
     const feedList = document.getElementById('feedList');
-    const feedTypeFilter = document.getElementById('feedTypeFilter');
+    if (!feedList) return;
 
     function csrfToken() {
         return document.querySelector('meta[name="csrf-token"]')?.content || '';
     }
 
-    // Curtir/descurtir atividade
-    if (feedList) {
-        feedList.addEventListener('click', async (e) => {
-            const btn = e.target.closest('.feed-like-btn');
-            if (!btn) return;
+    // ---------------------------------------------------------------
+    // Curtir / descurtir
+    // ---------------------------------------------------------------
 
-            const activityId = btn.dataset.activityId;
-            const countEl = btn.querySelector('.feed-like-count');
-            const wasLiked = btn.classList.contains('is-liked');
-
-            // Atualização otimista: reflete a mudança na hora, sem esperar o servidor
-            btn.classList.toggle('is-liked', !wasLiked);
-            btn.classList.toggle('text-zinc-500', wasLiked);
-            btn.classList.toggle('hover:text-pink-400', wasLiked);
-            btn.classList.toggle('hover:bg-zinc-800', wasLiked);
-            if (countEl) {
-                const current = parseInt(countEl.textContent, 10) || 0;
-                countEl.textContent = wasLiked ? Math.max(0, current - 1) : current + 1;
-            }
-
-            try {
-                const response = await fetch('index.php?action=activity_toggle_like', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-CSRF-Token': csrfToken(),
-                    },
-                    body: `activity_id=${encodeURIComponent(activityId)}`,
-                });
-
-                const data = await response.json();
-
-                if (!data.success) {
-                    throw new Error(data.message || 'Erro ao curtir');
-                }
-
-                // Sincroniza com o valor real do servidor
-                btn.classList.toggle('is-liked', data.liked);
-                btn.classList.toggle('text-zinc-500', !data.liked);
-                btn.classList.toggle('hover:text-pink-400', !data.liked);
-                btn.classList.toggle('hover:bg-zinc-800', !data.liked);
-                if (countEl) countEl.textContent = data.count;
-            } catch (error) {
-                console.error('Erro ao curtir atividade:', error);
-                // Desfaz a atualização otimista em caso de erro
-                btn.classList.toggle('is-liked', wasLiked);
-                btn.classList.toggle('text-zinc-500', !wasLiked);
-                btn.classList.toggle('hover:text-pink-400', !wasLiked);
-                btn.classList.toggle('hover:bg-zinc-800', !wasLiked);
-                if (countEl) {
-                    const current = parseInt(countEl.textContent, 10) || 0;
-                    countEl.textContent = wasLiked ? current + 1 : Math.max(0, current - 1);
-                }
-            }
-        });
+    function paintLike(btn, liked, count) {
+        btn.classList.toggle('is-liked', liked);
+        btn.setAttribute('aria-pressed', String(liked));
+        const countEl = btn.querySelector('.feed-like__count');
+        if (countEl) countEl.textContent = count > 0 ? count : '';
     }
 
-    // Filtro por tipo de atividade
-    if (feedTypeFilter && feedList) {
-        feedTypeFilter.addEventListener('change', () => {
-            const selected = feedTypeFilter.value;
-            const cards = feedList.querySelectorAll('[data-activity-type]');
+    feedList.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.feed-like');
+        if (!btn) return;
 
-            cards.forEach((card) => {
-                const matches = !selected || card.dataset.activityType === selected;
-                card.style.display = matches ? 'flex' : 'none';
+        const countEl = btn.querySelector('.feed-like__count');
+        const wasLiked = btn.classList.contains('is-liked');
+        const wasCount = parseInt(countEl?.textContent, 10) || 0;
+
+        // Atualização otimista: reflete na hora e corrige se o servidor discordar
+        paintLike(btn, !wasLiked, Math.max(0, wasCount + (wasLiked ? -1 : 1)));
+
+        try {
+            const response = await fetch('index.php?action=activity_toggle_like', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRF-Token': csrfToken(),
+                },
+                body: 'activity_id=' + encodeURIComponent(btn.dataset.activityId),
             });
+            const data = await response.json();
+            if (!data.success) throw new Error(data.message || 'Erro ao curtir');
+
+            paintLike(btn, data.liked, data.count);
+        } catch (error) {
+            console.error('Erro ao curtir atividade:', error);
+            paintLike(btn, wasLiked, wasCount);
+        }
+    });
+
+    // ---------------------------------------------------------------
+    // Filtro por tipo (chips). Esconde também os dias que ficarem vazios.
+    // ---------------------------------------------------------------
+
+    const chips = Array.from(document.querySelectorAll('[data-feed-filter]'));
+    const emptyMsg = document.getElementById('feedFilterEmpty');
+
+    function applyFilter(type) {
+        chips.forEach((chip) => chip.setAttribute('aria-pressed', String(chip.dataset.feedFilter === type)));
+
+        let anyVisible = false;
+        feedList.querySelectorAll('.feed-day').forEach((day) => {
+            let dayVisible = false;
+            day.querySelectorAll('[data-activity-type]').forEach((item) => {
+                const show = !type || item.dataset.activityType === type;
+                item.hidden = !show;
+                if (show) dayVisible = true;
+            });
+            day.hidden = !dayVisible;
+            if (dayVisible) anyVisible = true;
         });
+
+        if (emptyMsg) emptyMsg.hidden = anyVisible;
     }
+
+    chips.forEach((chip) => chip.addEventListener('click', () => applyFilter(chip.dataset.feedFilter)));
 })();

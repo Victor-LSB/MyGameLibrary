@@ -7,6 +7,9 @@
     <title><?php echo htmlspecialchars($pageTitle ?? 'MyGameLibrary'); ?></title>
     <?php if (!empty($metaDescription)): ?><meta name="description" content="<?php echo htmlspecialchars($metaDescription); ?>"><?php endif; ?>
     <link rel="stylesheet" href="<?php echo mgl_asset('assets/css/output.css'); ?>">
+    <?php foreach (($extraStyles ?? []) as $extraCss): ?>
+    <link rel="stylesheet" href="<?php echo mgl_asset($extraCss); ?>">
+    <?php endforeach; ?>
     <link rel="icon" type="image/png" href="assets/icon/icong.png?v=1">
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-30Z4M9S4PC"></script>

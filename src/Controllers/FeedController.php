@@ -30,7 +30,9 @@ class FeedController {
         }
 
         $userId = $_SESSION['user_id'];
-        $activities = $this->activityModel->getFeedForUser($userId, 30, true);
+        // Busca mais linhas do que o necessário: o agrupamento junta várias atividades em um item só
+        $activities = $this->activityModel->getFeedForUser($userId, 60, true);
+        $feedGroups = Activity::groupFeed($activities);
 
         require_once __DIR__ . '/FollowController.php';
         $followController = new FollowController();

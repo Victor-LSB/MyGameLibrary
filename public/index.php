@@ -64,6 +64,7 @@ $routes = [
     'dashboard_data' => [DashboardController::class, 'data'],
     'home'           => [GameController::class, 'index'],
     'profile'        => [ProfileController::class, 'view'],
+    'friends_list'   => [ProfileController::class, 'friendsList'],
     'edit_profile'   => [ProfileController::class, 'edit'],
     'update_profile' => [ProfileController::class, 'update'],
     'change_password' => [ProfileController::class, 'changePassword'],
