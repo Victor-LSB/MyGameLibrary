@@ -797,6 +797,8 @@ html.fmodal-open {
   padding: 0 1.25rem;
   border-bottom: 1px solid var(--s-line);
   overflow-x: auto;
+  /* sem isso o margin-bottom:-1px das abas cria uma barra de rolagem vertical minúscula */
+  overflow-y: hidden;
 }
 
 .fmodal__tab {

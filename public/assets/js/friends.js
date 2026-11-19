@@ -170,38 +170,110 @@
         statusEl.hidden = !message;
     }
 
-    async function load(reset) {
-        if (reset) {
-            state.offset = 0;
-            list.replaceChildren();
-            moreBtn.hidden = true;
-        }
+    // Cache por aba (só sem busca): trocar de aba mostra a lista na hora, sem recarregar.
+    // Ao abrir o modal, as outras abas são pré-carregadas em segundo plano.
+    const cache = {};
+    const pending = {};
 
-        const seq = ++state.seq;
-        modal.classList.add('is-loading');
-        if (reset) showStatus('Carregando...');
-
+    async function fetchPage(tab, q, offset) {
         const url = 'index.php?action=friends_list'
             + '&u=' + encodeURIComponent(username)
-            + '&tab=' + encodeURIComponent(state.tab)
-            + '&q=' + encodeURIComponent(state.q)
-            + '&offset=' + state.offset;
+            + '&tab=' + encodeURIComponent(tab)
+            + '&q=' + encodeURIComponent(q)
+            + '&offset=' + offset;
+        const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        const data = await response.json();
+        if (!data.success) throw new Error(data.message || 'Erro');
+        return data;
+    }
+
+    function ensureTab(tab) {
+        if (cache[tab]) return Promise.resolve(cache[tab]);
+        if (!pending[tab]) {
+            pending[tab] = fetchPage(tab, '', 0)
+                .then((data) => {
+                    cache[tab] = { users: data.users, offset: data.next_offset, hasMore: data.has_more };
+                    return cache[tab];
+                })
+                .finally(() => { delete pending[tab]; });
+        }
+        return pending[tab];
+    }
+
+    function render(users, hasMore) {
+        list.replaceChildren();
+        users.forEach((user) => list.appendChild(buildRow(user)));
+        moreBtn.hidden = !hasMore;
+        showStatus(users.length ? '' : emptyMessage());
+    }
+
+    function showError() {
+        list.replaceChildren();
+        moreBtn.hidden = true;
+        showStatus('Não foi possível carregar a lista. Tente novamente.');
+    }
+
+    // Aba sem busca: vem do cache se já tiver, senão busca (e guarda)
+    function showTab() {
+        const tab = state.tab;
+        const seq = ++state.seq;
+
+        if (cache[tab]) {
+            render(cache[tab].users, cache[tab].hasMore);
+            return;
+        }
+
+        list.replaceChildren();
+        moreBtn.hidden = true;
+        showStatus('Carregando...');
+        ensureTab(tab)
+            .then((entry) => { if (seq === state.seq) render(entry.users, entry.hasMore); })
+            .catch(() => { if (seq === state.seq) showError(); });
+    }
+
+    // Busca por nome: sempre vai ao servidor, não entra no cache
+    async function runSearch() {
+        const seq = ++state.seq;
+        state.offset = 0;
+        list.replaceChildren();
+        moreBtn.hidden = true;
+        showStatus('Buscando...');
 
         try {
-            const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
-            const data = await response.json();
+            const data = await fetchPage(state.tab, state.q, 0);
             if (seq !== state.seq) return; // chegou uma resposta mais nova enquanto esta voltava
-            if (!data.success) throw new Error(data.message || 'Erro');
+            state.offset = data.next_offset;
+            render(data.users, data.has_more);
+        } catch (error) {
+            if (seq === state.seq) showError();
+        }
+    }
+
+    async function loadMore() {
+        const tab = state.tab;
+        const q = state.q;
+        const seq = state.seq;
+        const offset = q ? state.offset : cache[tab].offset;
+
+        moreBtn.disabled = true;
+        try {
+            const data = await fetchPage(tab, q, offset);
+            if (seq !== state.seq) return;
 
             data.users.forEach((user) => list.appendChild(buildRow(user)));
-            state.offset = data.next_offset;
             moreBtn.hidden = !data.has_more;
-            showStatus(list.children.length ? '' : emptyMessage());
+
+            if (q) {
+                state.offset = data.next_offset;
+            } else {
+                cache[tab].users.push(...data.users);
+                cache[tab].offset = data.next_offset;
+                cache[tab].hasMore = data.has_more;
+            }
         } catch (error) {
-            if (seq !== state.seq) return;
-            showStatus('Não foi possível carregar a lista. Tente novamente.');
+            toast('Não foi possível carregar mais pessoas.');
         } finally {
-            if (seq === state.seq) modal.classList.remove('is-loading');
+            moreBtn.disabled = false;
         }
     }
 
@@ -210,7 +282,7 @@
         state.q = '';
         searchInput.value = '';
         tabs.forEach((btn) => btn.setAttribute('aria-selected', String(btn.dataset.tab === tab)));
-        load(true);
+        showTab();
     }
 
     function focusables() {
@@ -222,6 +294,7 @@
         modal.hidden = false;
         document.documentElement.classList.add('fmodal-open');
         setTab(tabs.some((t) => t.dataset.tab === tab) ? tab : 'followers');
+        tabs.forEach((t) => { ensureTab(t.dataset.tab).catch(() => {}); });
         panel.focus();
     }
 
@@ -263,18 +336,25 @@
     });
 
     tabs.forEach((btn) => btn.addEventListener('click', () => setTab(btn.dataset.tab)));
-    moreBtn.addEventListener('click', () => load(false));
+    moreBtn.addEventListener('click', loadMore);
 
     searchInput.addEventListener('input', () => {
         clearTimeout(searchTimer);
         searchTimer = setTimeout(() => {
             state.q = searchInput.value.trim();
-            load(true);
+            if (state.q) runSearch();
+            else showTab();
         }, 250);
     });
 
-    // Mantém os contadores da página coerentes depois de seguir/deixar de seguir
+    // Mantém o cache e os contadores coerentes depois de seguir/deixar de seguir
     document.addEventListener('mgl:follow-changed', (e) => {
+        Object.keys(cache).forEach((tab) => {
+            cache[tab].users.forEach((user) => {
+                if (String(user.id) === String(e.detail.userId)) user.i_follow = e.detail.following;
+            });
+        });
+
         if (!isOwner) return; // só as próprias listas mudam quando o dono do perfil age
         const delta = e.detail.following ? 1 : -1;
         bumpCount('following', delta);
@@ -283,6 +363,11 @@
 
     // Visitante seguiu/deixou de seguir o dono do perfil pelo botão do topo
     document.addEventListener('mgl:profile-follow-changed', (e) => {
+        // as listas de quem segue esse perfil mudaram: descarta para recarregar na próxima vez
+        delete cache.followers;
+        delete cache.mutual;
+        delete cache.common;
+
         const delta = e.detail.following ? 1 : -1;
         bumpCount('followers', delta);
         if (modal.dataset.followsMe === '1') bumpCount('mutual', delta);
