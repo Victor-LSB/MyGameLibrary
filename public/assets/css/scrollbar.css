@@ -1,0 +1,57 @@
+/*
+ * scrollbar.css - barra de rolagem discreta para o site inteiro
+ *
+ * Chrome, Edge e Safari usam os pseudo-elementos ::-webkit-scrollbar (fina, sem setas,
+ * thumb arredondado que acende em violeta). Firefox usa as propriedades padrão.
+ * Não misture os dois: no Chrome recente, scrollbar-color/scrollbar-width desligam o ::-webkit-scrollbar.
+ */
+
+:root {
+  --sb-track: transparent;
+  --sb-thumb: #3f3f46;
+  --sb-thumb-hover: #52525b;
+  --sb-thumb-active: #7c3aed;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--sb-thumb) var(--sb-track);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--sb-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--sb-thumb);
+  border-radius: 999px;
+  /* borda transparente = thumb mais fino que a trilha, sem encostar nas bordas */
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--sb-thumb-hover);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--sb-thumb-active);
+}
+
+/* Some com as setas nas pontas e o quadradinho do canto */
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}

@@ -90,6 +90,7 @@
     ?>
     <title>Perfil de <?php echo htmlspecialchars($profileUser['display_name'] ?: $profileUser['username']); ?> - MyGameLibrary</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="<?php echo mgl_asset('assets/css/scrollbar.css'); ?>">
     <link rel="stylesheet" href="<?php echo mgl_asset('assets/css/social.css'); ?>">
     <link rel="icon" type="image/png" href="assets/icon/icong.png?v=1">
 </head>

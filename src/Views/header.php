@@ -7,6 +7,7 @@
     <title><?php echo htmlspecialchars($pageTitle ?? 'MyGameLibrary'); ?></title>
     <?php if (!empty($metaDescription)): ?><meta name="description" content="<?php echo htmlspecialchars($metaDescription); ?>"><?php endif; ?>
     <link rel="stylesheet" href="<?php echo mgl_asset('assets/css/output.css'); ?>">
+    <link rel="stylesheet" href="<?php echo mgl_asset('assets/css/scrollbar.css'); ?>">
     <?php foreach (($extraStyles ?? []) as $extraCss): ?>
     <link rel="stylesheet" href="<?php echo mgl_asset($extraCss); ?>">
     <?php endforeach; ?>
