@@ -15,6 +15,35 @@ class Activity {
      * Registra uma atividade do usuário (jogo adicionado, status mudou, análise publicada).
      */
     public function log($userId, string $type, $gameId = null, $extra = null) {
+        // Análise e "adicionou" só aparecem uma vez por usuário + jogo; salvar a análise de novo
+        // (ou editar) não pode gerar outra entrada no feed.
+        if ($type === 'review_posted' || $type === 'game_added') {
+            $sql = "
+                INSERT INTO user_activity (user_id, game_id, type, extra)
+                SELECT ?, ?, ?, ? FROM DUAL
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM user_activity WHERE user_id = ? AND game_id <=> ? AND type = ?
+                )
+            ";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([$userId, $gameId, $type, $extra, $userId, $gameId, $type]);
+            return $stmt->rowCount() > 0;
+        }
+
+        // Mudança de status: ignora se o status mais recente registrado já é esse mesmo
+        if ($type === 'status_changed') {
+            $last = $this->conn->prepare("
+                SELECT extra FROM user_activity
+                WHERE user_id = ? AND game_id <=> ? AND type = 'status_changed'
+                ORDER BY id DESC LIMIT 1
+            ");
+            $last->execute([$userId, $gameId]);
+            $lastExtra = $last->fetchColumn();
+            if ($lastExtra !== false && $lastExtra === (string) $extra) {
+                return false;
+            }
+        }
+
         $sql = "INSERT INTO user_activity (user_id, game_id, type, extra) VALUES (?, ?, ?, ?)";
         $stmt = $this->conn->prepare($sql);
         return $stmt->execute([$userId, $gameId, $type, $extra]);
@@ -65,9 +94,20 @@ class Activity {
     public static function groupFeed(array $rows): array {
         $groups = [];
         $index = [];
+        $seen = [];
 
         foreach ($rows as $row) {
+            // Registros repetidos (ex.: análise salva várias vezes antes da correção) aparecem uma vez só.
+            // Como a lista vem do mais novo para o mais antigo, fica a ocorrência mais recente.
             $day = substr($row['created_at'], 0, 10);
+            $dupKey = $row['type'] === 'status_changed'
+                ? implode('|', [$row['type'], $row['actor_id'], $row['game_id'], $row['extra'], $day])
+                : implode('|', [$row['type'], $row['actor_id'], $row['game_id']]);
+            if (!empty($row['game_id'])) {
+                if (isset($seen[$dupKey])) continue;
+                $seen[$dupKey] = true;
+            }
+
             $groupable = in_array($row['type'], ['game_added', 'status_changed'], true) && !empty($row['game_id']);
 
             if ($groupable) {

@@ -175,15 +175,18 @@
 
 .feed-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 18rem;
+  grid-template-columns: minmax(0, 40rem) 17rem;
+  justify-content: center;
   gap: 3rem;
   align-items: start;
+  max-width: 62rem;
+  margin: 0 auto;
   padding-top: 2rem;
 }
 
 @media (max-width: 1023px) {
   .feed-layout {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 40rem);
     gap: 2rem;
   }
 }
@@ -235,7 +238,7 @@
 }
 
 .feed-day-title {
-  margin: 2rem 0 0.25rem;
+  margin: 1.5rem 0 0;
   color: var(--s-faint);
   font-size: 0.8125rem;
   font-weight: 600;
@@ -256,6 +259,7 @@
 
 .feed-day .feed-item:last-child {
   border-bottom: 0;
+  padding-bottom: 0.5rem;
 }
 
 .feed-item--group {
