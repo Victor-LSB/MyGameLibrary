@@ -22,6 +22,13 @@
     ];
 
     $isProfileArea = in_array($currentAction, ['profile', 'edit_profile', 'change_password'], true);
+    $isSearchPage  = $currentAction === 'search';
+
+    // Item ativo = fundo escuro + texto violeta + sublinhado violeta.
+    // Item inativo = fundo escuro + texto branco. A borda de 3px existe nos dois para o tamanho não mudar.
+    $navBase     = 'flex items-center gap-2 px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors border-b-[3px] bg-zinc-800 hover:bg-zinc-700';
+    $navActive   = 'text-violet-400 hover:text-violet-300 border-violet-500';
+    $navInactive = 'text-white border-zinc-950 hover:border-zinc-900';
 ?>
 <header class="bg-zinc-900 border-b-4 border-violet-600 shadow-md px-6 py-5 mb-8">
     <div class="max-w-screen-2xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -37,13 +44,16 @@
 
                 <?php foreach ($navLinks as $key => $link): ?>
                     <a href="index.php?action=<?php echo $link['action']; ?>"
-                       class="<?php echo $currentAction === $key ? 'bg-violet-600 hover:bg-violet-500' : 'bg-zinc-800 hover:bg-zinc-700'; ?> flex items-center gap-2 text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors border-b-2 border-zinc-950 hover:border-zinc-900">
+                       <?php echo $currentAction === $key ? 'aria-current="page"' : ''; ?>
+                       class="<?php echo $navBase . ' ' . ($currentAction === $key ? $navActive : $navInactive); ?>">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-4 h-4 shrink-0"><?php echo $link['icon']; ?></svg>
                         <?php echo $link['label']; ?>
                     </a>
                 <?php endforeach; ?>
 
-                <a href="index.php?action=search" class="bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors shadow-lg flex items-center gap-2">
+                <a href="index.php?action=search"
+                   <?php echo $isSearchPage ? 'aria-current="page"' : ''; ?>
+                   class="bg-violet-600 hover:bg-violet-700 border-b-[3px] border-violet-600 hover:border-violet-700 text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors shadow-lg flex items-center gap-2<?php echo $isSearchPage ? ' ring-2 ring-violet-300 ring-offset-2 ring-offset-zinc-900' : ''; ?>">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 shrink-0">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg>
@@ -71,7 +81,7 @@
                 </div>
 
                 <div class="relative">
-                    <button id="profileMenuButton" class="flex items-center gap-1.5 <?php echo $isProfileArea ? 'bg-violet-600 hover:bg-violet-500' : 'bg-zinc-800 hover:bg-zinc-700'; ?> text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors border-b-2 border-zinc-950 hover:border-zinc-900">
+                    <button id="profileMenuButton" class="<?php echo $navBase . ' ' . ($isProfileArea ? $navActive : $navInactive); ?>">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-4 h-4 shrink-0">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
                         </svg>
