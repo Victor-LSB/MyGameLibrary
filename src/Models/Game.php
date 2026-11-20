@@ -98,7 +98,16 @@ class Game {
         return [$where, $params];
     }
 
-    public function getGamesByUserId($user_id, $status = null, $search = null, $tag = null, $page = 1, $perPage = 24) {
+    /** Ordenações permitidas na biblioteca (whitelist: nunca entra texto do usuário no ORDER BY). */
+    public const LIBRARY_SORTS = [
+        'recent'     => 'ug.id DESC',
+        'oldest'     => 'ug.id ASC',
+        'title'      => 'g.title ASC',
+        'title_desc' => 'g.title DESC',
+        'rating'     => 'ug.rating DESC, ug.id DESC',
+    ];
+
+    public function getGamesByUserId($user_id, $status = null, $search = null, $tag = null, $page = 1, $perPage = 24, $sort = 'recent') {
         [$whereSql, $params] = $this->buildLibraryFilter($user_id, $status, $search, $tag);
 
         // Nunca confiar em page/perPage vindos de fora sem validar: aqui viram
@@ -107,11 +116,12 @@ class Game {
         $perPage = max(1, (int) $perPage);
         $page = max(1, (int) $page);
         $offset = ($page - 1) * $perPage;
+        $orderBy = self::LIBRARY_SORTS[$sort] ?? self::LIBRARY_SORTS['recent'];
 
         $sql = "SELECT g.*, ug.status, ug.platinum_at, ug.rating, ug.completion_date, ug.time_spent_hours
                 FROM games g JOIN user_games ug ON g.id = ug.game_id
                 WHERE $whereSql
-                ORDER BY ug.id DESC
+                ORDER BY $orderBy
                 LIMIT $perPage OFFSET $offset";
 
         $stmt = $this->conn->prepare($sql);

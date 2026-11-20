@@ -184,11 +184,49 @@
                     </section>
                 <?php endif; ?>
 
-                <h2 class="text-2xl font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3 mb-6">Registados Recentemente</h2>
+                <?php
+                    $libraryMode = $libraryMode ?? false;
+                    $libraryTotalAll = $libraryTotalAll ?? 0;
+                    $librarySort = $librarySort ?? 'recent';
+                    $librarySearch = $librarySearch ?? '';
+                    $libraryPage = $libraryPage ?? 1;
+                    $libraryPages = $libraryPages ?? 1;
+                    $libraryTotal = $libraryTotal ?? 0;
+                    $gamesToShow = $libraryMode ? ($libraryGames ?? []) : $recentGames;
+                    $profileBase = 'index.php?action=profile&u=' . urlencode($profileUser['username']);
+                    $libraryQuery = '&view=all&sort=' . urlencode($librarySort) . ($librarySearch !== '' ? '&q=' . urlencode($librarySearch) : '');
+                ?>
+                <section id="biblioteca">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+                    <h2 class="text-2xl font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3">
+                        <?php echo $libraryMode ? 'Biblioteca (' . (int) $libraryTotal . ')' : 'Registados Recentemente'; ?>
+                    </h2>
+                    <?php if ($libraryMode): ?>
+                        <a href="<?php echo $profileBase; ?>#biblioteca" class="text-xs font-bold uppercase tracking-wider text-zinc-400 hover:text-violet-400 transition-colors">&larr; Voltar aos recentes</a>
+                    <?php elseif ($libraryTotalAll > count($recentGames)): ?>
+                        <a href="<?php echo $profileBase; ?>&view=all#biblioteca" class="text-xs font-bold uppercase tracking-wider text-violet-400 hover:text-violet-300 transition-colors">Ver biblioteca completa (<?php echo (int) $libraryTotalAll; ?>) &rarr;</a>
+                    <?php endif; ?>
+                </div>
 
-                <?php if (!empty($recentGames) && count($recentGames) > 0): ?>
+                <?php if ($libraryMode): ?>
+                    <form method="get" action="index.php" class="flex flex-wrap gap-3 mb-6">
+                        <input type="hidden" name="action" value="profile">
+                        <input type="hidden" name="u" value="<?php echo htmlspecialchars($profileUser['username'], ENT_QUOTES); ?>">
+                        <input type="hidden" name="view" value="all">
+                        <input type="search" name="q" value="<?php echo htmlspecialchars($librarySearch, ENT_QUOTES); ?>" placeholder="Buscar jogo..." maxlength="60"
+                               class="flex-1 min-w-[160px] bg-zinc-900 border-2 border-zinc-800 text-white text-sm px-3 py-2 rounded-sm focus:border-violet-500 outline-none">
+                        <select name="sort" onchange="this.form.submit()" class="bg-zinc-900 border-2 border-zinc-800 text-white text-sm px-3 py-2 rounded-sm focus:border-violet-500 outline-none">
+                            <?php foreach (['recent' => 'Adicionados: mais recentes', 'oldest' => 'Adicionados: mais antigos', 'title' => 'Nome (A-Z)', 'title_desc' => 'Nome (Z-A)', 'rating' => 'Maior nota'] as $key => $label): ?>
+                                <option value="<?php echo $key; ?>" <?php echo $librarySort === $key ? 'selected' : ''; ?>><?php echo $label; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="submit" class="bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold uppercase tracking-wider px-4 py-2 rounded-sm transition-colors">Filtrar</button>
+                    </form>
+                <?php endif; ?>
+
+                <?php if (!empty($gamesToShow) && count($gamesToShow) > 0): ?>
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
-                        <?php foreach ($recentGames as $game): ?>
+                        <?php foreach ($gamesToShow as $game): ?>
                             <div class="bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl flex flex-col overflow-hidden group">
                                 <!-- AQUI ESTÁ A CORREÇÃO: O link agora carrega o ID do jogo e o nome de utilizador dono do perfil (&u=...) -->
                                 <a href="index.php?action=details&id=<?php echo $game['id']; ?>&u=<?php echo urlencode($profileUser['username']); ?>" class="block aspect-[3/4] bg-zinc-950 border-b-2 border-zinc-800 overflow-hidden relative">
@@ -216,11 +254,24 @@
                             </div>
                         <?php endforeach; ?>
                     </div>
+
+                    <?php if ($libraryMode && $libraryPages > 1): ?>
+                        <nav class="flex items-center justify-center gap-4 mt-8" aria-label="Paginação da biblioteca">
+                            <?php if ($libraryPage > 1): ?>
+                                <a href="<?php echo $profileBase . $libraryQuery . '&page=' . ($libraryPage - 1); ?>#biblioteca" class="px-4 py-2 bg-zinc-900 border-2 border-zinc-800 hover:border-violet-500 text-white text-sm font-bold rounded-sm">&larr; Anterior</a>
+                            <?php endif; ?>
+                            <span class="text-zinc-400 text-sm">Página <?php echo (int) $libraryPage; ?> de <?php echo (int) $libraryPages; ?></span>
+                            <?php if ($libraryPage < $libraryPages): ?>
+                                <a href="<?php echo $profileBase . $libraryQuery . '&page=' . ($libraryPage + 1); ?>#biblioteca" class="px-4 py-2 bg-zinc-900 border-2 border-zinc-800 hover:border-violet-500 text-white text-sm font-bold rounded-sm">Próxima &rarr;</a>
+                            <?php endif; ?>
+                        </nav>
+                    <?php endif; ?>
                 <?php else: ?>
                     <div class="bg-zinc-900 border-2 border-zinc-800 rounded-sm p-12 text-center shadow-xl">
-                        <p class="text-zinc-500 font-medium">Este jogador ainda não registou nenhum jogo.</p>
+                        <p class="text-zinc-500 font-medium"><?php echo ($libraryMode && $librarySearch !== '') ? 'Nenhum jogo encontrado para essa busca.' : 'Este jogador ainda não registou nenhum jogo.'; ?></p>
                     </div>
                 <?php endif; ?>
+                </section>
             </div>
 
             <aside class="w-full lg:w-72 shrink-0">

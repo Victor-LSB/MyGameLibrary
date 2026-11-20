@@ -58,6 +58,29 @@ class ProfileController {
         $recentGames = $this->gameModel->getRecentGamesByUserId($profileUser['id'], 10);
         $topGames = $this->gameModel->getTopGames($profileUser['id']);
 
+        // Biblioteca completa (?view=all): paginada, com busca e ordenação por data de adição, nome ou nota
+        $libraryTotalAll = $this->gameModel->countGamesByUserId($profileUser['id']);
+        $libraryMode = (($_GET['view'] ?? '') === 'all');
+        $librarySort = $_GET['sort'] ?? 'recent';
+        if (!array_key_exists($librarySort, Game::LIBRARY_SORTS)) {
+            $librarySort = 'recent';
+        }
+        $librarySearch = mb_substr(trim((string) ($_GET['q'] ?? '')), 0, 60);
+        $libraryPage = max(1, (int) ($_GET['page'] ?? 1));
+        $libraryPerPage = 24;
+        $libraryGames = [];
+        $libraryTotal = 0;
+        $libraryPages = 1;
+        if ($libraryMode) {
+            $libraryTotal = $this->gameModel->countGamesByUserId($profileUser['id'], null, $librarySearch !== '' ? $librarySearch : null);
+            $libraryPages = max(1, (int) ceil($libraryTotal / $libraryPerPage));
+            $libraryPage = min($libraryPage, $libraryPages);
+            $libraryGames = $this->gameModel->getGamesByUserId(
+                $profileUser['id'], null, $librarySearch !== '' ? $librarySearch : null, null,
+                $libraryPage, $libraryPerPage, $librarySort
+            );
+        }
+
         $isFollowing = false;
         $followsMe = false;
         if ($currentUserId !== null && !$isOwner) {
