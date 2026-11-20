@@ -36,6 +36,7 @@ use Victi\MyGameLibrary\Controllers\ProfileCommentController;
 use Victi\MyGameLibrary\Controllers\ReviewCommentController;
 use Victi\MyGameLibrary\Controllers\FollowController;
 use Victi\MyGameLibrary\Controllers\FeedController;
+use Victi\MyGameLibrary\Controllers\TopGamesController;
 use Victi\MyGameLibrary\Controllers\NotificationController;
 
 
@@ -64,6 +65,7 @@ $routes = [
     'dashboard_data' => [DashboardController::class, 'data'],
     'home'           => [GameController::class, 'index'],
     'profile'        => [ProfileController::class, 'view'],
+    'friends_list'   => [ProfileController::class, 'friendsList'],
     'edit_profile'   => [ProfileController::class, 'edit'],
     'update_profile' => [ProfileController::class, 'update'],
     'change_password' => [ProfileController::class, 'changePassword'],
@@ -73,6 +75,8 @@ $routes = [
     'review_comment_delete' => [ReviewCommentController::class, 'delete'],
     'follow_toggle'  => [FollowController::class, 'toggle'],
     'search_users'   => [FollowController::class, 'searchUsers'],
+    'top_games_library' => [TopGamesController::class, 'library'],
+    'top_games_save' => [TopGamesController::class, 'save'],
     'feed'           => [FeedController::class, 'index'],
     'activity_toggle_like' => [FeedController::class, 'toggleLike'],
     'verify_email'   => [AuthController::class, 'verifyEmail'],

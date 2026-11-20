@@ -3,6 +3,8 @@ namespace Victi\MyGameLibrary\Models;
 use PDO;
 
 class Game {
+    public const TOP_GAMES_SIZE = 5;
+
     private $conn;
 
     public function __construct($db) {
@@ -388,6 +390,10 @@ class Game {
     }
 
     public function deleteGameFromUser($user_id, $game_id) {
+        // Saiu da biblioteca => sai do Top 5 também
+        $top = $this->conn->prepare("DELETE FROM user_top_games WHERE user_id = ? AND game_id = ?");
+        $top->execute([$user_id, $game_id]);
+
         $sql = "DELETE FROM user_games WHERE user_id = ? AND game_id = ?";
         $stmt = $this->conn->prepare($sql);
         return $stmt->execute([$user_id, $game_id]);
@@ -428,6 +434,87 @@ class Game {
         $stmt->bindValue(2, $limit, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    /** Páginas em HTTPS bloqueiam imagens http://, então sobe o protocolo. */
+    public function normalizeCover($cover) {
+        return empty($cover) ? null : preg_replace('#^http://#i', 'https://', $cover);
+    }
+
+    /**
+     * Top 5 do usuário: sempre um array de 5 posições (índice 0 = rank #1),
+     * cada uma com ['id','title','cover'] ou null se o slot está vazio.
+     */
+    public function getTopGames($user_id) {
+        $slots = array_fill(0, self::TOP_GAMES_SIZE, null);
+
+        $stmt = $this->conn->prepare("SELECT t.position, g.id, g.title, g.cover_image
+            FROM user_top_games t
+            JOIN games g ON g.id = t.game_id
+            WHERE t.user_id = ?
+            ORDER BY t.position ASC");
+        $stmt->execute([$user_id]);
+
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $index = (int) $row['position'] - 1;
+            if ($index < 0 || $index >= self::TOP_GAMES_SIZE) {
+                continue;
+            }
+            $slots[$index] = [
+                'id'    => (int) $row['id'],
+                'title' => $row['title'],
+                'cover' => $this->normalizeCover($row['cover_image']),
+            ];
+        }
+
+        return $slots;
+    }
+
+    /**
+     * Substitui o Top 5 inteiro. $slots: 5 itens (id de jogo ou null); índice 0 = rank #1.
+     * Só aceita jogos que estão na biblioteca do usuário e sem repetição.
+     * Retorna null em caso de sucesso, ou a mensagem de erro.
+     */
+    public function saveTopGames($user_id, array $slots) {
+        if (count($slots) !== self::TOP_GAMES_SIZE) {
+            return 'Dados inválidos';
+        }
+
+        $ids = array_values(array_filter($slots, fn($v) => $v !== null));
+        if (count($ids) !== count(array_unique($ids))) {
+            return 'O mesmo jogo não pode aparecer duas vezes no Top 5.';
+        }
+
+        if (!empty($ids)) {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $check = $this->conn->prepare("SELECT COUNT(*) FROM user_games WHERE user_id = ? AND game_id IN ($placeholders)");
+            $check->execute(array_merge([$user_id], $ids));
+            if ((int) $check->fetchColumn() !== count($ids)) {
+                return 'Só é possível adicionar jogos da sua biblioteca.';
+            }
+        }
+
+        try {
+            $this->conn->beginTransaction();
+
+            $del = $this->conn->prepare("DELETE FROM user_top_games WHERE user_id = ?");
+            $del->execute([$user_id]);
+
+            $ins = $this->conn->prepare("INSERT INTO user_top_games (user_id, game_id, position) VALUES (?, ?, ?)");
+            foreach (array_values($slots) as $index => $gameId) {
+                if ($gameId !== null) {
+                    $ins->execute([$user_id, $gameId, $index + 1]);
+                }
+            }
+
+            $this->conn->commit();
+            return null;
+        } catch (\Throwable $e) {
+            if ($this->conn->inTransaction()) {
+                $this->conn->rollBack();
+            }
+            error_log('Erro ao salvar Top 5: ' . $e->getMessage());
+            return 'Não foi possível salvar o Top 5.';
+        }
     }
 }
 ?>
