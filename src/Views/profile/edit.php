@@ -1,5 +1,7 @@
 <?php require_once __DIR__ . '/../header.php'; ?>
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen pb-12 selection:bg-violet-600 selection:text-white">
+<link rel="stylesheet" href="<?php echo mgl_asset('assets/lib/cropperjs/cropper.min.css'); ?>">
+<link rel="stylesheet" href="<?php echo mgl_asset('assets/css/image-cropper.css'); ?>">
 
 <?php require_once __DIR__ . '/../partials/navbar.php'; ?>
 
@@ -45,6 +47,7 @@
                     <?php endif; ?>
                     <input type="file" id="avatar" name="avatar" accept="image/png, image/jpeg, image/gif, image/webp"
                         class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-sm file:font-black file:uppercase file:tracking-wider file:bg-violet-600 file:text-white hover:file:bg-violet-500 cursor-pointer">
+                    <p class="text-xs text-zinc-500 mt-2">Depois de escolher a foto, você poderá ajustar o recorte.</p>
                 </div>
 
                 <div>
@@ -63,6 +66,7 @@
                     <?php endif; ?>
                     <input type="file" id="banner" name="banner" accept="image/png, image/jpeg, image/gif, image/webp"
                         class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-sm file:font-black file:uppercase file:tracking-wider file:bg-zinc-700 file:text-white hover:file:bg-zinc-600 cursor-pointer">
+                    <p class="text-xs text-zinc-500 mt-2">Depois de escolher a imagem, você poderá ajustar o recorte. GIFs animados são enviados sem recorte.</p>
                 </div>
 
                 <div>
@@ -81,6 +85,7 @@
     </main>
 
     <script src="<?php echo mgl_asset('assets/js/notifications.js'); ?>"></script>
+    <script src="<?php echo mgl_asset('assets/lib/cropperjs/cropper.min.js'); ?>"></script>
     <script src="<?php echo mgl_asset('assets/js/imagePreview.js'); ?>"></script>
 </body>
 </html>

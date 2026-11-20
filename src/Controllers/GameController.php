@@ -634,16 +634,19 @@ class GameController {
                 $this->gameModel->updateReviewWithCompletionData($review, $completion_date, $time_spent_hours, $_SESSION['user_id'], $game_id);
                 $this->gameModel->addTagsForGame($_SESSION['user_id'], $game_id, $tags_array);
 
-                // Notifica quem segue este usuário, se a análise tiver conteúdo de fato
+                // Feed e notificação só na primeira vez que a análise deste jogo é publicada;
+                // editar ou salvar de novo não avisa os seguidores outra vez.
                 if (trim((string) $review) !== '') {
-                    $game = $this->gameModel->getGameById($game_id);
-                    $notificationController = new NotificationController($this->db);
-                    $notificationController->notifyFollowers(
-                        $_SESSION['user_id'],
-                        $game_id,
-                        ($_SESSION['username'] ?? 'Alguém') . ' publicou uma análise de ' . ($game['title'] ?? 'um jogo')
-                    );
-                    $this->activityModel->log($_SESSION['user_id'], 'review_posted', $game_id);
+                    $isFirstPublish = $this->activityModel->log($_SESSION['user_id'], 'review_posted', $game_id);
+                    if ($isFirstPublish) {
+                        $game = $this->gameModel->getGameById($game_id);
+                        $notificationController = new NotificationController($this->db);
+                        $notificationController->notifyFollowers(
+                            $_SESSION['user_id'],
+                            $game_id,
+                            ($_SESSION['username'] ?? 'Alguém') . ' publicou uma análise de ' . ($game['title'] ?? 'um jogo')
+                        );
+                    }
                 }
 
                 $_SESSION['review_success'] = "Análise guardada com sucesso!";

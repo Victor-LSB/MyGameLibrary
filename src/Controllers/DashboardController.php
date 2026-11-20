@@ -263,6 +263,98 @@ class DashboardController {
         ];
     }
 
+    /**
+     * Dados da tela do dashboard para um período (semana, mês ou ano):
+     * números do topo, diário de jogos zerados, biblioteca por status e gêneros.
+     */
+    private function buildDashboardView($user_id, $period) {
+        $anchorDate = $this->getAnchorDate($user_id);
+        $window = $this->getPeriodWindow($period, $anchorDate);
+
+        // Jogos zerados dentro da janela, do mais recente para o mais antigo
+        $entriesStmt = $this->db->prepare("
+            SELECT ug.completion_date, ug.time_spent_hours, ug.rating,
+                   g.id AS game_id, g.title, g.cover_image, g.genre
+            FROM user_games ug
+            INNER JOIN games g ON g.id = ug.game_id
+            WHERE ug.user_id = ?
+              AND ug.completion_date IS NOT NULL
+              AND ug.completion_date >= ?
+              AND ug.completion_date < DATE_ADD(?, INTERVAL 1 DAY)
+            ORDER BY ug.completion_date DESC, ug.id DESC
+        ");
+        $entriesStmt->execute([$user_id, $window['start'], $window['end']]);
+        $allEntries = $entriesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $totalCompleted = count($allEntries);
+        $totalHours = 0.0;
+        $ratingSum = 0.0;
+        $ratingCount = 0;
+        $genreCounts = [];
+
+        foreach ($allEntries as $row) {
+            if ($row['time_spent_hours'] !== null) $totalHours += (float) $row['time_spent_hours'];
+            if ($row['rating'] !== null && $row['rating'] !== '') {
+                $ratingSum += (float) $row['rating'];
+                $ratingCount++;
+            }
+            // Gêneros vêm como "adventure, puzzle": traduz e conta um por um
+            foreach (explode(',', (string) $row['genre']) as $genre) {
+                $name = mgl_genre_pt($genre);
+                if ($name !== '') $genreCounts[$name] = ($genreCounts[$name] ?? 0) + 1;
+            }
+        }
+
+        arsort($genreCounts);
+        $genres = [];
+        $others = 0;
+        $i = 0;
+        foreach ($genreCounts as $name => $total) {
+            if ($i < 5) $genres[] = ['name' => $name, 'total' => $total];
+            else $others += $total;
+            $i++;
+        }
+        if ($others > 0) $genres[] = ['name' => 'Outros', 'total' => $others];
+
+        // O diário mostra no máximo 100 entradas; os números do topo consideram todas
+        $diaryLimit = 100;
+        $entries = array_slice($allEntries, 0, $diaryLimit);
+
+        // Biblioteca inteira por status (não depende do período)
+        $statusStmt = $this->db->prepare("SELECT status, COUNT(*) AS total FROM user_games WHERE user_id = ? GROUP BY status");
+        $statusStmt->execute([$user_id]);
+        $statusTotals = [];
+        foreach ($statusStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $statusTotals[$row['status'] ?: 'Indefinido'] = (int) $row['total'];
+        }
+
+        $statusOrder = ['Zerado', 'Jogando', 'Dropado', 'Backlog'];
+        $library = [];
+        foreach ($statusOrder as $status) {
+            if (isset($statusTotals[$status])) {
+                $library[] = ['status' => $status, 'total' => $statusTotals[$status]];
+                unset($statusTotals[$status]);
+            }
+        }
+        foreach ($statusTotals as $status => $total) {
+            $library[] = ['status' => $status, 'total' => $total];
+        }
+
+        return [
+            'period' => $period,
+            'range' => $window,
+            'total_completed' => $totalCompleted,
+            'total_hours' => $totalHours,
+            'avg_hours' => $totalCompleted > 0 ? $totalHours / $totalCompleted : 0,
+            'avg_rating' => $ratingCount > 0 ? $ratingSum / $ratingCount : null,
+            'entries' => $entries,
+            'entries_truncated' => $totalCompleted > $diaryLimit,
+            'genres' => $genres,
+            'library' => $library,
+            'library_total' => array_sum(array_column($library, 'total')),
+        ];
+    }
+
     private function fetchAllAggregatedStats($user_id) {
         $periods = ['week', 'month', 'year'];
         $payload = [];
@@ -282,9 +374,11 @@ class DashboardController {
         }
 
         $period = filter_input(INPUT_GET, 'period', FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?: 'week';
-        $periodConfig = $this->getPeriodConfig($period);
+        if (!in_array($period, ['week', 'month', 'year'], true)) {
+            $period = 'week';
+        }
 
-        $dashboardStats = $this->fetchAggregatedStatsForPeriod($_SESSION['user_id'], $period);
+        $dash = $this->buildDashboardView($_SESSION['user_id'], $period);
 
         $periodOptions = [
             'week' => 'Semanal',
