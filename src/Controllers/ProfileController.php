@@ -81,6 +81,13 @@ class ProfileController {
             );
         }
 
+        // Pedido do JS (?partial=library): devolve só a seção da biblioteca, sem recarregar o perfil inteiro
+        if (($_GET['partial'] ?? '') === 'library') {
+            header('Content-Type: text/html; charset=utf-8');
+            include __DIR__ . '/../Views/profile/_library.php';
+            return;
+        }
+
         $isFollowing = false;
         $followsMe = false;
         if ($currentUserId !== null && !$isOwner) {
