@@ -40,6 +40,13 @@ use Victi\MyGameLibrary\Controllers\TopGamesController;
 use Victi\MyGameLibrary\Controllers\NotificationController;
 
 
+// URLs amigáveis: /perfil/victor vira action=profile&u=victor (veja src/pretty_urls.php).
+// Os redirecionamentos relativos dos controllers são ancorados na pasta do site.
+mgl_absolutize_redirects();
+if (!mgl_route_request()) {
+    mgl_redirect_to_pretty();   // só age com PRETTY_URLS=true
+}
+
 $action = $_GET['action'] ?? 'home';
 
 

@@ -149,3 +149,5 @@ if (!function_exists('mgl_date_range_pt')) {
         return $fmt($s, !$sameYear) . ' a ' . $fmt($e, $showYear);
     }
 }
+
+require_once __DIR__ . '/pretty_urls.php';

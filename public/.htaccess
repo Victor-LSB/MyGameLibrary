@@ -1,0 +1,9 @@
+# Manda para o index.php tudo que não for um arquivo ou pasta real (assets, uploads...),
+# para as URLs amigáveis (/perfil/victor, /jogo/12) funcionarem.
+# Precisa de: a2enmod rewrite  +  AllowOverride All na pasta pública do Apache.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>

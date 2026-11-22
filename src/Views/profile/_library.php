@@ -14,8 +14,13 @@
     $libraryPages = $libraryPages ?? 1;
     $libraryTotal = $libraryTotal ?? 0;
     $gamesToShow = $libraryMode ? ($libraryGames ?? []) : $recentGames;
-    $profileBase = 'index.php?action=profile&u=' . urlencode($profileUser['username']);
-    $libraryQuery = '&view=all&sort=' . urlencode($librarySort) . ($librarySearch !== '' ? '&q=' . urlencode($librarySearch) : '');
+    // Endereços pelo helper: /perfil/victor?view=all... com PRETTY_URLS=true, ou o formato antigo.
+    $profileName    = $profileUser['username'];
+    $profileUrl     = mgl_url('profile', ['u' => $profileName]);
+    $libraryAllUrl  = mgl_url('profile', ['u' => $profileName, 'view' => 'all']);
+    $libraryParams  = ['u' => $profileName, 'view' => 'all', 'sort' => $librarySort]
+                    + ($librarySearch !== '' ? ['q' => $librarySearch] : []);
+    $libraryPageUrl = fn(int $page) => mgl_url('profile', $libraryParams + ['page' => $page]) . '#biblioteca';
 ?>
 <section id="biblioteca">
 <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
@@ -23,16 +28,18 @@
         <?php echo $libraryMode ? 'Biblioteca (' . (int) $libraryTotal . ')' : 'Registados Recentemente'; ?>
     </h2>
     <?php if ($libraryMode): ?>
-        <a href="<?php echo $profileBase; ?>#biblioteca" data-library-link class="text-xs font-bold uppercase tracking-wider text-zinc-400 hover:text-violet-400 transition-colors">&larr; Voltar aos recentes</a>
+        <a href="<?php echo htmlspecialchars($profileUrl, ENT_QUOTES); ?>#biblioteca" data-library-link class="text-xs font-bold uppercase tracking-wider text-zinc-400 hover:text-violet-400 transition-colors">&larr; Voltar aos recentes</a>
     <?php elseif ($libraryTotalAll > count($recentGames)): ?>
-        <a href="<?php echo $profileBase; ?>&view=all#biblioteca" data-library-link class="text-xs font-bold uppercase tracking-wider text-violet-400 hover:text-violet-300 transition-colors">Ver biblioteca completa (<?php echo (int) $libraryTotalAll; ?>) &rarr;</a>
+        <a href="<?php echo htmlspecialchars($libraryAllUrl, ENT_QUOTES); ?>#biblioteca" data-library-link class="text-xs font-bold uppercase tracking-wider text-violet-400 hover:text-violet-300 transition-colors">Ver biblioteca completa (<?php echo (int) $libraryTotalAll; ?>) &rarr;</a>
     <?php endif; ?>
 </div>
 
 <?php if ($libraryMode): ?>
-    <form method="get" action="index.php" data-library-form class="flex flex-wrap gap-3 mb-6">
-        <input type="hidden" name="action" value="profile">
-        <input type="hidden" name="u" value="<?php echo htmlspecialchars($profileUser['username'], ENT_QUOTES); ?>">
+    <form method="get" action="<?php echo htmlspecialchars(mgl_pretty_enabled() ? $profileUrl : 'index.php', ENT_QUOTES); ?>" data-library-form class="flex flex-wrap gap-3 mb-6">
+        <?php if (!mgl_pretty_enabled()): ?>
+            <input type="hidden" name="action" value="profile">
+            <input type="hidden" name="u" value="<?php echo htmlspecialchars($profileName, ENT_QUOTES); ?>">
+        <?php endif; ?>
         <input type="hidden" name="view" value="all">
         <input type="search" name="q" value="<?php echo htmlspecialchars($librarySearch, ENT_QUOTES); ?>" placeholder="Buscar jogo..." maxlength="60"
                class="flex-1 min-w-[160px] bg-zinc-900 border-2 border-zinc-800 text-white text-sm px-3 py-2 rounded-sm focus:border-violet-500 outline-none">
@@ -79,11 +86,11 @@
     <?php if ($libraryMode && $libraryPages > 1): ?>
         <nav class="flex items-center justify-center gap-4 mt-8" aria-label="Paginação da biblioteca">
             <?php if ($libraryPage > 1): ?>
-                <a href="<?php echo $profileBase . $libraryQuery . '&page=' . ($libraryPage - 1); ?>#biblioteca" data-library-link class="px-4 py-2 bg-zinc-900 border-2 border-zinc-800 hover:border-violet-500 text-white text-sm font-bold rounded-sm">&larr; Anterior</a>
+                <a href="<?php echo htmlspecialchars($libraryPageUrl($libraryPage - 1), ENT_QUOTES); ?>" data-library-link class="px-4 py-2 bg-zinc-900 border-2 border-zinc-800 hover:border-violet-500 text-white text-sm font-bold rounded-sm">&larr; Anterior</a>
             <?php endif; ?>
             <span class="text-zinc-400 text-sm">Página <?php echo (int) $libraryPage; ?> de <?php echo (int) $libraryPages; ?></span>
             <?php if ($libraryPage < $libraryPages): ?>
-                <a href="<?php echo $profileBase . $libraryQuery . '&page=' . ($libraryPage + 1); ?>#biblioteca" data-library-link class="px-4 py-2 bg-zinc-900 border-2 border-zinc-800 hover:border-violet-500 text-white text-sm font-bold rounded-sm">Próxima &rarr;</a>
+                <a href="<?php echo htmlspecialchars($libraryPageUrl($libraryPage + 1), ENT_QUOTES); ?>" data-library-link class="px-4 py-2 bg-zinc-900 border-2 border-zinc-800 hover:border-violet-500 text-white text-sm font-bold rounded-sm">Próxima &rarr;</a>
             <?php endif; ?>
         </nav>
     <?php endif; ?>
