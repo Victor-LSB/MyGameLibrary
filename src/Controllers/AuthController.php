@@ -498,7 +498,7 @@ class AuthController {
     public function logout() {
         $this->startSession();
         session_destroy();
-        header("Location: index.php?action=login"); 
+        header("Location: " . mgl_base_path()); 
         exit();
     }
 
