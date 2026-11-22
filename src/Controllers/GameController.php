@@ -132,7 +132,8 @@ class GameController {
     public function details() {
         $this->startSession();
         
-        $game_id = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT);
+        // mgl_get lê $_GET (filter_input não enxerga o "id" de /jogo/12)
+        $game_id = mgl_get('id', FILTER_SANITIZE_NUMBER_INT);
         $username_profile = $_GET['u'] ?? null; 
 
         if (!$game_id) {

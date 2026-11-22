@@ -154,6 +154,44 @@ if (!function_exists('mgl_base_path')) {
     }
 
     /**
+     * Lê um parâmetro de $_GET aplicando um filtro, igual ao filter_input(INPUT_GET, ...).
+     * Existe porque filter_input lê a query ORIGINAL do pedido e não enxerga o que o roteador
+     * coloca em $_GET (o "victor" de /perfil/victor, o "12" de /jogo/12).
+     * Devolve null quando o parâmetro não existe, como o filter_input.
+     */
+    function mgl_get(string $key, int $filter = FILTER_DEFAULT) {
+        return isset($_GET[$key]) ? filter_var($_GET[$key], $filter) : null;
+    }
+
+    /**
+     * Troca href="index.php?action=profile&u=x" por href="/perfil/x" no HTML da página.
+     * Assim os links do site já saem bonitos e o clique não precisa passar pelo redirecionamento.
+     * Só mexe em páginas conhecidas; links de endpoints/formulários ficam como estão.
+     */
+    function mgl_prettify_html(string $html): string {
+        $routes = mgl_pretty_routes();
+        return preg_replace_callback('/href="index\.php\?([^"#]*)(#[^"]*)?"/', function ($m) use ($routes) {
+            parse_str(html_entity_decode($m[1], ENT_QUOTES), $params);
+            $action = $params['action'] ?? '';
+            if (!is_string($action) || !isset($routes[$action])) {
+                return $m[0];
+            }
+            unset($params['action']);
+            if ($routes[$action][1] === 'id' && empty($params['id'])) {
+                return $m[0];
+            }
+            return 'href="' . htmlspecialchars(mgl_url($action, $params), ENT_QUOTES) . ($m[2] ?? '') . '"';
+        }, $html) ?? $html;
+    }
+
+    /** Liga a troca de links acima nas páginas HTML (só com PRETTY_URLS=true). */
+    function mgl_start_pretty_output(string $action): void {
+        if (mgl_pretty_enabled() && isset(mgl_pretty_routes()[$action])) {
+            ob_start('mgl_prettify_html');
+        }
+    }
+
+    /**
      * Os controllers redirecionam com "Location: index.php?action=...". Como esse caminho é
      * relativo, a partir de /jogo/12 ele viraria /jogo/index.php. Este gancho roda na hora
      * de enviar os headers e ancora esses endereços na pasta do site, sem editar cada header().
@@ -169,7 +207,19 @@ if (!function_exists('mgl_base_path')) {
                 if ($location === '' || $location[0] === '/' || preg_match('#^[a-z][a-z0-9+.-]*:#i', $location)) {
                     return;
                 }
-                header('Location: ' . $base . ltrim($location, './'), true);
+                $target = $base . ltrim($location, './');
+                // Com PRETTY_URLS=true, já manda direto para a URL bonita (sem um 2º redirecionamento)
+                if (mgl_pretty_enabled() && preg_match('/^index\.php\?([^#]*)(#.*)?$/', $location, $m)) {
+                    parse_str($m[1], $params);
+                    $page = $params['action'] ?? '';
+                    $routes = mgl_pretty_routes();
+                    if (is_string($page) && isset($routes[$page])
+                        && !($routes[$page][1] === 'id' && empty($params['id']))) {
+                        unset($params['action']);
+                        $target = mgl_url($page, $params) . ($m[2] ?? '');
+                    }
+                }
+                header('Location: ' . $target, true);
                 return;
             }
         });

@@ -48,6 +48,7 @@ if (!mgl_route_request()) {
 }
 
 $action = $_GET['action'] ?? 'home';
+mgl_start_pretty_output($action);   // links do HTML já saem bonitos (só com PRETTY_URLS=true)
 
 
 $routes = [

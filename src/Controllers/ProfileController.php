@@ -32,7 +32,8 @@ class ProfileController {
     public function view() {
         $this->startSession();
         
-        $username = filter_input(INPUT_GET, 'u', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        // mgl_get lê $_GET (filter_input não enxerga o "u" de /perfil/victor)
+        $username = mgl_get('u', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         
         if (!$username && isset($_SESSION['username'])) {
             header("Location: index.php?action=profile&u=" . $_SESSION['username']);
