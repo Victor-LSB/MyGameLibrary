@@ -453,10 +453,21 @@ class DashboardController {
         $playingStmt->execute([$user_id]);
         $playing = $playingStmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // Para o calendário: quantos jogos foram zerados em cada dia (marca os períodos com jogo)
+        $daysStmt = $this->db->prepare("SELECT DATE(completion_date) AS d, COUNT(*) AS n FROM user_games
+            WHERE user_id = ? AND completion_date IS NOT NULL GROUP BY DATE(completion_date)");
+        $daysStmt->execute([$user_id]);
+        $completionDays = [];
+        foreach ($daysStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $completionDays[$row['d']] = (int) $row['n'];
+        }
+
         return [
             'period' => $period,
             'range' => $window,
             'ref' => $ref->format('Y-m-d'),
+            'first_day' => $firstDay,
+            'completion_days' => $completionDays,
             'has_prev' => $hasPrev,
             'has_next' => $hasNext,
             'total_completed' => $totalCompleted,

@@ -80,7 +80,7 @@
     $renderSpark = function (array $values, string $color) {
         $max = max($values ?: [0]);
         if ($max <= 0) return '';
-        $out = '<div class="dash-spark" aria-hidden="true">';
+        $out = '<div class="dash-spark' . (count($values) > 14 ? ' is-dense' : '') . '" aria-hidden="true">';
         foreach ($values as $v) {
             $h = $v > 0 ? max(14, round($v / $max * 100)) : 8;
             $out .= '<i style="height:' . $h . '%;' . ($v > 0 ? 'background:' . $color : '') . '"></i>';
@@ -113,22 +113,27 @@
             <div>
                 <p class="text-[11px] font-black uppercase tracking-[0.2em] text-violet-400">Seu ritmo</p>
                 <h1 class="text-4xl sm:text-5xl font-black text-white uppercase tracking-tighter leading-none">Dashboard</h1>
-                <div class="mt-3 flex items-center gap-2.5">
-                    <?php if (!empty($dash['has_prev'])): ?>
-                        <a href="<?php echo htmlspecialchars($navUrl($period, $range['prev'])); ?>" class="w-8 h-8 grid place-items-center border-2 border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white hover:border-zinc-600 transition-colors" aria-label="<?php echo ucfirst($prevWord); ?>">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-3.5 h-3.5"><path stroke-linecap="square" d="M15 18l-6-6 6-6"/></svg>
-                        </a>
-                    <?php else: ?>
-                        <span class="w-8 h-8 grid place-items-center border-2 border-zinc-900 text-zinc-800" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-3.5 h-3.5"><path stroke-linecap="square" d="M15 18l-6-6 6-6"/></svg></span>
-                    <?php endif; ?>
+                <!-- Setas e calendário juntos à esquerda: não mudam de lugar com o tamanho do texto -->
+                <div class="mt-3 flex items-center gap-3">
+                    <div class="relative flex items-center gap-1">
+                        <?php if (!empty($dash['has_prev'])): ?>
+                            <a href="<?php echo htmlspecialchars($navUrl($period, $range['prev'])); ?>" class="dash-navbtn" aria-label="<?php echo ucfirst($prevWord); ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-3.5 h-3.5"><path stroke-linecap="square" d="M15 18l-6-6 6-6"/></svg></a>
+                        <?php else: ?>
+                            <span class="dash-navbtn is-off" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-3.5 h-3.5"><path stroke-linecap="square" d="M15 18l-6-6 6-6"/></svg></span>
+                        <?php endif; ?>
+                        <?php if (!empty($dash['has_next'])): ?>
+                            <a href="<?php echo htmlspecialchars($navUrl($period, $range['next'])); ?>" class="dash-navbtn" aria-label="Próximo período"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-3.5 h-3.5"><path stroke-linecap="square" d="M9 6l6 6-6 6"/></svg></a>
+                        <?php else: ?>
+                            <span class="dash-navbtn is-off" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-3.5 h-3.5"><path stroke-linecap="square" d="M9 6l6 6-6 6"/></svg></span>
+                        <?php endif; ?>
+                        <button type="button" id="dashCalBtn" class="dash-navbtn ml-1" aria-haspopup="dialog" aria-expanded="false" aria-controls="dashCal" aria-label="Escolher período no calendário">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" class="w-4 h-4"><rect x="3.5" y="5" width="17" height="15.5" stroke-linejoin="miter"/><path stroke-linecap="square" d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+                        </button>
+
+                        <!-- Calendário (montado pelo script no fim da página) -->
+                        <div id="dashCal" class="dash-cal" role="dialog" aria-label="Escolher período" hidden></div>
+                    </div>
                     <span class="text-base font-extrabold text-white"><?php echo htmlspecialchars($rangeLabel); ?></span>
-                    <?php if (!empty($dash['has_next'])): ?>
-                        <a href="<?php echo htmlspecialchars($navUrl($period, $range['next'])); ?>" class="w-8 h-8 grid place-items-center border-2 border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white hover:border-zinc-600 transition-colors" aria-label="Próximo período">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-3.5 h-3.5"><path stroke-linecap="square" d="M9 6l6 6-6 6"/></svg>
-                        </a>
-                    <?php else: ?>
-                        <span class="w-8 h-8 grid place-items-center border-2 border-zinc-900 text-zinc-800" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-3.5 h-3.5"><path stroke-linecap="square" d="M9 6l6 6-6 6"/></svg></span>
-                    <?php endif; ?>
                     <?php if ($rangeSub): ?><span class="text-xs text-zinc-500">· <?php echo htmlspecialchars($rangeSub); ?></span><?php endif; ?>
                 </div>
             </div>
@@ -219,48 +224,51 @@
                                     }
                                     $showNum = $period !== 'month' || $has || $num === 1 || $num % 5 === 0;
                                 ?>
-                                    <div class="dash-col group" tabindex="<?php echo $has ? '0' : '-1'; ?>">
+                                    <div class="dash-col">
                                         <?php if ($has): ?>
                                             <span class="dash-val"><?php echo $b['hours'] > 0 ? $fmtHours($b['hours']) . ' h' : count($b['games']) . (count($b['games']) === 1 ? ' jogo' : ' jogos'); ?></span>
                                         <?php endif; ?>
-                                        <div class="dash-bar<?php echo $has ? ' is-on' : ''; ?><?php echo $b['future'] ? ' is-future' : ''; ?>" style="<?php echo $coverGames ? '' : 'height: ' . $barHeight($b) . 'px'; ?>">
-                                            <?php if ($coverGames): ?>
-                                                <div class="dash-bar__covers" style="grid-template-columns: repeat(<?php echo $mosaicCols; ?>, minmax(0, 1fr))">
-                                                    <?php foreach ($coverGames as $cg): ?>
-                                                        <?php if (!empty($cg['cover_image'])): ?>
-                                                            <img src="<?php echo htmlspecialchars($cg['cover_image']); ?>" alt="" title="<?php echo htmlspecialchars($cg['title']); ?>" loading="lazy">
-                                                        <?php else: ?>
-                                                            <?php $initials = mb_strtoupper(implode('', array_map(fn($w) => mb_substr($w, 0, 1), array_slice(preg_split('/\s+/u', trim(preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $cg['title']))), 0, 3)))); ?>
-                                                            <span title="<?php echo htmlspecialchars($cg['title']); ?>"><?php echo htmlspecialchars($initials); ?></span>
-                                                        <?php endif; ?>
+                                        <!-- Só a barra ativa a caixinha (e ela aparece colada no topo da barra) -->
+                                        <div class="dash-hit"<?php echo $has ? ' tabindex="0"' : ''; ?>>
+                                            <div class="dash-bar<?php echo $has ? ' is-on' : ''; ?><?php echo $b['future'] ? ' is-future' : ''; ?>" style="<?php echo $coverGames ? '' : 'height: ' . $barHeight($b) . 'px'; ?>">
+                                                <?php if ($coverGames): ?>
+                                                    <div class="dash-bar__covers" style="grid-template-columns: repeat(<?php echo $mosaicCols; ?>, minmax(0, 1fr))">
+                                                        <?php foreach ($coverGames as $cg): ?>
+                                                            <?php if (!empty($cg['cover_image'])): ?>
+                                                                <img src="<?php echo htmlspecialchars($cg['cover_image']); ?>" alt="" loading="lazy">
+                                                            <?php else: ?>
+                                                                <?php $initials = mb_strtoupper(implode('', array_map(fn($w) => mb_substr($w, 0, 1), array_slice(preg_split('/\s+/u', trim(preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $cg['title']))), 0, 3)))); ?>
+                                                                <span><?php echo htmlspecialchars($initials); ?></span>
+                                                            <?php endif; ?>
+                                                        <?php endforeach; ?>
+                                                        <?php if ($mosaicCols === 2 && count($coverGames) % 2 === 1): ?><i class="dash-bar__fill"></i><?php endif; ?>
+                                                    </div>
+                                                    <div class="dash-bar__stripe" style="height: <?php echo $stripeHeight($b); ?>px"></div>
+                                                <?php endif; ?>
+                                            </div>
+                                            <?php if ($has): ?>
+                                                <!-- Jogos do período ao passar o mouse -->
+                                                <div class="dash-tip <?php echo $tipSide; ?>">
+                                                    <p class="dash-tip__head">
+                                                        <?php echo $period === 'year'
+                                                            ? htmlspecialchars(mgl_month_pt((int) date('n', $ts)))
+                                                            : (int) date('j', $ts) . ' de ' . htmlspecialchars(mgl_month_pt((int) date('n', $ts))); ?>
+                                                        · <?php echo count($b['games']); ?> <?php echo count($b['games']) === 1 ? 'zerado' : 'zerados'; ?>
+                                                    </p>
+                                                    <?php foreach (array_slice($b['games'], 0, 6) as $tg): $r = (int) $tg['rating']; ?>
+                                                        <p class="dash-tip__row">
+                                                            <b><?php echo htmlspecialchars($tg['title']); ?></b>
+                                                            <span><?php echo $r ? '<i class="text-amber-400 not-italic">' . str_repeat('★', $r) . '</i> · ' : ''; ?><?php echo $tg['time_spent_hours'] !== null ? $fmtHours($tg['time_spent_hours']) . ' h' : 'sem horas'; ?></span>
+                                                        </p>
                                                     <?php endforeach; ?>
-                                                    <?php if ($mosaicCols === 2 && count($coverGames) % 2 === 1): ?><i class="dash-bar__fill"></i><?php endif; ?>
+                                                    <?php if (count($b['games']) > 6): ?><p class="text-[11px] text-zinc-500 mt-1">e mais <?php echo count($b['games']) - 6; ?></p><?php endif; ?>
                                                 </div>
-                                                <div class="dash-bar__stripe" style="height: <?php echo $stripeHeight($b); ?>px"></div>
                                             <?php endif; ?>
                                         </div>
                                         <div class="dash-lbl<?php echo $has ? ' is-on' : ''; ?>">
                                             <?php if ($lb): ?><span><?php echo htmlspecialchars($lb); ?></span><?php endif; ?>
                                             <?php if ($num !== null): ?><b class="<?php echo $showNum ? '' : 'max-sm:invisible'; ?>"><?php echo $num; ?></b><?php endif; ?>
                                         </div>
-                                        <?php if ($has): ?>
-                                            <!-- Jogos do período ao passar o mouse -->
-                                            <div class="dash-tip <?php echo $tipSide; ?>">
-                                                <p class="dash-tip__head">
-                                                    <?php echo $period === 'year'
-                                                        ? htmlspecialchars(mgl_month_pt((int) date('n', $ts)))
-                                                        : (int) date('j', $ts) . ' de ' . htmlspecialchars(mgl_month_pt((int) date('n', $ts))); ?>
-                                                    · <?php echo count($b['games']); ?> <?php echo count($b['games']) === 1 ? 'zerado' : 'zerados'; ?>
-                                                </p>
-                                                <?php foreach (array_slice($b['games'], 0, 6) as $tg): $r = (int) $tg['rating']; ?>
-                                                    <p class="dash-tip__row">
-                                                        <b><?php echo htmlspecialchars($tg['title']); ?></b>
-                                                        <span><?php echo $r ? '<i class="text-amber-400 not-italic">' . str_repeat('★', $r) . '</i> · ' : ''; ?><?php echo $tg['time_spent_hours'] !== null ? $fmtHours($tg['time_spent_hours']) . ' h' : 'sem horas'; ?></span>
-                                                    </p>
-                                                <?php endforeach; ?>
-                                                <?php if (count($b['games']) > 6): ?><p class="text-[11px] text-zinc-500 mt-1">e mais <?php echo count($b['games']) - 6; ?></p><?php endif; ?>
-                                            </div>
-                                        <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>
                             </div>
@@ -415,6 +423,131 @@
         <?php require __DIR__ . '/partials/igdb_credit.php'; ?>
     </main>
 
+    <script>
+    // Calendário do dashboard: escolher semana, mês ou ano sem ir de seta em seta.
+    // Períodos com jogos zerados ficam marcados; datas futuras e antes da primeira atividade ficam desligadas.
+    (function () {
+        const btn = document.getElementById('dashCalBtn');
+        const box = document.getElementById('dashCal');
+        if (!btn || !box) return;
+
+        const period = <?php echo json_encode($period); ?>;
+        const ref = <?php echo json_encode($dash['ref'] ?? date('Y-m-d')); ?>;
+        const today = <?php echo json_encode(date('Y-m-d')); ?>;
+        const firstDay = <?php echo json_encode($dash['first_day'] ?? date('Y-m-d')); ?>;
+        const days = <?php echo json_encode((object) ($dash['completion_days'] ?? [])); ?>;
+        const months = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+        const wk = ['seg','ter','qua','qui','sex','sáb','dom'];
+
+        const pad = (n) => String(n).padStart(2, '0');
+        const ymd = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+        const parse = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+        const url = (d) => 'index.php?action=dashboard&period=' + period + '&d=' + d;
+        const count = (prefix) => Object.keys(days).reduce((t, k) => t + (k.startsWith(prefix) ? days[k] : 0), 0);
+        const firstYear = Number(firstDay.slice(0, 4));
+        const thisYear = Number(today.slice(0, 4));
+
+        let viewYear = Number(ref.slice(0, 4));
+        let viewMonth = Number(ref.slice(5, 7)) - 1;
+
+        function head(label, canPrev, canNext) {
+            return '<div class="dash-cal__head">'
+                + '<button type="button" data-step="-1" ' + (canPrev ? '' : 'disabled') + ' aria-label="Anterior">‹</button>'
+                + '<b>' + label + '</b>'
+                + '<button type="button" data-step="1" ' + (canNext ? '' : 'disabled') + ' aria-label="Próximo">›</button></div>';
+        }
+
+        function render() {
+            let html = '';
+            if (period === 'year') {
+                html += '<p class="dash-cal__title">Escolha o ano</p><div class="dash-cal__grid dash-cal__grid--3">';
+                for (let y = thisYear; y >= firstYear; y--) {
+                    const n = count(y + '-');
+                    const cur = Number(ref.slice(0, 4)) === y;
+                    html += '<a href="' + url(y + '-01-01') + '" class="dash-cal__cell' + (cur ? ' is-cur' : '') + '">' + y
+                        + (n ? '<small>' + n + ' zerado' + (n > 1 ? 's' : '') + '</small>' : '<small class="is-none">—</small>') + '</a>';
+                }
+                html += '</div>';
+            } else if (period === 'month') {
+                html += head(String(viewYear), viewYear > firstYear, viewYear < thisYear) + '<div class="dash-cal__grid dash-cal__grid--3">';
+                for (let m = 0; m < 12; m++) {
+                    const key = viewYear + '-' + pad(m + 1);
+                    const off = key > today.slice(0, 7) || key < firstDay.slice(0, 7);
+                    const cur = key === ref.slice(0, 7);
+                    const n = count(key + '-');
+                    const label = months[m].slice(0, 3);
+                    html += off
+                        ? '<span class="dash-cal__cell is-off">' + label + '</span>'
+                        : '<a href="' + url(key + '-01') + '" class="dash-cal__cell' + (cur ? ' is-cur' : '') + '">' + label
+                          + (n ? '<small>' + n + '</small>' : '') + '</a>';
+                }
+                html += '</div>';
+            } else {
+                // Semana: calendário do mês, uma linha por semana (segunda a domingo)
+                const first = new Date(viewYear, viewMonth, 1);
+                const last = new Date(viewYear, viewMonth + 1, 0);
+                const canPrev = (viewYear * 12 + viewMonth) > (firstYear * 12 + Number(firstDay.slice(5, 7)) - 1);
+                const canNext = (viewYear * 12 + viewMonth) < (thisYear * 12 + Number(today.slice(5, 7)) - 1);
+                html += head(months[viewMonth] + ' ' + viewYear, canPrev, canNext);
+                html += '<div class="dash-cal__week dash-cal__week--head">' + wk.map((d) => '<span>' + d + '</span>').join('') + '</div>';
+                let start = new Date(first);
+                start.setDate(start.getDate() - ((start.getDay() + 6) % 7));   // volta até a segunda-feira
+                const refMonday = (() => { const r = parse(ref); r.setDate(r.getDate() - ((r.getDay() + 6) % 7)); return ymd(r); })();
+                while (start <= last) {
+                    const monday = ymd(start);
+                    const sunday = new Date(start); sunday.setDate(sunday.getDate() + 6);
+                    const off = monday > today || ymd(sunday) < firstDay;
+                    const cur = monday === refMonday;
+                    let cells = '';
+                    for (let i = 0; i < 7; i++) {
+                        const d = new Date(start); d.setDate(d.getDate() + i);
+                        const key = ymd(d);
+                        const other = d.getMonth() !== viewMonth;
+                        cells += '<span class="' + (other ? 'is-other ' : '') + (days[key] ? 'has-game' : '') + '">' + d.getDate() + '</span>';
+                    }
+                    html += off
+                        ? '<span class="dash-cal__week is-off">' + cells + '</span>'
+                        : '<a href="' + url(monday) + '" class="dash-cal__week' + (cur ? ' is-cur' : '') + '">' + cells + '</a>';
+                    start.setDate(start.getDate() + 7);
+                }
+                html += '<p class="dash-cal__hint"><i></i> dia com jogo zerado · clique numa semana</p>';
+            }
+            box.innerHTML = html;
+        }
+
+        function open() {
+            viewYear = Number(ref.slice(0, 4));
+            viewMonth = Number(ref.slice(5, 7)) - 1;
+            render();
+            box.hidden = false;
+            btn.setAttribute('aria-expanded', 'true');
+            btn.classList.add('is-active');
+        }
+        function close() {
+            box.hidden = true;
+            btn.setAttribute('aria-expanded', 'false');
+            btn.classList.remove('is-active');
+        }
+
+        btn.addEventListener('click', (e) => { e.stopPropagation(); box.hidden ? open() : close(); });
+        box.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const step = e.target.closest('[data-step]');
+            if (!step || step.disabled) return;
+            const dir = Number(step.dataset.step);
+            if (period === 'month') {
+                viewYear += dir;
+            } else {
+                viewMonth += dir;
+                if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+                if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+            }
+            render();
+        });
+        document.addEventListener('click', () => { if (!box.hidden) close(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !box.hidden) { close(); btn.focus(); } });
+    })();
+    </script>
     <script src="<?php echo mgl_asset('assets/js/notifications.js'); ?>"></script>
 </body>
 </html>
