@@ -173,22 +173,33 @@
 /* Feed                                                                */
 /* ------------------------------------------------------------------ */
 
+/* Três colunas na largura da navbar: você | feed | quem seguir */
 .feed-layout {
   display: grid;
-  grid-template-columns: minmax(0, 40rem) 17rem;
-  justify-content: center;
-  gap: 3rem;
+  grid-template-columns: 17rem minmax(0, 1fr) 19rem;
+  gap: 2.5rem;
   align-items: start;
-  max-width: 62rem;
-  margin: 0 auto;
-  padding-top: 2rem;
+  padding-top: 0.5rem;
+}
+
+.feed-me {
+  position: sticky;
+  top: 1.5rem;
+  background: #18181b;
+  border: 2px solid #27272a;
+  border-radius: 2px;
+  padding: 1.25rem;
+}
+
+.feed-main { min-width: 0; }
+
+@media (max-width: 1279px) {
+  .feed-layout { grid-template-columns: minmax(0, 1fr) 18rem; gap: 2rem; }
+  .feed-me { display: none; }
 }
 
 @media (max-width: 1023px) {
-  .feed-layout {
-    grid-template-columns: minmax(0, 40rem);
-    gap: 2rem;
-  }
+  .feed-layout { grid-template-columns: minmax(0, 1fr); }
 }
 
 .feed-head {

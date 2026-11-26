@@ -39,6 +39,7 @@ use Victi\MyGameLibrary\Controllers\FeedController;
 use Victi\MyGameLibrary\Controllers\TopGamesController;
 use Victi\MyGameLibrary\Controllers\NotificationController;
 use Victi\MyGameLibrary\Controllers\YearReviewController;
+use Victi\MyGameLibrary\Controllers\ProfileCardController;
 
 
 // URLs amigáveis: /perfil/victor vira action=profile&u=victor (veja src/pretty_urls.php).
@@ -72,6 +73,7 @@ $routes = [
     'game'           => [GameController::class, 'page'],
     'export_library' => [GameController::class, 'exportCsv'],
     'year_review'    => [YearReviewController::class, 'index'],
+    'profile_card'   => [ProfileCardController::class, 'image'],
     'save_review'    => [GameController::class, 'saveReview'],
     'dashboard'      => [DashboardController::class, 'index'],
     'dashboard_data' => [DashboardController::class, 'data'],

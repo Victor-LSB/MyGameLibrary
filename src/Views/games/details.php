@@ -109,7 +109,7 @@
 
 <?php require_once __DIR__ . '/../partials/navbar.php'; ?>
 
-    <main class="max-w-5xl mx-auto px-6">
+    <main class="max-w-screen-2xl mx-auto px-4 sm:px-6">
         <div class="flex items-center justify-between gap-4 mb-6">
             <h1 class="text-2xl font-black text-white tracking-tighter uppercase line-clamp-1 flex-1">
                 <?php if (!empty($game['id'])): ?>
@@ -140,7 +140,7 @@
         <div class="bg-zinc-900 rounded-sm border-2 border-zinc-800 p-6 sm:p-8 shadow-2xl">
         <div class="flex flex-col md:flex-row gap-8">
             
-            <div class="w-full md:w-1/3 shrink-0 flex flex-col gap-4">
+            <div class="w-full md:w-72 xl:w-80 shrink-0 flex flex-col gap-4">
                 <div class="bg-zinc-950 border-4 border-zinc-800 rounded-sm overflow-hidden shadow-xl aspect-[3/4]">
                     <?php if (!empty($game['cover_image'])): ?>
                         <img src="<?php echo htmlspecialchars($game['cover_image']); ?>" alt="Capa de <?php echo htmlspecialchars($game['title']); ?>" class="w-full h-full object-cover">

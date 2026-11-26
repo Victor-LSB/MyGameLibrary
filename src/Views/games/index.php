@@ -18,7 +18,7 @@
 
 <?php require_once __DIR__ . '/../partials/navbar.php'; ?>
 
-    <main class="max-w-7xl mx-auto px-6 pb-12">
+    <main class="max-w-screen-2xl mx-auto px-4 sm:px-6 pb-12">
         <p class="text-sm text-zinc-400 font-medium mb-6">Bem-vindo, <span class="text-violet-400 font-bold"><?php echo htmlspecialchars(!empty($_SESSION['display_name']) ? $_SESSION['display_name'] : $_SESSION['username']); ?></span>!</p>
 
         <?php if (isset($_SESSION['verification_notice'])): ?>
@@ -118,7 +118,7 @@
         </div>
 
         <?php if (!empty($userGames) && count($userGames) > 0): ?>
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-6">
                 
             <?php foreach ($userGames as $game): ?>
                 <div class="gameItem bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl flex flex-col overflow-hidden group" id="game-<?php echo $game['id']; ?>">

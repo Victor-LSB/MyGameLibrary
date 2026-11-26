@@ -577,7 +577,7 @@ class Game {
     }
     /** Páginas em HTTPS bloqueiam imagens http://, então sobe o protocolo. */
     public function normalizeCover($cover) {
-        return empty($cover) ? null : preg_replace('#^http://#i', 'https://', $cover);
+        return empty($cover) ? null : preg_replace('#^http://(?!localhost|127\.)#i', 'https://', $cover);
     }
 
     /**

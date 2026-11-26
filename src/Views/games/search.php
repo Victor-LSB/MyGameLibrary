@@ -3,11 +3,11 @@
 
 <?php require_once __DIR__ . '/../partials/navbar.php'; ?>
 
-    <main class="max-w-7xl mx-auto px-6">
+    <main class="max-w-screen-2xl mx-auto px-4 sm:px-6">
         <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tighter uppercase mb-8 text-center">Buscar Jogos</h1>
 
         
-        <div class="bg-zinc-900 p-6 sm:p-8 rounded-sm border-2 border-zinc-800 mb-10 shadow-xl max-w-4xl mx-auto">
+        <div class="bg-zinc-900 p-6 sm:p-8 rounded-sm border-2 border-zinc-800 mb-10 shadow-xl">
             <form action="index.php" method="GET" class="relative" onsubmit="return false;">
                 <input type="hidden" name="action" value="search">
                 <input type="text" id="liveSearchInput" name="q" autocomplete="off" placeholder="Ex: The Witcher 3, Elden Ring, Minecraft..." value="<?php echo htmlspecialchars($q ?? '', ENT_QUOTES, 'UTF-8'); ?>" autofocus
@@ -20,7 +20,7 @@
             <?php if (!empty($q)) echo 'Resultados para "<span class="text-violet-400">' . htmlspecialchars($q) . '</span>"'; ?>
         </h2>
         
-        <div id="resultsGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6">
+        <div id="resultsGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-6">
             
             <?php if (!empty($results)): ?>
                 <?php foreach ($results as $game): ?>

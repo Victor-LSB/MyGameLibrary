@@ -4,6 +4,7 @@ namespace Victi\MyGameLibrary\Controllers;
 
 use Victi\MyGameLibrary\Database\Database;
 use Victi\MyGameLibrary\Models\Activity;
+use Victi\MyGameLibrary\Models\User;
 use Victi\MyGameLibrary\Services\Csrf;
 use Victi\MyGameLibrary\Services\Session;
 
@@ -44,6 +45,16 @@ class FeedController {
         require_once __DIR__ . '/FollowController.php';
         $followController = new FollowController();
         $followSuggestions = $followController->getFollowSuggestions($userId, 5);
+
+        // Card "você" da coluna da esquerda
+        $me = (new User($this->db))->getUserById($userId);
+        $meStats = $this->db->prepare("SELECT
+                (SELECT COUNT(*) FROM user_games WHERE user_id = ?) AS games,
+                (SELECT COUNT(*) FROM user_games WHERE user_id = ? AND completion_date >= ?) AS completed_year,
+                (SELECT COUNT(*) FROM user_follows WHERE following_id = ?) AS followers,
+                (SELECT COUNT(*) FROM user_follows WHERE follower_id = ?) AS following");
+        $meStats->execute([$userId, $userId, date('Y') . '-01-01', $userId, $userId]);
+        $meStats = $meStats->fetch(\PDO::FETCH_ASSOC) ?: [];
 
         include __DIR__ . '/../Views/feed/index.php';
     }

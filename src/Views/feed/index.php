@@ -23,9 +23,36 @@
 
 <?php require_once __DIR__ . '/../partials/navbar.php'; ?>
 
-    <main class="max-w-7xl mx-auto px-6 pb-12">
+    <main class="max-w-screen-2xl mx-auto px-4 sm:px-6 pb-12">
         <div class="feed-layout">
-            <section aria-labelledby="feedTitle">
+            <?php if (!empty($me)): $meAvatar = mgl_avatar_url($me['avatar'] ?? null); ?>
+                <aside class="feed-me" aria-label="Seu resumo">
+                    <a href="<?php echo htmlspecialchars(mgl_url('profile', ['u' => $me['username']])); ?>" class="flex items-center gap-3 group">
+                        <?php if ($meAvatar): ?>
+                            <img src="<?php echo htmlspecialchars($meAvatar); ?>" alt="" class="w-14 h-14 rounded-sm object-cover bg-zinc-950 border-2 border-zinc-800">
+                        <?php else: ?>
+                            <span class="w-14 h-14 rounded-sm bg-zinc-800 flex items-center justify-center text-zinc-500 text-xl font-black uppercase"><?php echo htmlspecialchars(mb_substr($me['username'], 0, 1)); ?></span>
+                        <?php endif; ?>
+                        <span class="min-w-0">
+                            <span class="block text-white font-black truncate group-hover:text-violet-300"><?php echo htmlspecialchars($me['display_name'] ?: $me['username']); ?></span>
+                            <span class="block text-xs text-zinc-500 truncate">@<?php echo htmlspecialchars($me['username']); ?></span>
+                        </span>
+                    </a>
+                    <dl class="mt-5 grid grid-cols-2 gap-2 text-center">
+                        <div class="bg-zinc-950 border border-zinc-800 rounded-sm py-2"><dd class="text-lg font-black text-white"><?php echo (int) ($meStats['games'] ?? 0); ?></dd><dt class="text-[10px] uppercase tracking-widest text-zinc-500">Jogos</dt></div>
+                        <div class="bg-zinc-950 border border-zinc-800 rounded-sm py-2"><dd class="text-lg font-black text-emerald-400"><?php echo (int) ($meStats['completed_year'] ?? 0); ?></dd><dt class="text-[10px] uppercase tracking-widest text-zinc-500">Zerados <?php echo date('Y'); ?></dt></div>
+                        <div class="bg-zinc-950 border border-zinc-800 rounded-sm py-2"><dd class="text-lg font-black text-white"><?php echo (int) ($meStats['followers'] ?? 0); ?></dd><dt class="text-[10px] uppercase tracking-widest text-zinc-500">Seguidores</dt></div>
+                        <div class="bg-zinc-950 border border-zinc-800 rounded-sm py-2"><dd class="text-lg font-black text-white"><?php echo (int) ($meStats['following'] ?? 0); ?></dd><dt class="text-[10px] uppercase tracking-widest text-zinc-500">Seguindo</dt></div>
+                    </dl>
+                    <nav class="mt-5 grid gap-1 text-sm font-bold">
+                        <a href="index.php?action=home" class="px-3 py-2 rounded-sm text-zinc-300 hover:bg-zinc-800 hover:text-white">Minha biblioteca</a>
+                        <a href="index.php?action=year_review" class="px-3 py-2 rounded-sm text-zinc-300 hover:bg-zinc-800 hover:text-white">Retrospectiva <?php echo date('Y'); ?></a>
+                        <a href="index.php?action=dashboard" class="px-3 py-2 rounded-sm text-zinc-300 hover:bg-zinc-800 hover:text-white">Dashboard</a>
+                    </nav>
+                </aside>
+            <?php endif; ?>
+
+            <section aria-labelledby="feedTitle" class="feed-main">
                 <div class="feed-head">
                     <h1 id="feedTitle" class="feed-title">Feed</h1>
 
@@ -200,9 +227,11 @@
                 <?php endif; ?>
             </section>
 
-            <?php if (!empty($followSuggestions)): ?>
                 <aside class="feed-aside" aria-labelledby="suggestTitle">
                     <h2 id="suggestTitle" class="feed-aside__title">Quem seguir</h2>
+                    <?php if (empty($followSuggestions)): ?>
+                        <p class="mt-3 text-sm text-zinc-500 leading-relaxed">Você já segue todo mundo que a gente conhece por aqui. Use a busca de usuários no topo para encontrar mais gente.</p>
+                    <?php endif; ?>
                     <?php foreach ($followSuggestions as $suggestion): ?>
                         <?php $suggAvatar = mgl_avatar_url($suggestion['avatar'] ?? null); ?>
                         <div class="person">
@@ -221,7 +250,7 @@
                         </div>
                     <?php endforeach; ?>
                 </aside>
-            <?php endif; ?>
+
         </div>
     </main>
 

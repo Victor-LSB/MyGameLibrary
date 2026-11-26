@@ -15,7 +15,7 @@
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen pb-12 selection:bg-violet-600 selection:text-white">
 <?php require __DIR__ . '/../partials/navbar.php'; ?>
 
-<main class="max-w-4xl mx-auto px-4 sm:px-6">
+<main class="max-w-screen-2xl mx-auto px-4 sm:px-6">
     <!-- Capa -->
     <section class="relative overflow-hidden rounded-sm border-2 border-violet-600 bg-gradient-to-br from-violet-950 via-zinc-900 to-zinc-950 p-6 sm:p-10">
         <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
@@ -29,7 +29,7 @@
                     <form action="index.php" method="get">
                         <input type="hidden" name="action" value="year_review">
                         <input type="hidden" name="u" value="<?php echo htmlspecialchars($profileUser['username']); ?>">
-                        <select name="y" onchange="this.form.submit()" aria-label="Escolher ano" class="bg-zinc-950 border-2 border-zinc-700 text-white font-bold rounded-sm px-3 py-2 focus:outline-none focus:border-violet-500">
+                        <select name="y" data-custom-select onchange="this.form.submit()" aria-label="Escolher ano" class="bg-zinc-950 border-2 border-zinc-700 text-white font-bold rounded-sm px-4 py-2.5 min-w-[7rem] focus:outline-none focus:border-violet-500 cursor-pointer appearance-none">
                             <?php foreach ($availableYears as $y): ?>
                                 <option value="<?php echo $y; ?>" <?php echo $y === $year ? 'selected' : ''; ?>><?php echo $y; ?></option>
                             <?php endforeach; ?>
@@ -50,8 +50,11 @@
         </div>
     <?php else: ?>
 
+    <div class="mt-6 grid gap-6 lg:grid-cols-12 items-start">
+    <div class="lg:col-span-8 min-w-0">
+
     <!-- Números grandes -->
-    <section class="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <section class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <?php
             $tiles = [
                 ['Zerados', $review['completedCount'], 'text-emerald-400'],
@@ -137,11 +140,14 @@
         </section>
     <?php endif; ?>
 
+    </div>
+
+    <aside class="lg:col-span-4 lg:sticky lg:top-6">
     <?php if ($review['completedCount'] > 0): ?>
         <!-- Lista completa -->
-        <section class="mt-8">
+        <section>
             <h2 class="text-xl font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3 mb-4">Todos os zerados</h2>
-            <ol class="bg-zinc-900 border-2 border-zinc-800 rounded-sm divide-y divide-zinc-800">
+            <ol class="bg-zinc-900 border-2 border-zinc-800 rounded-sm divide-y divide-zinc-800 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto">
                 <?php foreach ($review['completed'] as $g): ?>
                     <li class="flex items-center gap-3 px-4 py-3 text-sm">
                         <span class="w-14 shrink-0 text-xs text-zinc-500"><?php echo date('d/m', strtotime($g['completion_date'])); ?></span>
@@ -154,9 +160,12 @@
             </ol>
         </section>
     <?php endif; ?>
+    </aside>
+    </div>
 
     <?php endif; ?>
 </main>
+
 
 <script>
 (function () {

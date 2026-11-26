@@ -7,8 +7,21 @@
     $metaDescription = $profileBio !== ''
         ? mb_strimwidth($profileBio, 0, 180, '…')
         : 'Veja a biblioteca de jogos, o Top 5 e as análises de ' . $profileDisplayName . ' no MyGameLibrary.';
-    $ogImage = mgl_avatar_url($profileUser['avatar'] ?? null) ?: (mgl_avatar_url($profileUser['banner'] ?? null));
+    // Prévia de link: o card gerado (avatar + números + Top 5). "v" muda quando o card muda,
+    // para o WhatsApp/Discord não ficarem mostrando a versão antiga do cache deles.
+    $cardVersion = substr(md5(json_encode([
+        $profileUser['avatar'] ?? null, $profileDisplayName,
+        array_map(fn($slot) => $slot['id'] ?? null, $topGames ?? []), $libraryTotalAll ?? null,
+    ])), 0, 8);
+    $profileCardUrl = 'index.php?' . http_build_query(['action' => 'profile_card', 'u' => $profileUser['username'] ?? '', 'v' => $cardVersion]);
+    $cardSupported = \Victi\MyGameLibrary\Controllers\ProfileCardController::isSupported();
+    $ogImage = $cardSupported
+        ? $profileCardUrl
+        : (mgl_avatar_url($profileUser['avatar'] ?? null) ?: mgl_avatar_url($profileUser['banner'] ?? null));
     $ogType = 'profile';
+    $appUrl = rtrim((string) ($_ENV['APP_URL'] ?? ''), '/');
+    $profileLink = mgl_url('profile', ['u' => $profileUser['username'] ?? '']);
+    $profileShareUrl = $appUrl !== '' ? $appUrl . '/' . ltrim(preg_replace('#^' . preg_quote(mgl_base_path(), '#') . '#', '', $profileLink), '/') : '';
     $extraStyles = ['assets/css/social.css'];
     require __DIR__ . '/../header.php';
 ?>
@@ -99,7 +112,7 @@
 
     <?php require_once __DIR__ . '/../partials/navbar.php'; ?>
 
-    <main class="max-w-7xl mx-auto px-6 mt-8">
+    <main class="max-w-screen-2xl mx-auto px-4 sm:px-6 mt-8">
         
         <div class="bg-zinc-900 rounded-sm border-2 border-zinc-800 shadow-xl overflow-hidden mb-10 relative">
             <div class="h-48 sm:h-64 md:h-80 w-full relative bg-zinc-800 overflow-hidden group">
@@ -113,7 +126,7 @@
                     <div class="w-full h-full bg-gradient-to-r from-violet-900 to-zinc-900"></div>
                 <?php endif; ?>
                 
-                <button onclick="navigator.clipboard.writeText(window.location.href); alert('Link do perfil copiado!');" class="absolute top-4 right-4 bg-black/50 hover:bg-black/80 backdrop-blur-sm text-white px-3 py-2 rounded-sm text-xs font-bold uppercase tracking-wider transition-colors border border-white/10 z-10">
+                <button type="button" id="openShareProfile" class="absolute top-4 right-4 bg-black/50 hover:bg-black/80 backdrop-blur-sm text-white px-3 py-2 rounded-sm text-xs font-bold uppercase tracking-wider transition-colors border border-white/10 z-10">
                     🔗 Compartilhar
                 </button>
             </div>
@@ -307,6 +320,100 @@
         </section>
 
     </main>
+
+    <!-- Janela de compartilhar perfil: prévia do card + copiar link / baixar imagem -->
+    <div id="shareProfileModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="shareProfileTitle">
+        <div class="w-full max-w-2xl bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-2xl">
+            <div class="flex items-center justify-between px-5 py-4 border-b-2 border-zinc-800">
+                <h2 id="shareProfileTitle" class="text-white font-black uppercase tracking-tight">Compartilhar perfil</h2>
+                <button type="button" data-close-share class="w-9 h-9 flex items-center justify-center rounded-sm text-zinc-400 hover:text-white hover:bg-zinc-800" aria-label="Fechar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+                </button>
+            </div>
+            <div class="p-5 space-y-4">
+                <?php if ($cardSupported): ?>
+                    <div class="relative aspect-[1200/630] bg-zinc-950 border-2 border-zinc-800 rounded-sm overflow-hidden">
+                        <div id="shareCardLoading" class="absolute inset-0 flex items-center justify-center text-zinc-600 text-sm font-bold uppercase tracking-widest">Gerando prévia…</div>
+                        <img id="shareCardImg" data-src="<?php echo htmlspecialchars($profileCardUrl); ?>" alt="Prévia do card do perfil" class="relative w-full h-full object-cover opacity-0 transition-opacity duration-300">
+                    </div>
+                    <p class="text-xs text-zinc-500">É assim que o link aparece no WhatsApp, Discord e redes sociais.</p>
+                <?php endif; ?>
+                <div class="flex gap-2">
+                    <input id="shareProfileUrl" type="text" readonly value="<?php echo htmlspecialchars($profileShareUrl); ?>" class="flex-1 min-w-0 bg-zinc-950 border-2 border-zinc-800 text-zinc-300 text-sm rounded-sm px-3 py-2.5 focus:outline-none focus:border-violet-500">
+                    <button type="button" id="copyProfileUrl" class="shrink-0 bg-violet-600 hover:bg-violet-500 text-white px-4 py-2.5 rounded-sm font-bold uppercase tracking-wide text-xs transition-colors">Copiar link</button>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" id="nativeShareProfile" class="hidden bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2.5 rounded-sm font-bold uppercase tracking-wide text-xs transition-colors">Compartilhar…</button>
+                    <?php if ($cardSupported): ?>
+                        <a id="downloadProfileCard" href="<?php echo htmlspecialchars($profileCardUrl); ?>" download="mygamelibrary-<?php echo htmlspecialchars($profileUser['username'] ?? 'perfil'); ?>.jpg" class="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2.5 rounded-sm font-bold uppercase tracking-wide text-xs transition-colors">Baixar imagem</a>
+                    <?php endif; ?>
+                    <a href="<?php echo htmlspecialchars(mgl_url('year_review', ['u' => $profileUser['username'] ?? ''])); ?>" class="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2.5 rounded-sm font-bold uppercase tracking-wide text-xs transition-colors">Ver retrospectiva <?php echo date('Y'); ?></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function () {
+        const modal = document.getElementById('shareProfileModal');
+        const openBtn = document.getElementById('openShareProfile');
+        if (!modal || !openBtn) return;
+        const urlInput = document.getElementById('shareProfileUrl');
+        const copyBtn = document.getElementById('copyProfileUrl');
+        const nativeBtn = document.getElementById('nativeShareProfile');
+        const img = document.getElementById('shareCardImg');
+        if (!urlInput.value) urlInput.value = location.origin + location.pathname + location.search.replace(/([?&])(view|sort|q|page)=[^&]*/g, '$1').replace(/[?&]+$/, '');
+
+        function open() {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            // A imagem só é pedida (e gerada no servidor) quando a janela abre
+            if (img && !img.src) {
+                img.addEventListener('load', () => {
+                    img.classList.remove('opacity-0');
+                    document.getElementById('shareCardLoading')?.remove();
+                }, { once: true });
+                img.src = img.dataset.src;
+            }
+            copyBtn.focus();
+        }
+        function close() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            openBtn.focus();
+        }
+
+        openBtn.addEventListener('click', open);
+        modal.addEventListener('click', (e) => { if (e.target === modal || e.target.closest('[data-close-share]')) close(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.classList.contains('hidden')) close(); });
+
+        copyBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(urlInput.value);
+            } catch (e) {
+                urlInput.select();
+                document.execCommand('copy');
+            }
+            copyBtn.textContent = 'Copiado!';
+            setTimeout(() => { copyBtn.textContent = 'Copiar link'; }, 2000);
+        });
+
+        if (navigator.share) {
+            nativeBtn.classList.remove('hidden');
+            nativeBtn.addEventListener('click', async () => {
+                const data = { title: document.title, url: urlInput.value };
+                // No celular, manda junto a imagem do card quando o navegador aceita arquivos
+                try {
+                    if (img && img.src && navigator.canShare) {
+                        const blob = await (await fetch(img.src)).blob();
+                        const file = new File([blob], 'perfil.jpg', { type: 'image/jpeg' });
+                        if (navigator.canShare({ files: [file] })) data.files = [file];
+                    }
+                    await navigator.share(data);
+                } catch (e) { /* cancelado */ }
+            });
+        }
+    })();
+    </script>
 
     <div id="friendsModal" class="fmodal" hidden role="dialog" aria-modal="true" aria-labelledby="friendsModalTitle"
          data-username="<?php echo htmlspecialchars($profileUser['username']); ?>"

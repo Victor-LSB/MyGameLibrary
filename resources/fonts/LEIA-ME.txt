@@ -1,0 +1,4 @@
+Fonte Inter (https://rsms.me/inter/) — Copyright (c) 2016 The Inter Project Authors.
+Licença SIL Open Font License 1.1 (https://openfontlicense.org): pode ser usada e
+distribuída livremente, inclusive em projetos comerciais.
+Usada para desenhar o card de compartilhamento do perfil (ProfileCardController).

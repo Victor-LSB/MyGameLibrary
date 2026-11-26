@@ -50,6 +50,25 @@ BLOCKED_GAME_TERMS=hitler,goy
 Os termos são procurados dentro do nome do jogo, sem diferenciar maiúsculas. Isso só afeta a
 busca; jogos que já estão em bibliotecas continuam lá (dá para removê-los pelo painel do banco).
 
+## 6. Extensão GD do PHP (card de compartilhar o perfil)
+
+O card de compartilhamento do perfil é uma imagem gerada pelo PHP com a extensão GD.
+Confira se ela está instalada:
+
+```
+php -m | grep -i gd
+```
+
+Se não aparecer nada, instale e reinicie o Apache:
+
+```
+sudo apt install php-gd
+sudo systemctl restart apache2
+```
+
+Sem a GD o site continua funcionando: a prévia do link usa o avatar e a janela de
+compartilhar mostra só o link.
+
 ## O que mudou
 
 - **Página pública do jogo** (`index.php?action=game&id=…` ou `/jogos/…`): nota média,
@@ -71,3 +90,19 @@ busca; jogos que já estão em bibliotecas continuam lá (dá para removê-los p
 
 Para a prévia de links mostrar o endereço e a imagem certos, o `APP_URL` do `.env` precisa
 estar preenchido com o endereço público do site (ex.: `https://seusite.com.br`).
+
+### Segunda leva
+
+- **Layout na largura da navbar**: biblioteca, busca, perfil, detalhes, feed, página do jogo e
+  retrospectiva usam a mesma largura (e o mesmo alinhamento) da navbar e do dashboard, em vez de
+  uma coluna estreita no meio da tela.
+  - Página do jogo: capa, ações e números da comunidade numa coluna fixa à esquerda.
+  - Retrospectiva: números, gráfico e favoritos à esquerda; lista de zerados à direita.
+  - Feed: três colunas (seu resumo | feed | quem seguir).
+- **Selects estilizados** no ano da retrospectiva e na ordenação da biblioteca do perfil,
+  também para visitantes sem login.
+- **Compartilhar perfil**: o botão abre uma janela com a prévia do card (avatar, nome, números
+  e Top 5), copiar link, baixar a imagem e compartilhar pelo celular. O mesmo card vira a prévia
+  do link no WhatsApp/Discord. As imagens ficam em cache em `storage/cache/cards`.
+- A fonte do card (Inter, licença livre OFL) fica em `resources/fonts`.
+

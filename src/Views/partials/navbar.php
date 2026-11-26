@@ -30,8 +30,9 @@
     $navActive   = 'text-violet-400 hover:text-violet-300 border-violet-500';
     $navInactive = 'text-white border-zinc-950 hover:border-zinc-900';
 ?>
-<header class="bg-zinc-900 border-b-4 border-violet-600 shadow-md px-4 sm:px-6 py-3 sm:py-5 mb-8">
-    <div class="max-w-screen-2xl mx-auto flex flex-wrap sm:flex-nowrap justify-between items-center gap-3 sm:gap-4">
+<header class="bg-zinc-900 border-b-4 border-violet-600 shadow-md py-3 sm:py-5 mb-8">
+    <!-- Mesma largura e respiro lateral do conteúdo das páginas, para o logo alinhar com elas -->
+    <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 flex flex-wrap sm:flex-nowrap justify-between items-center gap-3 sm:gap-4">
         <a href="index.php?action=home" class="text-xl sm:text-2xl font-black text-white tracking-tighter uppercase hover:text-violet-400 transition-colors shrink-0">MyGameLibrary</a>
 
         <?php if (isset($_SESSION['user_id'])): ?>
@@ -176,4 +177,8 @@
             });
         })();
     </script>
+<?php endif; ?>
+<?php if (!isset($_SESSION['user_id'])): ?>
+    <!-- Visitantes sem login também veem os selects no estilo do site (perfil, retrospectiva) -->
+    <script src="<?php echo mgl_asset('assets/js/customSelect.js'); ?>"></script>
 <?php endif; ?>

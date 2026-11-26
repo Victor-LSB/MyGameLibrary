@@ -43,7 +43,7 @@
         <input type="hidden" name="view" value="all">
         <input type="search" name="q" value="<?php echo htmlspecialchars($librarySearch, ENT_QUOTES); ?>" placeholder="Buscar jogo..." maxlength="60"
                class="flex-1 min-w-[160px] bg-zinc-900 border-2 border-zinc-800 text-white text-sm px-3 py-2 rounded-sm focus:border-violet-500 outline-none">
-        <select name="sort" onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()" class="bg-zinc-900 border-2 border-zinc-800 text-white text-sm px-3 py-2 rounded-sm focus:border-violet-500 outline-none">
+        <select name="sort" data-custom-select onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()" class="bg-zinc-900 border-2 border-zinc-800 text-white text-sm px-3 py-2 rounded-sm focus:border-violet-500 outline-none cursor-pointer appearance-none">
             <?php foreach (\Victi\MyGameLibrary\Models\Game::LIBRARY_SORT_LABELS as $key => $label): ?>
                 <option value="<?php echo $key; ?>" <?php echo $librarySort === $key ? 'selected' : ''; ?>><?php echo $label; ?></option>
             <?php endforeach; ?>
@@ -53,7 +53,7 @@
 <?php endif; ?>
 
 <?php if (!empty($gamesToShow) && count($gamesToShow) > 0): ?>
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-6">
         <?php foreach ($gamesToShow as $game): ?>
             <div class="bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl flex flex-col overflow-hidden group">
                 <!-- AQUI ESTÁ A CORREÇÃO: O link agora carrega o ID do jogo e o nome de usuário dono do perfil (&u=...) -->
