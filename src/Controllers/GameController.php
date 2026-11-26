@@ -215,7 +215,7 @@ class GameController {
                 } else {
                     $gameDetails = $this->api->getGameDetails($external_id);
                     $raw_description = $gameDetails['description'] ?? '';
-                    $description = $this->api->translateHTML($raw_description, 'EN', 'PT');
+                    $description = $this->api->translateHTML($raw_description, 'EN', 'PT-BR');
                     $normalized_genres = $this->api->formatGenresForStorage($gameDetails['genres'] ?? $genre);
                     $normalized_genres = $normalized_genres !== '' ? $normalized_genres : trim(mb_strtolower((string) $genre));
                     
