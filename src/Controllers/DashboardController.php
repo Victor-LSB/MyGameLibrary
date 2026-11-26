@@ -264,16 +264,69 @@ class DashboardController {
     }
 
     /**
-     * Dados da tela do dashboard para um período (semana, mês ou ano):
-     * números do topo, diário de jogos zerados, biblioteca por status e gêneros.
+     * Janela de calendário que contém $ref: semana (segunda a domingo), mês ou ano.
+     * Devolve start/end (Y-m-d) e as datas de referência do período anterior e do seguinte.
      */
-    private function buildDashboardView($user_id, $period) {
-        $anchorDate = $this->getAnchorDate($user_id);
-        $window = $this->getPeriodWindow($period, $anchorDate);
+    private function calendarWindow(string $period, \DateTimeImmutable $ref): array {
+        if ($period === 'year') {
+            $start = $ref->setDate((int) $ref->format('Y'), 1, 1);
+            $end = $ref->setDate((int) $ref->format('Y'), 12, 31);
+            $prev = $start->modify('-1 year');
+            $next = $start->modify('+1 year');
+        } elseif ($period === 'month') {
+            $start = $ref->modify('first day of this month');
+            $end = $ref->modify('last day of this month');
+            $prev = $start->modify('-1 month');
+            $next = $start->modify('+1 month');
+        } else {
+            $start = $ref->modify('-' . ((int) $ref->format('N') - 1) . ' days');
+            $end = $start->modify('+6 days');
+            $prev = $start->modify('-7 days');
+            $next = $start->modify('+7 days');
+        }
+        return [
+            'start' => $start->format('Y-m-d'),
+            'end' => $end->format('Y-m-d'),
+            'prev' => $prev->format('Y-m-d'),
+            'next' => $next->format('Y-m-d'),
+        ];
+    }
+
+    /** Números de um período (para comparar com o atual). */
+    private function periodTotals(int $user_id, string $start, string $end): array {
+        $stmt = $this->db->prepare("SELECT
+                (SELECT COUNT(*) FROM user_games WHERE user_id = ? AND completion_date BETWEEN ? AND ?) AS completed,
+                (SELECT COALESCE(SUM(time_spent_hours), 0) FROM user_games WHERE user_id = ? AND completion_date BETWEEN ? AND ?) AS hours,
+                (SELECT COUNT(*) FROM user_games WHERE user_id = ? AND platinum_at BETWEEN ? AND ?) AS platinums");
+        $stmt->execute([$user_id, $start, $end, $user_id, $start, $end, $user_id, $start . ' 00:00:00', $end . ' 23:59:59']);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        return [
+            'completed' => (int) ($row['completed'] ?? 0),
+            'hours' => (float) ($row['hours'] ?? 0),
+            'platinums' => (int) ($row['platinums'] ?? 0),
+        ];
+    }
+
+    /**
+     * Dados da tela do dashboard para um período de calendário (semana, mês ou ano):
+     * números do topo com comparação, ritmo (gráfico), diário, biblioteca, jogando agora e gêneros.
+     * $refDate escolhe qual semana/mês/ano; sem ela, usa o período do último jogo zerado.
+     */
+    private function buildDashboardView($user_id, $period, $refDate = null) {
+        $user_id = (int) $user_id;
+        $today = new \DateTimeImmutable('today');
+        $ref = null;
+        if ($refDate && preg_match('/^\d{4}-\d{2}-\d{2}$/', $refDate)) {
+            $ref = \DateTimeImmutable::createFromFormat('!Y-m-d', $refDate) ?: null;
+        }
+        if (!$ref || $ref > $today) {
+            $ref = new \DateTimeImmutable($this->getAnchorDate($user_id));
+        }
+        $window = $this->calendarWindow($period, $ref);
 
         // Jogos zerados dentro da janela, do mais recente para o mais antigo
         $entriesStmt = $this->db->prepare("
-            SELECT ug.completion_date, ug.time_spent_hours, ug.rating,
+            SELECT ug.completion_date, ug.time_spent_hours, ug.rating, ug.platinum_at,
                    g.id AS game_id, g.title, g.cover_image, g.genre
             FROM user_games ug
             INNER JOIN games g ON g.id = ug.game_id
@@ -300,6 +353,7 @@ class DashboardController {
             }
             // Gêneros vêm como "adventure, puzzle": traduz e conta um por um
             foreach (explode(',', (string) $row['genre']) as $genre) {
+                if (mb_strtolower(trim($genre)) === 'desconhecido') continue;
                 $name = mgl_genre_pt($genre);
                 if ($name !== '') $genreCounts[$name] = ($genreCounts[$name] ?? 0) + 1;
             }
@@ -315,6 +369,42 @@ class DashboardController {
             $i++;
         }
         if ($others > 0) $genres[] = ['name' => 'Outros', 'total' => $others];
+
+        // Ritmo: um "balde" por dia (semana/mês) ou por mês (ano), com os jogos zerados nele
+        $buckets = [];
+        $cursor = new \DateTimeImmutable($window['start']);
+        $last = new \DateTimeImmutable($window['end']);
+        while ($cursor <= $last) {
+            $key = $period === 'year' ? $cursor->format('Y-m') : $cursor->format('Y-m-d');
+            $buckets[$key] = [
+                'date' => $cursor->format('Y-m-d'),
+                'games' => [],
+                'hours' => 0.0,
+                'future' => $cursor > $today,
+            ];
+            $cursor = $period === 'year' ? $cursor->modify('+1 month') : $cursor->modify('+1 day');
+        }
+        foreach (array_reverse($allEntries) as $row) {
+            $key = $period === 'year' ? substr($row['completion_date'], 0, 7) : substr($row['completion_date'], 0, 10);
+            if (!isset($buckets[$key])) continue;
+            $buckets[$key]['games'][] = $row;
+            $buckets[$key]['hours'] += (float) ($row['time_spent_hours'] ?? 0);
+        }
+
+        // Período anterior, para "+1 vs. semana anterior"
+        $prevWindow = $this->calendarWindow($period, new \DateTimeImmutable($window['prev']));
+        $previous = $this->periodTotals($user_id, $prevWindow['start'], $prevWindow['end']);
+        $current = $this->periodTotals($user_id, $window['start'], $window['end']);
+
+        // Limites da navegação: nada antes da primeira atividade, nada depois de hoje
+        $firstStmt = $this->db->prepare("SELECT LEAST(
+                COALESCE((SELECT MIN(completion_date) FROM user_games WHERE user_id = ?), CURDATE()),
+                COALESCE((SELECT DATE(MIN(created_at)) FROM user_activity WHERE user_id = ?), CURDATE())
+            ) AS first_day");
+        $firstStmt->execute([$user_id, $user_id]);
+        $firstDay = (string) ($firstStmt->fetchColumn() ?: $today->format('Y-m-d'));
+        $hasPrev = $window['start'] > $firstDay;
+        $hasNext = $window['next'] <= $today->format('Y-m-d');
 
         // O diário mostra no máximo 100 entradas; os números do topo consideram todas
         $diaryLimit = 100;
@@ -340,18 +430,51 @@ class DashboardController {
             $library[] = ['status' => $status, 'total' => $total];
         }
 
+        // Estimativa do backlog: jogos em Backlog x média de horas dos jogos que você já zerou
+        $avgStmt = $this->db->prepare("SELECT AVG(time_spent_hours) FROM user_games
+            WHERE user_id = ? AND status = 'Zerado' AND time_spent_hours > 0");
+        $avgStmt->execute([$user_id]);
+        $avgAllTime = (float) ($avgStmt->fetchColumn() ?: 0);
+        $backlogCount = 0;
+        foreach ($library as $row) {
+            if ($row['status'] === 'Backlog') $backlogCount = (int) $row['total'];
+        }
+
+        // Jogando agora: status Jogando, com há quanto tempo (pela última troca de status no feed)
+        $playingStmt = $this->db->prepare("
+            SELECT g.id AS game_id, g.title, g.cover_image,
+                   (SELECT MAX(ua.created_at) FROM user_activity ua
+                     WHERE ua.user_id = ug.user_id AND ua.game_id = ug.game_id
+                       AND ua.type = 'status_changed' AND ua.extra = 'Jogando') AS since
+            FROM user_games ug JOIN games g ON g.id = ug.game_id
+            WHERE ug.user_id = ? AND ug.status = 'Jogando'
+            ORDER BY since DESC, ug.id DESC
+            LIMIT 6");
+        $playingStmt->execute([$user_id]);
+        $playing = $playingStmt->fetchAll(PDO::FETCH_ASSOC);
+
         return [
             'period' => $period,
             'range' => $window,
+            'ref' => $ref->format('Y-m-d'),
+            'has_prev' => $hasPrev,
+            'has_next' => $hasNext,
             'total_completed' => $totalCompleted,
             'total_hours' => $totalHours,
             'avg_hours' => $totalCompleted > 0 ? $totalHours / $totalCompleted : 0,
             'avg_rating' => $ratingCount > 0 ? $ratingSum / $ratingCount : null,
+            'rating_count' => $ratingCount,
+            'platinums' => $current['platinums'],
+            'previous' => $previous,
+            'buckets' => $buckets,
             'entries' => $entries,
             'entries_truncated' => $totalCompleted > $diaryLimit,
             'genres' => $genres,
             'library' => $library,
             'library_total' => array_sum(array_column($library, 'total')),
+            'backlog_hours' => $backlogCount > 0 && $avgAllTime > 0 ? $backlogCount * $avgAllTime : null,
+            'avg_hours_all_time' => $avgAllTime,
+            'playing' => $playing,
         ];
     }
 
@@ -378,7 +501,8 @@ class DashboardController {
             $period = 'week';
         }
 
-        $dash = $this->buildDashboardView($_SESSION['user_id'], $period);
+        $refDate = isset($_GET['d']) ? (string) $_GET['d'] : null;
+        $dash = $this->buildDashboardView($_SESSION['user_id'], $period, $refDate);
 
         $periodOptions = [
             'week' => 'Semanal',

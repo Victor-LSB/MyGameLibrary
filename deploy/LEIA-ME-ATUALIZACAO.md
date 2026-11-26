@@ -122,3 +122,16 @@ estar preenchido com o endereço público do site (ex.: `https://seusite.com.br`
 
 Lembrete: depois de mexer em classes nas views, rode `npm run build` para recompilar o
 `public/assets/css/output.css` (o pacote já vem com ele compilado).
+
+### Quarta leva: dashboard novo
+
+- Períodos de calendário (semana de segunda a domingo, mês e ano) com setas para ir ao
+  período anterior/seguinte. Ao abrir, mostra o período do último jogo zerado.
+- Números com comparação com o período anterior; Platinas entrou como quarto número.
+- Gráfico "Ritmo": barras pelas horas, com a capa do jogo no topo (semanal: todos os jogos
+  do dia; anual: o jogo com mais horas do mês; mensal: só as barras). Passar o mouse mostra
+  os jogos.
+- Coluna da direita: biblioteca por status com estimativa de horas do backlog, "Jogando
+  agora" e gêneros do período.
+- Gêneros que vêm da Steam ("action", "rpg"...) agora aparecem traduzidos.
+
