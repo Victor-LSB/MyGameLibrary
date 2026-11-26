@@ -11,33 +11,62 @@
     $monthsShort = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
     $shareUrl = rtrim((string) ($_ENV['APP_URL'] ?? ''), '/') . '/index.php?' . http_build_query(['action' => 'year_review', 'u' => $profileUser['username'], 'y' => $year]);
     $fmtHours = fn($h) => number_format((float) $h, 0, ',', '.');
+    $retroGameUrl = fn($gameId) => mgl_url('game', ['id' => (int) $gameId, 'from' => 'retro', 'fu' => $profileUser['username'], 'fy' => $year]);
+    // Jogos zerados em cada mês (para o gráfico mostrar quais foram)
+    $gamesByMonth = array_fill(1, 12, []);
+    foreach ($review['completed'] as $g) {
+        $gamesByMonth[(int) substr($g['completion_date'], 5, 2)][] = $g;
+    }
 ?>
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen pb-12 selection:bg-violet-600 selection:text-white">
 <?php require __DIR__ . '/../partials/navbar.php'; ?>
 
 <main class="max-w-screen-2xl mx-auto px-4 sm:px-6">
-    <!-- Capa -->
-    <section class="relative overflow-hidden rounded-sm border-2 border-violet-600 bg-gradient-to-br from-violet-950 via-zinc-900 to-zinc-950 p-6 sm:p-10">
-        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-            <div>
+    <!-- Capa: texto e controles à esquerda, leque com as capas do ano à direita -->
+    <?php
+        // Capas do leque: favoritos primeiro, depois o resto do que foi zerado no ano
+        $heroCovers = [];
+        foreach (array_merge($review['favorites'], array_reverse($review['completed'])) as $g) {
+            if (!empty($g['cover_image']) && !isset($heroCovers[$g['id']])) {
+                $heroCovers[$g['id']] = $g;
+            }
+        }
+        $heroCovers = array_slice(array_values($heroCovers), 0, 7);
+        $tilts = [-6, 3, -2, 5, -4, 2, -3];
+    ?>
+    <section class="relative overflow-hidden rounded-sm border-2 border-violet-600 bg-gradient-to-br from-violet-950 via-zinc-900 to-zinc-950">
+        <div class="grid lg:grid-cols-[minmax(0,26rem)_1fr] items-center gap-8 p-6 sm:p-10">
+            <div class="relative z-10">
                 <p class="text-xs font-black uppercase tracking-[0.3em] text-violet-300">Retrospectiva</p>
                 <h1 class="mt-2 text-6xl sm:text-8xl font-black text-white tracking-tighter leading-none"><?php echo $year; ?></h1>
                 <p class="mt-3 text-zinc-300">O ano em jogos de <a href="<?php echo htmlspecialchars(mgl_url('profile', ['u' => $profileUser['username']])); ?>" class="font-bold text-white hover:text-violet-300"><?php echo htmlspecialchars($displayName); ?></a></p>
+                <div class="mt-6 flex flex-wrap items-center gap-2">
+                    <?php if (count($availableYears) > 1): ?>
+                        <form action="index.php" method="get">
+                            <input type="hidden" name="action" value="year_review">
+                            <input type="hidden" name="u" value="<?php echo htmlspecialchars($profileUser['username']); ?>">
+                            <select name="y" data-custom-select onchange="this.form.submit()" aria-label="Escolher ano" class="bg-zinc-950 border-2 border-zinc-700 text-white font-bold rounded-sm px-4 py-2.5 min-w-[7rem] focus:outline-none focus:border-violet-500 cursor-pointer appearance-none">
+                                <?php foreach ($availableYears as $y): ?>
+                                    <option value="<?php echo $y; ?>" <?php echo $y === $year ? 'selected' : ''; ?>><?php echo $y; ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </form>
+                    <?php endif; ?>
+                    <button type="button" id="shareReview" data-url="<?php echo htmlspecialchars($shareUrl); ?>" data-title="<?php echo htmlspecialchars($pageTitle); ?>" class="bg-violet-600 hover:bg-violet-500 text-white px-5 py-3 rounded-sm font-bold uppercase tracking-wide text-xs transition-colors">Compartilhar</button>
+                </div>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
-                <?php if (count($availableYears) > 1): ?>
-                    <form action="index.php" method="get">
-                        <input type="hidden" name="action" value="year_review">
-                        <input type="hidden" name="u" value="<?php echo htmlspecialchars($profileUser['username']); ?>">
-                        <select name="y" data-custom-select onchange="this.form.submit()" aria-label="Escolher ano" class="bg-zinc-950 border-2 border-zinc-700 text-white font-bold rounded-sm px-4 py-2.5 min-w-[7rem] focus:outline-none focus:border-violet-500 cursor-pointer appearance-none">
-                            <?php foreach ($availableYears as $y): ?>
-                                <option value="<?php echo $y; ?>" <?php echo $y === $year ? 'selected' : ''; ?>><?php echo $y; ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </form>
-                <?php endif; ?>
-                <button type="button" id="shareReview" data-url="<?php echo htmlspecialchars($shareUrl); ?>" data-title="<?php echo htmlspecialchars($pageTitle); ?>" class="bg-violet-600 hover:bg-violet-500 text-white px-4 py-2.5 rounded-sm font-bold uppercase tracking-wide text-xs transition-colors">Compartilhar</button>
-            </div>
+
+            <?php if ($heroCovers): ?>
+                <div class="hidden md:flex min-w-0 overflow-hidden justify-end items-center pr-2 lg:pr-6 py-4" aria-hidden="true"
+                     style="-webkit-mask-image: linear-gradient(to right, transparent, #000 18%); mask-image: linear-gradient(to right, transparent, #000 18%);">
+                    <?php foreach ($heroCovers as $i => $g): ?>
+                        <div class="relative shrink-0 w-28 lg:w-36 xl:w-40 aspect-[3/4] <?php echo $i ? '-ml-8 lg:-ml-10' : ''; ?> rounded-sm overflow-hidden border-2 border-zinc-900 shadow-2xl shadow-black/70 bg-zinc-900 transition-transform duration-300 hover:-translate-y-2 hover:z-20"
+                             style="transform: rotate(<?php echo $tilts[$i % count($tilts)]; ?>deg); z-index: <?php echo 10 - $i; ?>;">
+                            <img src="<?php echo htmlspecialchars($g['cover_image']); ?>" alt="" class="w-full h-full object-cover">
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </div>
     </section>
 
@@ -83,7 +112,7 @@
         <div class="bg-zinc-900 border-2 border-zinc-800 rounded-sm p-5">
             <p class="text-[11px] font-bold uppercase tracking-widest text-zinc-500">Maior maratona</p>
             <?php if ($review['longest']): ?>
-                <a href="<?php echo htmlspecialchars(mgl_game_url($review['longest']['id'])); ?>" class="mt-2 block text-xl font-black text-white hover:text-violet-300 line-clamp-2"><?php echo htmlspecialchars($review['longest']['title']); ?></a>
+                <a href="<?php echo htmlspecialchars($retroGameUrl($review['longest']['id'])); ?>" class="mt-2 block text-xl font-black text-white hover:text-violet-300 line-clamp-2"><?php echo htmlspecialchars($review['longest']['title']); ?></a>
                 <p class="mt-1 text-xs text-zinc-500"><?php echo $fmtHours($review['longest']['time_spent_hours']); ?> horas</p>
             <?php else: ?>
                 <p class="mt-2 text-xl font-black text-zinc-600">—</p>
@@ -105,13 +134,31 @@
                     <p class="text-xs text-zinc-500">Mês mais forte: <span class="text-white font-bold"><?php echo mgl_month_pt($review['busiestMonth']); ?></span></p>
                 <?php endif; ?>
             </div>
-            <div class="mt-5 grid grid-cols-12 gap-1.5 sm:gap-3 items-end h-32" role="img" aria-label="Jogos zerados em cada mês de <?php echo $year; ?>">
-                <?php foreach ($review['byMonth'] as $m => $n): ?>
-                    <div class="flex flex-col items-center justify-end h-full gap-1" title="<?php echo mgl_month_pt($m) . ': ' . $n; ?>">
+            <p class="mt-1 text-xs text-zinc-500">Passe o mouse para ver os jogos; clique num mês para filtrar a lista.</p>
+            <div id="monthChart" class="mt-5 grid grid-cols-12 gap-1.5 sm:gap-3 items-end h-36">
+                <?php foreach ($review['byMonth'] as $m => $n): $monthGames = $gamesByMonth[$m]; ?>
+                    <button type="button" <?php echo $n ? '' : 'disabled'; ?> data-month="<?php echo $m; ?>" data-month-name="<?php echo mgl_month_pt($m); ?>"
+                        class="month-bar group relative flex flex-col items-center justify-end h-full gap-1 rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 <?php echo $n ? 'cursor-pointer' : 'cursor-default'; ?>"
+                        aria-label="<?php echo htmlspecialchars(mgl_month_pt($m) . ': ' . $n . ' ' . ($n === 1 ? 'jogo' : 'jogos') . ($n ? ' — ' . implode(', ', array_column($monthGames, 'title')) : '')); ?>">
                         <span class="text-[10px] font-bold <?php echo $n ? 'text-zinc-300' : 'text-transparent'; ?>"><?php echo $n; ?></span>
-                        <span class="w-full rounded-sm <?php echo $n ? 'bg-emerald-500' : 'bg-zinc-800'; ?>" style="height: <?php echo $n ? max(8, round($n / $maxMonth * 100)) : 4; ?>%"></span>
-                        <span class="text-[10px] uppercase text-zinc-500"><?php echo $monthsShort[$m - 1]; ?></span>
-                    </div>
+                        <span class="month-bar__fill w-full rounded-sm transition-colors <?php echo $n ? 'bg-emerald-500 group-hover:bg-emerald-400' : 'bg-zinc-800'; ?>" style="height: <?php echo $n ? max(8, round($n / $maxMonth * 100)) : 4; ?>%"></span>
+                        <span class="month-bar__label text-[10px] uppercase text-zinc-500"><?php echo $monthsShort[$m - 1]; ?></span>
+                        <?php if ($n): ?>
+                            <!-- Lista do mês ao passar o mouse -->
+                            <span class="pointer-events-none absolute bottom-full mb-2 <?php echo $m <= 2 ? 'left-0' : ($m >= 11 ? 'right-0' : 'left-1/2 -translate-x-1/2'); ?> z-30 hidden group-hover:block group-focus-visible:block w-56 text-left bg-zinc-950 border-2 border-zinc-700 rounded-sm shadow-2xl p-3">
+                                <span class="block text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-2"><?php echo mgl_month_pt($m); ?> · <?php echo $n; ?> <?php echo $n === 1 ? 'zerado' : 'zerados'; ?></span>
+                                <?php foreach (array_slice($monthGames, 0, 6) as $mg): ?>
+                                    <span class="flex items-center gap-2 py-1">
+                                        <?php if (!empty($mg['cover_image'])): ?>
+                                            <img src="<?php echo htmlspecialchars($mg['cover_image']); ?>" alt="" loading="lazy" class="w-6 h-8 object-cover rounded-sm shrink-0 bg-zinc-800">
+                                        <?php endif; ?>
+                                        <span class="text-xs font-bold text-white leading-tight line-clamp-2"><?php echo htmlspecialchars($mg['title']); ?></span>
+                                    </span>
+                                <?php endforeach; ?>
+                                <?php if ($n > 6): ?><span class="block text-[11px] text-zinc-500 mt-1">e mais <?php echo $n - 6; ?></span><?php endif; ?>
+                            </span>
+                        <?php endif; ?>
+                    </button>
                 <?php endforeach; ?>
             </div>
         </section>
@@ -123,7 +170,7 @@
             <h2 class="text-xl font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3 mb-4">Favoritos do ano</h2>
             <div class="grid grid-cols-3 sm:grid-cols-5 gap-3">
                 <?php foreach ($review['favorites'] as $i => $g): ?>
-                    <a href="<?php echo htmlspecialchars(mgl_game_url($g['id'])); ?>" class="group block">
+                    <a href="<?php echo htmlspecialchars($retroGameUrl($g['id'])); ?>" class="group block">
                         <div class="relative aspect-[3/4] bg-zinc-900 border-2 <?php echo $i === 0 ? 'border-amber-400' : 'border-zinc-800'; ?> rounded-sm overflow-hidden">
                             <?php if (!empty($g['cover_image'])): ?>
                                 <img src="<?php echo htmlspecialchars($g['cover_image']); ?>" alt="<?php echo htmlspecialchars($g['title']); ?>" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
@@ -146,12 +193,15 @@
     <?php if ($review['completedCount'] > 0): ?>
         <!-- Lista completa -->
         <section>
-            <h2 class="text-xl font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3 mb-4">Todos os zerados</h2>
+            <div class="flex items-baseline justify-between gap-3 mb-4">
+                <h2 id="completedTitle" class="text-xl font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3">Todos os zerados</h2>
+                <button type="button" id="clearMonthFilter" class="hidden text-xs font-bold uppercase tracking-wider text-violet-400 hover:text-violet-300">Ver todos</button>
+            </div>
             <ol class="bg-zinc-900 border-2 border-zinc-800 rounded-sm divide-y divide-zinc-800 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto">
                 <?php foreach ($review['completed'] as $g): ?>
-                    <li class="flex items-center gap-3 px-4 py-3 text-sm">
+                    <li class="flex items-center gap-3 px-4 py-3 text-sm" data-month="<?php echo (int) substr($g['completion_date'], 5, 2); ?>">
                         <span class="w-14 shrink-0 text-xs text-zinc-500"><?php echo date('d/m', strtotime($g['completion_date'])); ?></span>
-                        <a href="<?php echo htmlspecialchars(mgl_game_url($g['id'])); ?>" class="flex-1 min-w-0 font-bold text-white hover:text-violet-300 truncate"><?php echo htmlspecialchars($g['title']); ?></a>
+                        <a href="<?php echo htmlspecialchars($retroGameUrl($g['id'])); ?>" class="flex-1 min-w-0 font-bold text-white hover:text-violet-300 truncate"><?php echo htmlspecialchars($g['title']); ?></a>
                         <?php if (!empty($g['platinum_at'])): ?><span title="Platinado">🏆</span><?php endif; ?>
                         <?php if ($g['rating']): ?><span class="text-amber-400 text-xs shrink-0"><?php echo str_repeat('★', (int) $g['rating']); ?></span><?php endif; ?>
                         <?php if ($g['time_spent_hours']): ?><span class="w-12 text-right text-xs text-zinc-500 shrink-0"><?php echo $fmtHours($g['time_spent_hours']); ?> h</span><?php endif; ?>
@@ -168,6 +218,37 @@
 
 
 <script>
+// Clique num mês do gráfico filtra a lista de zerados; clicar de novo (ou "Ver todos") limpa
+(function () {
+    const bars = document.querySelectorAll('.month-bar[data-month]:not([disabled])');
+    const items = document.querySelectorAll('li[data-month]');
+    const title = document.getElementById('completedTitle');
+    const clear = document.getElementById('clearMonthFilter');
+    if (!bars.length || !title) return;
+    let current = null;
+
+    function apply(month, name) {
+        current = month;
+        items.forEach((li) => { li.classList.toggle('hidden', month !== null && li.dataset.month !== month); });
+        bars.forEach((b) => {
+            const active = b.dataset.month === month;
+            b.querySelector('.month-bar__fill').classList.toggle('!bg-violet-500', active);
+            b.querySelector('.month-bar__label').classList.toggle('!text-white', active);
+            b.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+        title.textContent = month === null ? 'Todos os zerados' : 'Zerados em ' + name;
+        clear.classList.toggle('hidden', month === null);
+        if (month !== null && window.matchMedia('(max-width: 1023px)').matches) {
+            title.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    bars.forEach((b) => b.addEventListener('click', () => {
+        apply(current === b.dataset.month ? null : b.dataset.month, b.dataset.monthName);
+    }));
+    clear.addEventListener('click', () => apply(null));
+})();
+
 (function () {
     const btn = document.getElementById('shareReview');
     if (!btn) return;

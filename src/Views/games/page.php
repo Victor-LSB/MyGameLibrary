@@ -30,6 +30,13 @@
         <div class="mb-6 bg-red-950/60 border border-red-800 text-red-300 px-4 py-3 rounded-sm text-sm"><?php echo htmlspecialchars($_SESSION['search_error']); unset($_SESSION['search_error']); ?></div>
     <?php endif; ?>
 
+    <?php if (!empty($backUrl)): ?>
+        <a href="<?php echo htmlspecialchars($backUrl); ?>" class="inline-flex items-center gap-2 mb-6 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white px-4 py-2.5 rounded-sm font-bold uppercase tracking-wide text-xs transition-colors">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-4 h-4" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/></svg>
+            <?php echo htmlspecialchars($backLabel); ?>
+        </a>
+    <?php endif; ?>
+
     <div class="grid gap-8 lg:grid-cols-12 items-start">
         <!-- Coluna da esquerda: capa, ação e números da comunidade (fixa ao rolar no desktop) -->
         <aside class="lg:col-span-4 xl:col-span-3 space-y-6 lg:sticky lg:top-6">

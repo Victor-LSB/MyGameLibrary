@@ -244,6 +244,22 @@ class GameController {
         $followedPlayers = $currentUserId ? $this->gameModel->getFollowedPlayers($currentUserId, $game_id) : [];
         $viewerEntry = $currentUserId ? $this->gameModel->getUserGameInfo($currentUserId, $game_id) : null;
 
+        // Botão "voltar": volta à retrospectiva de onde veio, ou à página anterior do próprio site
+        $backUrl = null;
+        $backLabel = 'Voltar';
+        $fromUser = (string) ($_GET['fu'] ?? '');
+        $fromYear = (int) ($_GET['fy'] ?? 0);
+        if (($_GET['from'] ?? '') === 'retro' && preg_match('/^[\w.-]{1,50}$/u', $fromUser) && $fromYear >= 1980 && $fromYear <= (int) date('Y')) {
+            $backUrl = mgl_url('year_review', ['u' => $fromUser, 'y' => $fromYear]);
+            $backLabel = 'Voltar à retrospectiva ' . $fromYear;
+        } elseif (!empty($_SERVER['HTTP_REFERER'])) {
+            $ref = parse_url($_SERVER['HTTP_REFERER']);
+            $sameSite = ($ref['host'] ?? '') === ($_SERVER['HTTP_HOST'] ?? '') || ($ref['host'] ?? '') . ':' . ($ref['port'] ?? '') === ($_SERVER['HTTP_HOST'] ?? '');
+            if ($sameSite && strpos($_SERVER['HTTP_REFERER'], 'action=game') === false && strpos($ref['path'] ?? '', '/jogos/') === false) {
+                $backUrl = $_SERVER['HTTP_REFERER'];
+            }
+        }
+
         include __DIR__ . '/../Views/games/page.php';
     }
 
