@@ -30,9 +30,16 @@ class FeedController {
         }
 
         $userId = $_SESSION['user_id'];
-        // Busca mais linhas do que o necessário: o agrupamento junta várias atividades em um item só
-        $activities = $this->activityModel->getFeedForUser($userId, 60, true);
+        // Busca mais linhas do que o necessário: o agrupamento junta várias atividades em um item só.
+        // "Carregar mais" só aumenta o limite (de 60 em 60, até 600): o agrupamento por dia
+        // continua certo porque a lista inteira é montada de novo.
+        $feedStep = 60;
+        $feedLimit = min(600, max($feedStep, (int) ($_GET['limit'] ?? $feedStep)));
+        $feedLimit -= $feedLimit % $feedStep;
+        $activities = $this->activityModel->getFeedForUser($userId, $feedLimit, true);
         $feedGroups = Activity::groupFeed($activities);
+        $feedHasMore = count($activities) >= $feedLimit && $feedLimit < 600;
+        $feedNextLimit = $feedLimit + $feedStep;
 
         require_once __DIR__ . '/FollowController.php';
         $followController = new FollowController();

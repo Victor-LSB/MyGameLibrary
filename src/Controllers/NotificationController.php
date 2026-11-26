@@ -101,49 +101,18 @@ class NotificationController {
      * fazendo fetch em loop) e só envia dado quando a contagem
      * de não lidas realmente muda.
      */
+    /**
+     * Antigo stream SSE. O front agora consulta notifications_count de tempos em tempos;
+     * isto só atende abas abertas com o JS antigo: manda a contagem uma vez, pede para o
+     * navegador esperar 60s antes de reconectar e encerra, sem segurar um processo do PHP.
+     */
     public function streamNotifications() {
-        set_time_limit(0);
-        ignore_user_abort(true);
-
+        session_write_close();
         header('Content-Type: text/event-stream');
         header('Cache-Control: no-cache');
-        header('Connection: keep-alive');
-        header('X-Accel-Buffering: no'); // evita buffering em proxies (ex: Nginx)
-
-        // Libera o lock da sessão assim que possível: como essa conexão
-        // fica aberta por um tempo, sem isso as outras abas/requisições
-        // do mesmo usuário ficariam travadas esperando a sessão liberar.
-        session_write_close();
-
-        while (ob_get_level() > 0) {
-            ob_end_flush();
-        }
-
-        $lastCount = null;
-        $checkIntervalSeconds = 3;
-        $maxDurationSeconds = 55; // depois disso o EventSource reconecta sozinho no front
-
-        $start = time();
-
-        while (true) {
-            if (connection_aborted() || (time() - $start) >= $maxDurationSeconds) {
-                break;
-            }
-
-            $count = $this->countUnreadCount();
-
-            if ($count !== $lastCount) {
-                echo "event: unread_count\n";
-                echo 'data: ' . json_encode(['unread_count' => $count]) . "\n\n";
-                $lastCount = $count;
-            } else {
-                // Comentário "ping" só pra manter a conexão viva através de proxies
-                echo ": ping\n\n";
-            }
-
-            flush();
-            sleep($checkIntervalSeconds);
-        }
+        echo "retry: 60000\n";
+        echo "event: unread_count\n";
+        echo 'data: ' . json_encode(['unread_count' => (int) $this->countUnreadCount()]) . "\n\n";
     }
 
     private function countUnreadCount() {

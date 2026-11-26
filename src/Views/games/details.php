@@ -1,4 +1,16 @@
-<?php require_once __DIR__ . '/../header.php'; ?>
+<?php
+    if (!empty($game['title'])) {
+        $reviewAuthor = $username_profile ?? '';
+        $pageTitle = $game['title'] . ($reviewAuthor !== '' ? ' por ' . $reviewAuthor : '') . ' - MyGameLibrary';
+        $reviewText = trim(preg_replace('/\s+/', ' ', (string) ($game['review'] ?? '')));
+        $metaDescription = $reviewText !== ''
+            ? ($game['rating'] ? str_repeat('★', (int) $game['rating']) . ' ' : '') . mb_strimwidth($reviewText, 0, 170, '…')
+            : 'Veja ' . $game['title'] . ' na biblioteca de ' . $reviewAuthor . ' no MyGameLibrary.';
+        $ogImage = $game['cover_image'] ?? null;
+        $ogType = 'article';
+    }
+    require_once __DIR__ . '/../header.php';
+?>
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen pb-12 selection:bg-violet-600 selection:text-white">
 <?php
     $isOwner = $isOwner ?? false;
@@ -100,8 +112,15 @@
     <main class="max-w-5xl mx-auto px-6">
         <div class="flex items-center justify-between gap-4 mb-6">
             <h1 class="text-2xl font-black text-white tracking-tighter uppercase line-clamp-1 flex-1">
-                <?php echo isset($game['title']) ? htmlspecialchars($game['title']) : 'Jogo não encontrado'; ?>
+                <?php if (!empty($game['id'])): ?>
+                    <a href="<?php echo htmlspecialchars(mgl_game_url($game['id'])); ?>" class="hover:text-violet-400 transition-colors" title="Ver o que a comunidade acha deste jogo"><?php echo htmlspecialchars($game['title']); ?></a>
+                <?php else: ?>
+                    Jogo não encontrado
+                <?php endif; ?>
             </h1>
+            <?php if (!empty($game['id'])): ?>
+                <a href="<?php echo htmlspecialchars(mgl_game_url($game['id'])); ?>" class="hidden sm:inline-block bg-zinc-800 hover:bg-zinc-700 text-violet-300 px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm border-b-2 border-zinc-950 transition-colors shrink-0">Página do jogo</a>
+            <?php endif; ?>
             <a href="<?php echo $isOwner ? 'index.php?action=home' : 'index.php?action=profile&u=' . urlencode($username_profile); ?>" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm border-b-2 border-zinc-950 hover:border-zinc-900 transition-colors shrink-0">
                 <?php echo $isOwner ? 'Voltar à Biblioteca' : 'Voltar ao Perfil'; ?>
             </a>
@@ -110,7 +129,10 @@
         
         <?php if (!isset($game) || !$game): ?>
             <div class="bg-zinc-900 rounded-sm border-2 border-zinc-800 p-8 text-center shadow-2xl">
-                <p class="text-zinc-400 font-medium text-lg">As informações deste jogo não foram encontradas na biblioteca deste utilizador.</p>
+                <p class="text-zinc-400 font-medium text-lg">Este jogo não está na biblioteca deste usuário.</p>
+                <?php if (!empty($game_id)): ?>
+                    <a href="<?php echo htmlspecialchars(mgl_game_url($game_id)); ?>" class="inline-block mt-4 mr-4 text-violet-400 hover:text-violet-300 font-bold underline">Ver a página do jogo</a>
+                <?php endif; ?>
                 <a href="index.php?action=home" class="inline-block mt-4 text-violet-400 hover:text-violet-300 font-bold underline">Voltar para a página inicial</a>
             </div>
         <?php else: ?>
@@ -136,6 +158,7 @@
                                 'Jogando' => 'text-blue-400',
                                 'Completo' => 'text-emerald-400',
                                 'Dropado' => 'text-amber-400',
+                                'Quero jogar' => 'text-fuchsia-400',
                                 default => 'text-white'
                             } : 'text-zinc-600';
                         ?> uppercase tracking-tight block mb-3"><?php echo isset($game['status']) ? htmlspecialchars($game['status']) : 'N/A'; ?></span>
@@ -182,6 +205,7 @@
                                 'Jogando' => 'text-blue-400',
                                 'Completo' => 'text-emerald-400',
                                 'Dropado' => 'text-amber-400',
+                                'Quero jogar' => 'text-fuchsia-400',
                                 default => 'text-white'
                             } : 'text-zinc-600';
                         ?> uppercase tracking-tight"><?php echo isset($game['status']) ? htmlspecialchars($game['status']) : 'N/A'; ?></span>

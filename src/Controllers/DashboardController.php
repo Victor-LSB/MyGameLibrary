@@ -328,7 +328,7 @@ class DashboardController {
             $statusTotals[$row['status'] ?: 'Indefinido'] = (int) $row['total'];
         }
 
-        $statusOrder = ['Zerado', 'Jogando', 'Dropado', 'Backlog'];
+        $statusOrder = ['Zerado', 'Jogando', 'Dropado', 'Backlog', 'Quero jogar'];
         $library = [];
         foreach ($statusOrder as $status) {
             if (isset($statusTotals[$status])) {

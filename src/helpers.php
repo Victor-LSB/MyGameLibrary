@@ -151,3 +151,42 @@ if (!function_exists('mgl_date_range_pt')) {
 }
 
 require_once __DIR__ . '/pretty_urls.php';
+
+if (!function_exists('mgl_not_found')) {
+    /**
+     * Página 404 no tema do site (com a navbar), em vez de texto puro numa página branca.
+     */
+    function mgl_not_found(string $message = 'A página que você procurou não existe ou mudou de endereço.'): void {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            \Victi\MyGameLibrary\Services\Session::start();
+        }
+        http_response_code(404);
+        $pageTitle = 'Página não encontrada - MyGameLibrary';
+        $notFoundMessage = $message;
+        include __DIR__ . '/Views/errors/404.php';
+        exit;
+    }
+}
+
+if (!function_exists('mgl_statuses')) {
+    /**
+     * Status de um jogo na biblioteca, na ordem em que aparecem nas telas.
+     * 'badge' = classes Tailwind do selo; 'hex' = cor usada em gráficos/barras.
+     */
+    function mgl_statuses(): array {
+        return [
+            'Quero jogar' => ['badge' => 'bg-fuchsia-600 text-white',  'hex' => '#c026d3'],
+            'Backlog'     => ['badge' => 'bg-zinc-700 text-zinc-100',  'hex' => '#71717a'],
+            'Jogando'     => ['badge' => 'bg-blue-600 text-white',     'hex' => '#60a5fa'],
+            'Zerado'      => ['badge' => 'bg-emerald-600 text-white',  'hex' => '#34d399'],
+            'Dropado'     => ['badge' => 'bg-amber-600 text-white',    'hex' => '#f87171'],
+        ];
+    }
+}
+
+if (!function_exists('mgl_game_url')) {
+    /** Link da página pública de um jogo. */
+    function mgl_game_url($gameId): string {
+        return mgl_url('game', ['id' => (int) $gameId]);
+    }
+}

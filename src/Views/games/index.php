@@ -9,6 +9,9 @@
     $search_query = $search_query ?? '';
     $filter_status = $filter_status ?? '';
     $filter_tag = $filter_tag ?? '';
+    $sort = $sort ?? 'recent';
+    // Mantém a ordenação escolhida nos links de tag/limpar (só quando não é a padrão)
+    $keepSort = $sort !== 'recent' ? '&sort=' . urlencode($sort) : '';
 ?>
 <?php require_once __DIR__ . '/../header.php'; ?>
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen selection:bg-violet-600 selection:text-white">
@@ -29,7 +32,7 @@
             </div>
         <?php endif; ?>
 
-        <div class="flex flex-col sm:flex-row justify-between items-end mb-6 gap-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 gap-4">
             <h2 class="text-2xl font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3">
                 Minha Biblioteca
                 <?php if (!empty($userGames) || !empty($search_query) || !empty($filter_status) || !empty($filter_tag)): ?>
@@ -42,7 +45,7 @@
             <div class="mb-4 inline-flex items-center gap-2 bg-violet-600/15 text-violet-300 border border-violet-500/30 px-4 py-2 rounded-full text-sm font-semibold">
                 <span>Filtrando por tag:</span>
                 <span>#<?php echo htmlspecialchars($filter_tag ?? ''); ?></span>
-                <a href="index.php?action=home<?php echo !empty($search_query) ? '&search=' . urlencode($search_query) : ''; ?><?php echo !empty($filter_status) ? '&filter_status=' . urlencode($filter_status) : ''; ?>" class="text-white/70 hover:text-white ml-1">Limpar</a>
+                <a href="index.php?action=home<?php echo !empty($search_query) ? '&search=' . urlencode($search_query) : ''; ?><?php echo !empty($filter_status) ? '&filter_status=' . urlencode($filter_status) : ''; ?><?php echo $keepSort; ?>" class="text-white/70 hover:text-white ml-1">Limpar</a>
             </div>
         <?php endif; ?>
 
@@ -51,14 +54,14 @@
                 <div class="flex items-center justify-between gap-4 mb-3">
                     <h3 class="text-sm font-black uppercase tracking-widest text-zinc-400">Tags Salvas</h3>
                     <?php if (!empty($filter_tag)): ?>
-                        <a href="index.php?action=home<?php echo !empty($search_query) ? '&search=' . urlencode($search_query) : ''; ?><?php echo !empty($filter_status) ? '&filter_status=' . urlencode($filter_status) : ''; ?>" class="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-white transition-colors">Limpar tag ativa</a>
+                        <a href="index.php?action=home<?php echo !empty($search_query) ? '&search=' . urlencode($search_query) : ''; ?><?php echo !empty($filter_status) ? '&filter_status=' . urlencode($filter_status) : ''; ?><?php echo $keepSort; ?>" class="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-white transition-colors">Limpar tag ativa</a>
                     <?php endif; ?>
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <?php foreach ($userTags as $tag): ?>
                         <?php $isActiveTag = !empty($filter_tag) && $filter_tag === $tag['name']; ?>
                         <div class="inline-flex items-center overflow-hidden rounded-full border transition-colors <?php echo $isActiveTag ? 'bg-violet-600 text-white border-violet-400' : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:border-violet-500 hover:text-violet-300'; ?>">
-                            <a href="index.php?action=home&tag=<?php echo urlencode($tag['name']); ?><?php echo !empty($search_query) ? '&search=' . urlencode($search_query) : ''; ?><?php echo !empty($filter_status) ? '&filter_status=' . urlencode($filter_status) : ''; ?>" class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold transition-colors">
+                            <a href="index.php?action=home&tag=<?php echo urlencode($tag['name']); ?><?php echo !empty($search_query) ? '&search=' . urlencode($search_query) : ''; ?><?php echo !empty($filter_status) ? '&filter_status=' . urlencode($filter_status) : ''; ?><?php echo $keepSort; ?>" class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold transition-colors">
                                 <span>#</span>
                                 <span><?php echo htmlspecialchars($tag['name']); ?></span>
                                 <span class="text-[10px] <?php echo $isActiveTag ? 'text-violet-100/80' : 'text-zinc-500'; ?>">(<?php echo (int) ($tag['usage_count'] ?? 0); ?>)</span>
@@ -85,11 +88,14 @@
                 <?php if (!empty($filter_status)): ?>
                     <input type="hidden" name="filter_status" value="<?php echo htmlspecialchars($filter_status ?? ''); ?>">
                 <?php endif; ?>
+                <?php if ($sort !== 'recent'): ?>
+                    <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
+                <?php endif; ?>
                 <input id="searchInput" type="text" name="search" placeholder="Buscar na biblioteca..."  autocomplete="off" value="<?php echo htmlspecialchars($search_query ?? ''); ?>" 
                     class="flex-1 bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 font-medium placeholder-zinc-600">
             </form>
 
-            <form action="index.php" method="GET" class="w-full md:w-auto flex-shrink-0">
+            <form action="index.php" method="GET" class="w-full md:w-auto flex-shrink-0 md:flex md:items-center">
                 <input type="hidden" name="action" value="home">
                 <?php if (!empty($filter_tag)): ?>
                     <input type="hidden" name="tag" value="<?php echo htmlspecialchars($filter_tag ?? ''); ?>">
@@ -99,16 +105,20 @@
                 <?php endif; ?>
                 <select name="filter_status" data-custom-select class="filterStatus w-full bg-zinc-950 border-2 border-zinc-800 text-white font-medium rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 cursor-pointer appearance-none">
                     <option value="">Todos os status</option>
-                    <option value="Backlog" <?php if (!empty($filter_status) && $filter_status == 'Backlog') echo 'selected'; ?>>Backlog</option>
-                    <option value="Jogando" <?php if (!empty($filter_status) && $filter_status == 'Jogando') echo 'selected'; ?>>Jogando</option>
-                    <option value="Zerado" <?php if (!empty($filter_status) && $filter_status == 'Zerado') echo 'selected'; ?>>Zerado</option>
-                    <option value="Dropado" <?php if (!empty($filter_status) && $filter_status == 'Dropado') echo 'selected'; ?>>Dropado</option>
+                    <?php foreach (array_keys(mgl_statuses()) as $statusName): ?>
+                        <option value="<?php echo htmlspecialchars($statusName); ?>" <?php if (!empty($filter_status) && $filter_status == $statusName) echo 'selected'; ?>><?php echo htmlspecialchars($statusName); ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <select name="sort" data-custom-select onchange="this.form.submit()" aria-label="Ordenar biblioteca" class="mt-3 md:mt-0 md:ml-2 w-full bg-zinc-950 border-2 border-zinc-800 text-white font-medium rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 cursor-pointer appearance-none">
+                    <?php foreach (\Victi\MyGameLibrary\Models\Game::LIBRARY_SORT_LABELS as $sortKey => $sortLabel): ?>
+                        <option value="<?php echo $sortKey; ?>" <?php echo $sort === $sortKey ? 'selected' : ''; ?>><?php echo htmlspecialchars($sortLabel); ?></option>
+                    <?php endforeach; ?>
                 </select>
             </form>
         </div>
 
         <?php if (!empty($userGames) && count($userGames) > 0): ?>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6">
                 
             <?php foreach ($userGames as $game): ?>
                 <div class="gameItem bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl flex flex-col overflow-hidden group" id="game-<?php echo $game['id']; ?>">
@@ -119,7 +129,7 @@
                     <div class="relative aspect-[3/4] bg-zinc-950 border-b-2 border-zinc-800 overflow-hidden">
                         <a href="index.php?action=details&id=<?php echo $game['id']; ?>" class="block h-full w-full">
                             <?php if (!empty($game['cover_image'])): ?>
-                                <img src="<?php echo htmlspecialchars($game['cover_image']); ?>" alt="<?php echo htmlspecialchars($game['title']); ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                <img src="<?php echo htmlspecialchars($game['cover_image']); ?>" alt="<?php echo htmlspecialchars($game['title']); ?>" loading="lazy" decoding="async" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                             <?php else: ?>
                                 <div class="w-full h-full flex items-center justify-center text-zinc-700 font-bold uppercase text-center p-2"><?php echo htmlspecialchars($game['title']); ?></div>
                             <?php endif; ?>
@@ -139,8 +149,8 @@
                         </button>
                     </div>
 
-                    <div class="p-4 flex-1 flex flex-col">
-                        <h3 class="font-bold text-white mb-3 line-clamp-2 leading-tight text-lg">
+                    <div class="p-3 sm:p-4 flex-1 flex flex-col">
+                        <h3 class="font-bold text-white mb-3 line-clamp-2 leading-tight text-base sm:text-lg">
                             <a href="index.php?action=details&id=<?php echo $game['id']; ?>" class="hover:text-violet-400 transition-colors">
                                 <?php echo htmlspecialchars($game['title']); ?>
                             </a>
@@ -176,7 +186,7 @@
                                     <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
                                     <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating'] ?? ''); ?>">
                                     <input type="hidden" name="status" value="Jogando">
-                                    <button type="submit" title="Jogando" data-status-btn="Jogando" class="status-btn w-full text-[10px] font-bold uppercase py-2 bg-blue-600 text-white rounded-sm hover:bg-blue-500 transition-all duration-200 <?php echo $currentStatus === 'Jogando' ? 'is-active' : 'is-inactive'; ?>">Jogando</button>
+                                    <button type="submit" title="Jogando" data-status-btn="Jogando" class="status-btn w-full text-[9px] sm:text-[10px] tracking-tighter sm:tracking-normal font-bold uppercase py-2 px-0 bg-blue-600 text-white rounded-sm hover:bg-blue-500 transition-all duration-200 <?php echo $currentStatus === 'Jogando' ? 'is-active' : 'is-inactive'; ?>">Jogando</button>
                                 </form>
 
                                 <form class="formStatus" action="index.php?action=change_status" method="post">
@@ -184,7 +194,7 @@
                                     <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
                                     <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating'] ?? ''); ?>">
                                     <input type="hidden" name="status" value="Zerado">
-                                    <button type="submit" title="Zerado" data-status-btn="Zerado" class="status-btn w-full text-[10px] font-bold uppercase py-2 bg-emerald-600 text-white rounded-sm hover:bg-emerald-500 transition-all duration-200 <?php echo $currentStatus === 'Zerado' ? 'is-active' : 'is-inactive'; ?>">Zerado</button>
+                                    <button type="submit" title="Zerado" data-status-btn="Zerado" class="status-btn w-full text-[9px] sm:text-[10px] tracking-tighter sm:tracking-normal font-bold uppercase py-2 px-0 bg-emerald-600 text-white rounded-sm hover:bg-emerald-500 transition-all duration-200 <?php echo $currentStatus === 'Zerado' ? 'is-active' : 'is-inactive'; ?>">Zerado</button>
                                 </form>
 
                                 <form class="formStatus" action="index.php?action=change_status" method="post">
@@ -192,7 +202,7 @@
                                     <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
                                     <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating'] ?? ''); ?>">
                                     <input type="hidden" name="status" value="Dropado">
-                                    <button type="submit" title="Dropado" data-status-btn="Dropado" class="status-btn w-full text-[10px] font-bold uppercase py-2 bg-amber-600 text-white rounded-sm hover:bg-amber-500 transition-all duration-200 <?php echo $currentStatus === 'Dropado' ? 'is-active' : 'is-inactive'; ?>">Dropado</button>
+                                    <button type="submit" title="Dropado" data-status-btn="Dropado" class="status-btn w-full text-[9px] sm:text-[10px] tracking-tighter sm:tracking-normal font-bold uppercase py-2 px-0 bg-amber-600 text-white rounded-sm hover:bg-amber-500 transition-all duration-200 <?php echo $currentStatus === 'Dropado' ? 'is-active' : 'is-inactive'; ?>">Dropado</button>
                                 </form>
                             </div>
 
@@ -209,6 +219,7 @@
                                 <?php if (!empty($filter_tag)): ?>
                                     <input type="hidden" name="tag" value="<?php echo htmlspecialchars($filter_tag ?? ''); ?>">
                                 <?php endif; ?>
+                                <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
                                 <button type="submit" class="w-full text-[11px] uppercase tracking-wider font-bold py-2 mt-1 text-zinc-400 bg-zinc-950 border border-zinc-800 rounded-sm hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors">Remover</button>
                             </form>
                         </div>
@@ -220,8 +231,9 @@
 
             <?php if ($total_pages > 1): ?>
                 <?php
-                    $buildPageUrl = function ($targetPage) use ($search_query, $filter_status, $filter_tag) {
+                    $buildPageUrl = function ($targetPage) use ($search_query, $filter_status, $filter_tag, $sort) {
                         $params = ['action' => 'home', 'page' => $targetPage];
+                        if ($sort !== 'recent') $params['sort'] = $sort;
                         if (!empty($search_query)) $params['search'] = $search_query;
                         if (!empty($filter_status)) $params['filter_status'] = $filter_status;
                         if (!empty($filter_tag)) $params['tag'] = $filter_tag;

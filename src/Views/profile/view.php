@@ -1,11 +1,17 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <?php echo mgl_base_tag(); ?>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
-    <?php $profileUser = $profileUser ?? []; ?>
+<?php
+    $profileUser = $profileUser ?? [];
+    // <head> compartilhado (header.php): CSS compilado, favicon, Open Graph etc.
+    $profileDisplayName = ($profileUser['display_name'] ?? '') ?: ($profileUser['username'] ?? '');
+    $pageTitle = 'Perfil de ' . $profileDisplayName . ' - MyGameLibrary';
+    $profileBio = trim((string) ($profileUser['bio'] ?? ''));
+    $metaDescription = $profileBio !== ''
+        ? mb_strimwidth($profileBio, 0, 180, '…')
+        : 'Veja a biblioteca de jogos, o Top 5 e as análises de ' . $profileDisplayName . ' no MyGameLibrary.';
+    $ogImage = mgl_avatar_url($profileUser['avatar'] ?? null) ?: (mgl_avatar_url($profileUser['banner'] ?? null));
+    $ogType = 'profile';
+    $extraStyles = ['assets/css/social.css'];
+    require __DIR__ . '/../header.php';
+?>
     <?php $isOwner = $isOwner ?? false; ?>
     <?php $currentUserId = $currentUserId ?? null; ?>
     <?php $profileUserId = $profileUserId ?? ($profileUser['id'] ?? null); ?>
@@ -89,12 +95,6 @@
             }
         }
     ?>
-    <title>Perfil de <?php echo htmlspecialchars($profileUser['display_name'] ?: $profileUser['username']); ?> - MyGameLibrary</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="<?php echo mgl_asset('assets/css/scrollbar.css'); ?>">
-    <link rel="stylesheet" href="<?php echo mgl_asset('assets/css/social.css'); ?>">
-    <link rel="icon" type="image/png" href="assets/icon/icong.png?v=1">
-</head>
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen pb-12 selection:bg-violet-600 selection:text-white">
 
     <?php require_once __DIR__ . '/../partials/navbar.php'; ?>

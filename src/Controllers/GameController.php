@@ -69,6 +69,10 @@ class GameController {
         $search_query = filter_input(INPUT_GET, 'search', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         $filter_status = filter_input(INPUT_GET, 'filter_status', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         $filter_tag = filter_input(INPUT_GET, 'tag', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $sort = (string) ($_GET['sort'] ?? 'recent');
+        if (!array_key_exists($sort, Game::LIBRARY_SORTS)) {
+            $sort = 'recent';
+        }
 
         $per_page = 25;
         $current_page = (int) (filter_input(INPUT_GET, 'page', FILTER_SANITIZE_NUMBER_INT) ?: 1);
@@ -85,7 +89,7 @@ class GameController {
             $current_page = $total_pages;
         }
 
-        $userGames = $this->gameModel->getGamesByUserId($user_id, $filter_status, $search_query, $filter_tag, $current_page, $per_page);
+        $userGames = $this->gameModel->getGamesByUserId($user_id, $filter_status, $search_query, $filter_tag, $current_page, $per_page, $sort);
         $userTags = $this->gameModel->getUniqueTagsForUser($user_id);
         include __DIR__ . '/../Views/games/index.php';
     }
@@ -181,6 +185,68 @@ class GameController {
         include __DIR__ . '/../Views/games/details.php';
     }
 
+    /**
+     * Baixa a biblioteca do usuário logado em CSV (abre no Excel/Google Sheets).
+     * Separador ";" e BOM UTF-8 para o Excel em português abrir com acentos e colunas certas.
+     */
+    public function exportCsv() {
+        $this->startSession();
+        if (!isset($_SESSION['user_id'])) {
+            header("Location: index.php?action=login");
+            exit();
+        }
+
+        $rows = $this->gameModel->getLibraryForExport($_SESSION['user_id']);
+        $filename = 'mygamelibrary-' . preg_replace('/[^a-z0-9_-]/i', '', $_SESSION['username'] ?? 'biblioteca') . '-' . date('Y-m-d') . '.csv';
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: no-store');
+
+        $out = fopen('php://output', 'w');
+        fwrite($out, "\xEF\xBB\xBF");
+        fputcsv($out, ['Jogo', 'Lançamento', 'Gêneros', 'Status', 'Nota', 'Platinado em', 'Zerado em', 'Horas', 'Tags', 'Análise'], ';');
+
+        // Texto que começa com = + - @ vira fórmula no Excel; o apóstrofo impede isso
+        $safe = fn($v) => (is_string($v) && $v !== '' && strpbrk($v[0], '=+-@') !== false) ? "'" . $v : $v;
+
+        foreach ($rows as $r) {
+            fputcsv($out, array_map($safe, [
+                $r['title'],
+                $r['release_date'] ? substr($r['release_date'], 0, 10) : '',
+                implode(', ', array_map('mgl_genre_pt', array_filter(array_map('trim', explode(',', (string) $r['genre']))))),
+                $r['status'] ?? '',
+                $r['rating'] ?? '',
+                $r['platinum_at'] ? date('d/m/Y', strtotime($r['platinum_at'])) : '',
+                $r['completion_date'] ? date('d/m/Y', strtotime($r['completion_date'])) : '',
+                $r['time_spent_hours'] !== null ? number_format((float) $r['time_spent_hours'], 1, ',', '') : '',
+                $r['tags'] ?? '',
+                $r['review'] ?? '',
+            ]), ';');
+        }
+        fclose($out);
+        exit();
+    }
+
+    /** Página pública do jogo: dados do jogo + o que a comunidade acha dele. */
+    public function page() {
+        $this->startSession();
+
+        $game_id = (int) mgl_get('id', FILTER_SANITIZE_NUMBER_INT);
+        $game = $game_id ? $this->gameModel->getGameById($game_id) : null;
+        if (!$game) {
+            mgl_not_found('Esse jogo não existe ou foi removido.');
+        }
+
+        $currentUserId = $_SESSION['user_id'] ?? null;
+        $stats = $this->gameModel->getCommunityStats($game_id);
+        $reviews = $this->gameModel->getReviewsForGame($game_id, 20);
+        $followedPlayers = $currentUserId ? $this->gameModel->getFollowedPlayers($currentUserId, $game_id) : [];
+        $viewerEntry = $currentUserId ? $this->gameModel->getUserGameInfo($currentUserId, $game_id) : null;
+
+        include __DIR__ . '/../Views/games/page.php';
+    }
+
     public function add() {
         $this->startSession();
         if (!isset($_SESSION['user_id'])) {
@@ -208,8 +274,10 @@ class GameController {
             $cover_image = filter_input(INPUT_POST, 'cover', FILTER_SANITIZE_URL);
 
             if ($external_id && $title) {
-                $existingGame = $this->gameModel->findGameByExternalId($external_id);
-                
+                // Mesmo jogo por outra fonte (ex.: fallback da Steam) reaproveita o registro existente
+                $existingGame = $this->gameModel->findGameByExternalId($external_id)
+                    ?: $this->gameModel->findGameByTitleAndYear($title, $release_date);
+
                 if ($existingGame) {
                     $game_id = $existingGame['id'];
                 } else {
@@ -230,9 +298,12 @@ class GameController {
                     if ($this->gameModel->checkUserGame($_SESSION['user_id'], $game_id)) {
                         $_SESSION['search_error'] = "Este jogo já está na sua biblioteca!";
                     } else {
-                        if ($this->gameModel->addGameToUser($_SESSION['user_id'], $game_id)) {
-                            $this->activityModel->log($_SESSION['user_id'], 'game_added', $game_id);
-                            header("Location: index.php?action=home");
+                        // Status inicial: Backlog (padrão) ou "Quero jogar" (lista de desejos)
+                        $initialStatus = ($_POST['initial_status'] ?? '') === 'Quero jogar' ? 'Quero jogar' : 'Backlog';
+                        if ($this->gameModel->addGameToUser($_SESSION['user_id'], $game_id, $initialStatus)) {
+                            // extra "Quero jogar" faz o feed mostrar "quer jogar" em vez de "adicionou"
+                            $this->activityModel->log($_SESSION['user_id'], 'game_added', $game_id, $initialStatus === 'Quero jogar' ? 'Quero jogar' : null);
+                            header("Location: " . (!empty($_POST['return_to_game']) ? mgl_game_url($game_id) : "index.php?action=home"));
                             exit();
                         } else {
                             $_SESSION['search_error'] = "Erro ao adicionar jogo à sua lista.";
@@ -242,6 +313,10 @@ class GameController {
                     $_SESSION['search_error'] = "Erro ao registrar o jogo no sistema.";
                 }
             }
+        }
+        if (!empty($_POST['return_to_game']) && !empty($game_id)) {
+            header("Location: " . mgl_game_url($game_id));
+            exit();
         }
         header("Location: index.php?action=search");
         exit();
@@ -503,6 +578,11 @@ class GameController {
             $redirectParams['tag'] = $tag;
         }
 
+        $sort = (string) ($_POST['sort'] ?? '');
+        if ($sort !== '' && $sort !== 'recent' && array_key_exists($sort, Game::LIBRARY_SORTS)) {
+            $redirectParams['sort'] = $sort;
+        }
+
         header("Location: index.php?" . http_build_query($redirectParams));
         exit();
     }
@@ -650,7 +730,7 @@ class GameController {
                     }
                 }
 
-                $_SESSION['review_success'] = "Análise guardada com sucesso!";
+                $_SESSION['review_success'] = "Análise salva com sucesso!";
                 
                 // Retorna mantendo a URL formatada perfeitamente
                 header("Location: index.php?action=details&id=" . $game_id . "&u=" . urlencode($_SESSION['username']));

@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderGames(games) {
         grid.innerHTML = games.map(game => {
             const cover = game.background_image 
-                ? `<img src="${game.background_image}" alt="${game.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">` 
+                ? `<img loading="lazy" decoding="async" src="${game.background_image}" alt="${game.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">` 
                 : `<div class="w-full h-full flex items-center justify-center text-zinc-700 font-bold uppercase">Sem Capa</div>`;
 
             const year = game.released ? game.released.substring(0, 4) : 'N/A';
@@ -120,9 +120,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         <input type="hidden" name="platform" value="${safePlatforms}">
                         <input type="hidden" name="genre" value="${safeGenres}">
                         <input type="hidden" name="release_date" value="${game.released || ''}">
-                        <button type="submit" class="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold uppercase tracking-wider py-3 rounded-sm transition-colors text-xs flex items-center justify-center gap-2">
-                            <span class="text-base leading-none">✚</span> Adicionar
-                        </button>
+                        <div class="grid grid-cols-1 gap-1.5">
+                            <button type="submit" name="initial_status" value="Backlog" class="bg-violet-600 hover:bg-violet-500 text-white font-bold uppercase tracking-wider py-3 rounded-sm transition-colors text-xs flex items-center justify-center gap-2">
+                                <span class="text-base leading-none">✚</span> Adicionar
+                            </button>
+                            <button type="submit" name="initial_status" value="Quero jogar" title="Adicionar como Quero jogar" class="bg-zinc-800 hover:bg-fuchsia-700 text-zinc-300 hover:text-white font-bold uppercase tracking-wider px-3 py-2 rounded-sm transition-colors text-[10px]">Quero jogar</button>
+                        </div>
                     </form>
                 </div>
             </div>`;

@@ -25,7 +25,7 @@
 <section id="biblioteca">
 <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
     <h2 class="text-2xl font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3">
-        <?php echo $libraryMode ? 'Biblioteca (' . (int) $libraryTotal . ')' : 'Registados Recentemente'; ?>
+        <?php echo $libraryMode ? 'Biblioteca (' . (int) $libraryTotal . ')' : 'Adicionados recentemente'; ?>
     </h2>
     <?php if ($libraryMode): ?>
         <a href="<?php echo htmlspecialchars($profileUrl, ENT_QUOTES); ?>#biblioteca" data-library-link class="text-xs font-bold uppercase tracking-wider text-zinc-400 hover:text-violet-400 transition-colors">&larr; Voltar aos recentes</a>
@@ -44,7 +44,7 @@
         <input type="search" name="q" value="<?php echo htmlspecialchars($librarySearch, ENT_QUOTES); ?>" placeholder="Buscar jogo..." maxlength="60"
                class="flex-1 min-w-[160px] bg-zinc-900 border-2 border-zinc-800 text-white text-sm px-3 py-2 rounded-sm focus:border-violet-500 outline-none">
         <select name="sort" onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()" class="bg-zinc-900 border-2 border-zinc-800 text-white text-sm px-3 py-2 rounded-sm focus:border-violet-500 outline-none">
-            <?php foreach (['recent' => 'Adicionados: mais recentes', 'oldest' => 'Adicionados: mais antigos', 'title' => 'Nome (A-Z)', 'title_desc' => 'Nome (Z-A)', 'rating' => 'Maior nota'] as $key => $label): ?>
+            <?php foreach (\Victi\MyGameLibrary\Models\Game::LIBRARY_SORT_LABELS as $key => $label): ?>
                 <option value="<?php echo $key; ?>" <?php echo $librarySort === $key ? 'selected' : ''; ?>><?php echo $label; ?></option>
             <?php endforeach; ?>
         </select>
@@ -56,10 +56,10 @@
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
         <?php foreach ($gamesToShow as $game): ?>
             <div class="bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl flex flex-col overflow-hidden group">
-                <!-- AQUI ESTÁ A CORREÇÃO: O link agora carrega o ID do jogo e o nome de utilizador dono do perfil (&u=...) -->
+                <!-- AQUI ESTÁ A CORREÇÃO: O link agora carrega o ID do jogo e o nome de usuário dono do perfil (&u=...) -->
                 <a href="index.php?action=details&id=<?php echo $game['id']; ?>&u=<?php echo urlencode($profileUser['username']); ?>" class="block aspect-[3/4] bg-zinc-950 border-b-2 border-zinc-800 overflow-hidden relative">
                     <?php if (!empty($game['cover_image'])): ?>
-                        <img src="<?php echo htmlspecialchars($game['cover_image']); ?>" alt="<?php echo htmlspecialchars($game['title']); ?>" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 bg-zinc-950">
+                        <img src="<?php echo htmlspecialchars($game['cover_image']); ?>" alt="<?php echo htmlspecialchars($game['title']); ?>" loading="lazy" decoding="async" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 bg-zinc-950">
                     <?php else: ?>
                         <div class="w-full h-full flex items-center justify-center text-zinc-700 font-bold uppercase text-xs sm:text-base text-center p-2"><?php echo htmlspecialchars($game['title']); ?></div>
                     <?php endif; ?>
@@ -96,7 +96,7 @@
     <?php endif; ?>
 <?php else: ?>
     <div class="bg-zinc-900 border-2 border-zinc-800 rounded-sm p-12 text-center shadow-xl">
-        <p class="text-zinc-500 font-medium"><?php echo ($libraryMode && $librarySearch !== '') ? 'Nenhum jogo encontrado para essa busca.' : 'Este jogador ainda não registou nenhum jogo.'; ?></p>
+        <p class="text-zinc-500 font-medium"><?php echo ($libraryMode && $librarySearch !== '') ? 'Nenhum jogo encontrado para essa busca.' : 'Este jogador ainda não registrou nenhum jogo.'; ?></p>
     </div>
 <?php endif; ?>
 </section>

@@ -26,7 +26,13 @@ class GameAPI {
     private $igdbExcludedTypes = [1, 2, 3, 5, 6, 7, 13, 14];
 
     // Campos pedidos à IGDB nas buscas por lista (normal e tolerante)
-    private $igdbListFields = 'name,first_release_date,genres.name,platforms.name,cover.image_id,screenshots.image_id,total_rating_count,follows,game_type,version_parent';
+    private $igdbListFields = 'name,first_release_date,genres.name,platforms.name,cover.image_id,screenshots.image_id,total_rating_count,follows,game_type,version_parent,themes';
+
+    // Tema "Erotic" da IGDB: jogos pornográficos não aparecem na busca
+    private $igdbBlockedThemes = [42];
+
+    // Steam (content_descriptors): 3 = conteúdo sexual só para adultos, 4 = nudez/sexo frequente
+    private $steamBlockedDescriptors = [3, 4];
 
     public function __construct() {
         $this->twitchClientId = trim($_ENV['TWITCH_CLIENT_ID'] ?? '');
@@ -513,12 +519,33 @@ class GameAPI {
         return [$igdbGames, is_array($steamPayload) ? $steamPayload : null];
     }
 
+    // Termos extras bloqueados na busca (BLOCKED_GAME_TERMS no .env, separados por vírgula).
+    // Serve para jogos ofensivos que nenhuma das APIs marca (ex.: "hitler").
+    private function hasBlockedTerm($name) {
+        static $terms = null;
+        if ($terms === null) {
+            $terms = array_values(array_filter(array_map(
+                fn($t) => mb_strtolower(trim($t)),
+                explode(',', (string) ($_ENV['BLOCKED_GAME_TERMS'] ?? ''))
+            )));
+        }
+        $name = mb_strtolower((string) $name);
+        foreach ($terms as $term) {
+            if (mb_strpos($name, $term) !== false) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Remove DLC/mod/bundle etc. e edições duplicadas (version_parent preenchido)
     private function filterIgdbGameTypes(array $games) {
         return array_values(array_filter($games, function ($g) {
             if (!is_array($g) || empty($g['id'])) return false;
             if (in_array($g['game_type'] ?? null, $this->igdbExcludedTypes, true)) return false;
             if (!empty($g['version_parent'])) return false;
+            if (array_intersect($g['themes'] ?? [], $this->igdbBlockedThemes)) return false;
+            if ($this->hasBlockedTerm($g['name'] ?? '')) return false;
             return true;
         }));
     }
@@ -569,6 +596,12 @@ class GameAPI {
         foreach ($items as $item) {
             $appId = (int) $item['id'];
             $details = $detailsByAppId[$appId] ?? null;
+
+            // Conteúdo adulto/termos bloqueados ficam fora (mesma regra da IGDB)
+            $descriptors = array_map('intval', $details['content_descriptors']['ids'] ?? []);
+            if (array_intersect($descriptors, $this->steamBlockedDescriptors) || $this->hasBlockedTerm($item['name'] ?? '')) {
+                continue;
+            }
 
             $genres = [];
             foreach (($details['genres'] ?? []) as $genre) {

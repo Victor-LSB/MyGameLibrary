@@ -1,0 +1,73 @@
+# Atualização: página do jogo, Quero jogar, retrospectiva e melhorias
+
+Faça nesta ordem, no servidor, a partir da raiz do projeto (`/var/www/html`).
+
+## 1. Backup do banco
+
+```
+mysqldump -u USER -p mygamelibrary > backup-antes-da-atualizacao.sql
+```
+
+## 2. Suba os arquivos novos
+
+Pelo deploy do GitHub ou copiando os arquivos. O `public/assets/css/output.css` já vem
+compilado, então não precisa rodar `npm run build` no servidor.
+
+## 3. Migração do status "Quero jogar"
+
+```
+mysql -u USER -p mygamelibrary < database/migration_quero_jogar.sql
+```
+
+Sem ela, adicionar um jogo como "Quero jogar" dá erro se a coluna de status for um ENUM.
+
+## 4. Unir jogos duplicados
+
+Primeiro a simulação (não grava nada, só lista os grupos):
+
+```
+php scripts/merge_duplicate_games.php
+```
+
+Confira a lista. Se estiver certa:
+
+```
+php scripts/merge_duplicate_games.php --apply
+```
+
+Daqui para frente, um jogo que chega por outra fonte (ex.: fallback da Steam) com o mesmo
+nome e ano de um que já existe reaproveita o registro em vez de criar outro.
+
+## 5. (Opcional) Termos bloqueados na busca
+
+O conteúdo adulto já é filtrado automaticamente (tema "Erotic" da IGDB e classificação adulta
+da Steam). Para esconder também jogos ofensivos que as APIs não marcam, adicione ao `.env`:
+
+```
+BLOCKED_GAME_TERMS=hitler,goy
+```
+
+Os termos são procurados dentro do nome do jogo, sem diferenciar maiúsculas. Isso só afeta a
+busca; jogos que já estão em bibliotecas continuam lá (dá para removê-los pelo painel do banco).
+
+## O que mudou
+
+- **Página pública do jogo** (`index.php?action=game&id=…` ou `/jogos/…`): nota média,
+  distribuição de status e notas, horas médias para zerar, quem você segue que tem o jogo e
+  todas as análises. O título na tela de detalhes leva para ela.
+- **Quero jogar**: novo status, com botão próprio na busca e na página do jogo. Aparece no
+  filtro da biblioteca, no dashboard e no feed ("quer jogar").
+- **Ordenação na biblioteca**: recentes, antigos, nome, nota, horas jogadas, zerados recentes.
+- **Feed** com "Carregar mais" (de 60 em 60 atividades, até 600).
+- **Retrospectiva do ano** (menu Perfil → Retrospectiva): zerados, horas, platinas, gênero do
+  ano, favoritos, gráfico por mês. Pública e com botão de compartilhar.
+- **Exportar biblioteca em CSV** (menu Perfil). Abre direto no Excel.
+- **Notificações**: o contador agora é consultado a cada 25 s com a aba aberta, em vez de manter
+  uma conexão aberta por aba (que prendia um processo do PHP por até 55 s).
+- **Visual**: página 404 no tema do site, menu recolhível no celular, biblioteca e busca com 2
+  colunas no celular, capas com carregamento preguiçoso, prévia de links (Open Graph) com capa
+  do jogo ou avatar, perfil usando o CSS compilado (antes carregava o Tailwind pelo CDN).
+- Textos que ainda estavam em português de Portugal foram trocados.
+
+Para a prévia de links mostrar o endereço e a imagem certos, o `APP_URL` do `.env` precisa
+estar preenchido com o endereço público do site (ex.: `https://seusite.com.br`).

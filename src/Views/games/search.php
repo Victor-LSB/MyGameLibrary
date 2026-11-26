@@ -20,7 +20,7 @@
             <?php if (!empty($q)) echo 'Resultados para "<span class="text-violet-400">' . htmlspecialchars($q) . '</span>"'; ?>
         </h2>
         
-        <div id="resultsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <div id="resultsGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6">
             
             <?php if (!empty($results)): ?>
                 <?php foreach ($results as $game): ?>
@@ -28,7 +28,7 @@
                     <div class="bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl flex flex-col overflow-hidden group">
                         <div class="aspect-[3/4] bg-zinc-950 border-b-2 border-zinc-800 overflow-hidden relative">
                             <?php if (!empty($cover)): ?>
-                                <img src="<?php echo htmlspecialchars($cover); ?>" alt="<?php echo htmlspecialchars($game['name']); ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                <img src="<?php echo htmlspecialchars($cover); ?>" alt="<?php echo htmlspecialchars($game['name']); ?>" loading="lazy" decoding="async" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                             <?php else: ?>
                                 <div class="w-full h-full flex items-center justify-center text-zinc-700 font-bold uppercase">Sem Capa</div>
                             <?php endif; ?>
@@ -65,9 +65,12 @@
                                 ?>">
                                 <input type="hidden" name="genre" value="<?php echo htmlspecialchars(implode(', ', $genres)); ?>">
                                 <input type="hidden" name="release_date" value="<?php echo htmlspecialchars($game['released'] ?? ''); ?>">
-                                <button type="submit" class="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold uppercase tracking-wider py-3 rounded-sm transition-colors text-xs flex items-center justify-center gap-2">
-                                    <span class="text-base leading-none">✚</span> Adicionar
-                                </button>
+                                <div class="grid grid-cols-1 gap-1.5">
+                                    <button type="submit" name="initial_status" value="Backlog" class="bg-violet-600 hover:bg-violet-500 text-white font-bold uppercase tracking-wider py-3 rounded-sm transition-colors text-xs flex items-center justify-center gap-2">
+                                        <span class="text-base leading-none">✚</span> Adicionar
+                                    </button>
+                                    <button type="submit" name="initial_status" value="Quero jogar" title="Adicionar como Quero jogar" class="bg-zinc-800 hover:bg-fuchsia-700 text-zinc-300 hover:text-white font-bold uppercase tracking-wider px-3 py-2 rounded-sm transition-colors text-[10px]">Quero jogar</button>
+                                </div>
                             </form>
                         </div>
                     </div>

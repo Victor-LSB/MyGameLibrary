@@ -12,6 +12,7 @@
         'Zerado'    => ['class' => 'st-done',    'text' => 'zerou'],
         'Dropado'   => ['class' => 'st-dropped', 'text' => 'dropou'],
         'Platina'   => ['class' => 'st-plat',    'text' => 'platinou'],
+        'Quero jogar' => ['class' => 'st-want',  'text' => 'quer jogar'],
     ];
 
     $gameUrl = function (array $item): string {
@@ -70,7 +71,10 @@
                                 $verbClass = '';
                                 $verbText = '';
                                 $suffix = '';
-                                if ($type === 'game_added') {
+                                if ($type === 'game_added' && $group['extra'] === 'Quero jogar') {
+                                    $verbClass = $statusVerbs['Quero jogar']['class'];
+                                    $verbText = $statusVerbs['Quero jogar']['text'];
+                                } elseif ($type === 'game_added') {
                                     $verbText = 'adicionou';
                                 } elseif ($isReview) {
                                     $verbText = 'publicou uma análise de';
@@ -87,7 +91,7 @@
                                 $title = (string) ($first['game_title'] ?? '');
                                 $itemClass = 'feed-item' . ($isGroup ? ' feed-item--group' : '') . ($isReview ? ' feed-item--review' : '');
                             ?>
-                            <article class="<?php echo $itemClass; ?>" data-activity-type="<?php echo htmlspecialchars($type); ?>">
+                            <article id="act-<?php echo (int) $first['id']; ?>" class="<?php echo $itemClass; ?>" data-activity-type="<?php echo htmlspecialchars($type); ?>">
                                 <?php if (!$isGroup): ?>
                                     <?php if (!empty($first['game_id'])): ?>
                                         <a href="<?php echo htmlspecialchars($gameUrl($first)); ?>" class="feed-cover<?php echo empty($first['game_cover']) ? ' feed-cover--empty' : ''; ?>" tabindex="-1" aria-hidden="true">
@@ -179,6 +183,13 @@
                         <?php endforeach; ?>
                         <?php if ($dayOpen) echo '</div></section>'; ?>
                     </div>
+
+                    <?php if (!empty($feedHasMore)): ?>
+                        <?php $lastGroup = end($feedGroups); $lastId = (int) ($lastGroup['items'][0]['id'] ?? 0); ?>
+                        <div class="mt-8 text-center">
+                            <a href="index.php?action=feed&amp;limit=<?php echo (int) $feedNextLimit; ?>#act-<?php echo $lastId; ?>" class="inline-block bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors">Carregar mais</a>
+                        </div>
+                    <?php endif; ?>
 
                     <p id="feedFilterEmpty" class="feed-filter-empty" hidden>Nada desse tipo por aqui ainda.</p>
                 <?php else: ?>

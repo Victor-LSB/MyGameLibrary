@@ -27,7 +27,7 @@
                 
                 <div>
                     <label for="display_name" class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Nome de Exibição</label>
-                    <input type="text" id="display_name" name="display_name" value="<?php echo htmlspecialchars($user['display_name'] ?? ''); ?>" placeholder="Como queres ser chamado?"
+                    <input type="text" id="display_name" name="display_name" value="<?php echo htmlspecialchars($user['display_name'] ?? ''); ?>" placeholder="Como você quer ser chamado?"
                         class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium">
                 </div>
 
@@ -71,13 +71,13 @@
 
                 <div>
                     <label for="bio" class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Bio / Sobre Mim</label>
-                    <textarea id="bio" name="bio" rows="4" placeholder="Fala um pouco sobre os teus jogos favoritos..."
+                    <textarea id="bio" name="bio" rows="4" placeholder="Fale um pouco sobre seus jogos favoritos..."
                         class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium resize-y"><?php echo htmlspecialchars($user['bio'] ?? ''); ?></textarea>
                 </div>
 
                 <div class="pt-4 border-t-2 border-zinc-800 flex justify-end">
                     <button type="submit" class="bg-violet-600 hover:bg-violet-500 text-white font-black uppercase tracking-widest py-3 px-8 rounded-sm transition-colors shadow-lg">
-                        Guardar Alterações
+                        Salvar alterações
                     </button>
                 </div>
             </form>

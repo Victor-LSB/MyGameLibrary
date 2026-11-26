@@ -27,7 +27,7 @@
         return preg_replace('/,0$/', '', $text);
     };
 
-    $statusColors = ['Zerado' => '#34d399', 'Jogando' => '#60a5fa', 'Dropado' => '#f87171', 'Backlog' => '#71717a'];
+    $statusColors = ['Zerado' => '#34d399', 'Jogando' => '#60a5fa', 'Dropado' => '#f87171', 'Backlog' => '#71717a', 'Quero jogar' => '#c026d3'];
 
     // Dias sem nenhum jogo zerado só viram linha no diário quando o buraco for grande o bastante
     $gapThreshold = ['week' => 1, 'month' => 7][$period] ?? null;

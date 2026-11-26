@@ -184,6 +184,11 @@
             unreadCount.textContent = count;
             unreadCount.style.display = count > 0 ? 'flex' : 'none';
         }
+        // Ponto no botão do menu do celular (o sino fica dentro do menu recolhido)
+        const mobileDot = document.getElementById('unreadDotMobile');
+        if (mobileDot) {
+            mobileDot.classList.toggle('hidden', !(count > 0));
+        }
     }
 
     // Formatar data de forma amigável
@@ -226,69 +231,53 @@
     updateUnreadCount(0);
     refreshUnreadCount();
 
+    let lastUnreadCount = null;
+
     async function refreshUnreadCount() {
         try {
             const response = await fetch('index.php?action=notifications_count');
             const data = await response.json();
-            updateUnreadCount(data.unread_count);
+            const count = Number(data.unread_count) || 0;
+            updateUnreadCount(count);
+
+            // Chegou notificação nova com o painel aberto: atualiza a lista também
+            if (lastUnreadCount !== null && count !== lastUnreadCount
+                && !notificationPanel.classList.contains('hidden')) {
+                loadNotifications();
+            }
+            lastUnreadCount = count;
         } catch (error) {
             console.error('Erro ao atualizar contagem:', error);
         }
     }
 
-    // Live update via SSE: uma única conexão aberta, o servidor só
-    // manda algo quando a contagem de não lidas realmente muda.
-    let eventSource = null;
+    // Consulta a contagem a cada 25s enquanto a aba está visível. Antes era uma conexão
+    // SSE aberta, mas cada aba segurava um processo do PHP por até 55s, o que num servidor
+    // pequeno esgota os processos e deixa o site inteiro lento.
+    const POLL_INTERVAL_MS = 25000;
+    let pollTimer = null;
 
-    function startNotificationsStream() {
-        if (eventSource || typeof EventSource === 'undefined') return;
-
-        eventSource = new EventSource('index.php?action=notifications_stream');
-
-        eventSource.addEventListener('unread_count', (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                updateUnreadCount(data.unread_count);
-
-                // Se o painel estiver aberto, atualiza a lista também
-                if (!notificationPanel.classList.contains('hidden')) {
-                    loadNotifications();
-                }
-            } catch (error) {
-                console.error('Erro ao processar evento de notificação:', error);
-            }
-        });
-
-        eventSource.onerror = () => {
-            // O próprio EventSource reconecta sozinho depois de alguns
-            // segundos (é assim que o protocolo SSE funciona); só logamos.
-            console.warn('Conexão de notificações interrompida, reconectando...');
-        };
+    function startPolling() {
+        if (pollTimer) return;
+        pollTimer = setInterval(refreshUnreadCount, POLL_INTERVAL_MS);
     }
 
-    function stopNotificationsStream() {
-        if (eventSource) {
-            eventSource.close();
-            eventSource = null;
-        }
+    function stopPolling() {
+        clearInterval(pollTimer);
+        pollTimer = null;
     }
 
-    // Pausa o stream quando a aba fica em segundo plano e retoma
-    // (com uma checagem imediata) quando o usuário volta pra ela.
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
-            stopNotificationsStream();
+            stopPolling();
         } else {
             refreshUnreadCount();
-            startNotificationsStream();
+            startPolling();
         }
     });
 
-    if (typeof EventSource !== 'undefined') {
-        startNotificationsStream();
-    } else {
-        // Fallback para navegadores muito antigos sem suporte a SSE
-        setInterval(refreshUnreadCount, 30000);
+    if (!document.hidden) {
+        startPolling();
     }
 
 })();

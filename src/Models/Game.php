@@ -48,6 +48,50 @@ class Game {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Forma "achatada" do título, para reconhecer o mesmo jogo vindo de fontes diferentes
+     * ("ELDEN RING" da Steam x "Elden Ring" da IGDB, "Dark Souls III" x "Dark Souls 3").
+     */
+    public static function titleMatchKey($title) {
+        static $roman = ['xx' => '20', 'xix' => '19', 'xviii' => '18', 'xvii' => '17', 'xvi' => '16',
+            'xv' => '15', 'xiv' => '14', 'xiii' => '13', 'xii' => '12', 'xi' => '11', 'x' => '10',
+            'ix' => '9', 'viii' => '8', 'vii' => '7', 'vi' => '6', 'v' => '5', 'iv' => '4',
+            'iii' => '3', 'ii' => '2'];
+        $text = mb_strtolower(html_entity_decode((string) $title, ENT_QUOTES, 'UTF-8'));
+        $text = str_replace(['™', '®', '©'], '', $text);
+        $text = preg_replace('/[^\p{L}\p{N}]+/u', ' ', $text);
+        $words = array_map(fn($w) => $roman[$w] ?? $w, preg_split('/\s+/', trim($text)));
+        return implode(' ', $words);
+    }
+
+    /**
+     * Procura um jogo já salvo com o mesmo título (ver titleMatchKey) e o mesmo ano de
+     * lançamento (ou sem ano em um dos lados). Evita duplicar o jogo quando ele chega por
+     * outra fonte (ex.: fallback da Steam com a IGDB fora do ar).
+     */
+    public function findGameByTitleAndYear($title, $release_date) {
+        $key = self::titleMatchKey($title);
+        if ($key === '') {
+            return false;
+        }
+        $year = $release_date ? substr((string) $release_date, 0, 4) : null;
+
+        // Filtro grosso no SQL pela primeira palavra; a comparação exata é no PHP
+        $first = explode(' ', $key)[0];
+        $stmt = $this->conn->prepare("SELECT id, title, release_date FROM games WHERE title LIKE ? ORDER BY id ASC LIMIT 50");
+        $stmt->execute(['%' . $first . '%']);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            if (self::titleMatchKey($row['title']) !== $key) {
+                continue;
+            }
+            $rowYear = $row['release_date'] ? substr((string) $row['release_date'], 0, 4) : null;
+            if ($year === null || $rowYear === null || $year === $rowYear) {
+                return ['id' => $row['id']];
+            }
+        }
+        return false;
+    }
+
     public function getGameById($game_id) {
         $sql = "SELECT * FROM games WHERE id = ? LIMIT 1";
         $stmt = $this->conn->prepare($sql);
@@ -105,6 +149,19 @@ class Game {
         'title'      => 'g.title ASC',
         'title_desc' => 'g.title DESC',
         'rating'     => 'ug.rating DESC, ug.id DESC',
+        'hours'      => 'ug.time_spent_hours IS NULL, ug.time_spent_hours DESC, ug.id DESC',
+        'completed'  => 'ug.completion_date IS NULL, ug.completion_date DESC, ug.id DESC',
+    ];
+
+    /** Rótulos das ordenações, na ordem em que aparecem nos selects. */
+    public const LIBRARY_SORT_LABELS = [
+        'recent'     => 'Adicionados: mais recentes',
+        'oldest'     => 'Adicionados: mais antigos',
+        'title'      => 'Nome (A-Z)',
+        'title_desc' => 'Nome (Z-A)',
+        'rating'     => 'Maior nota',
+        'hours'      => 'Mais horas jogadas',
+        'completed'  => 'Zerados mais recentes',
     ];
 
     public function getGamesByUserId($user_id, $status = null, $search = null, $tag = null, $page = 1, $perPage = 24, $sort = 'recent') {
@@ -435,6 +492,79 @@ class Game {
         $sql = "UPDATE user_games SET review = ? WHERE user_id = ? AND game_id = ?";
         $stmt = $this->conn->prepare($sql);
         return $stmt->execute([$review, $user_id, $game_id]);
+    }
+
+    // ---------- Página pública do jogo ----------
+
+    /** Números do jogo no site: bibliotecas, nota média e quantos em cada status. */
+    public function getCommunityStats($game_id) {
+        $stmt = $this->conn->prepare("SELECT
+                COUNT(*) AS owners,
+                AVG(rating) AS avg_rating,
+                COUNT(rating) AS rating_count,
+                SUM(platinum_at IS NOT NULL) AS platinum_count,
+                AVG(CASE WHEN status = 'Zerado' THEN time_spent_hours END) AS avg_hours
+            FROM user_games WHERE game_id = ?");
+        $stmt->execute([$game_id]);
+        $stats = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        $byStatus = $this->conn->prepare("SELECT status, COUNT(*) AS total FROM user_games
+            WHERE game_id = ? AND status IS NOT NULL GROUP BY status");
+        $byStatus->execute([$game_id]);
+        $stats['by_status'] = $byStatus->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        $dist = $this->conn->prepare("SELECT rating, COUNT(*) FROM user_games
+            WHERE game_id = ? AND rating BETWEEN 1 AND 5 GROUP BY rating");
+        $dist->execute([$game_id]);
+        $stats['rating_distribution'] = $dist->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        return $stats;
+    }
+
+    /** Pessoas que o visitante segue e que têm o jogo na biblioteca. */
+    public function getFollowedPlayers($viewer_id, $game_id, $limit = 12) {
+        $limit = max(1, (int) $limit);
+        $stmt = $this->conn->prepare("SELECT u.id, u.username, u.display_name, u.avatar,
+                ug.status, ug.rating, ug.platinum_at, (ug.review IS NOT NULL AND ug.review <> '') AS has_review
+            FROM user_follows f
+            JOIN users u ON u.id = f.following_id
+            JOIN user_games ug ON ug.user_id = u.id AND ug.game_id = ?
+            WHERE f.follower_id = ?
+            ORDER BY ug.rating IS NULL, ug.rating DESC, u.username ASC
+            LIMIT $limit");
+        $stmt->execute([$game_id, $viewer_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Análises publicadas do jogo (mais recentes primeiro), com o número de comentários. */
+    public function getReviewsForGame($game_id, $limit = 20) {
+        $limit = max(1, (int) $limit);
+        $stmt = $this->conn->prepare("SELECT u.id AS user_id, u.username, u.display_name, u.avatar,
+                ug.rating, ug.status, ug.platinum_at, ug.time_spent_hours,
+                LEFT(ug.review, 700) AS review_excerpt, CHAR_LENGTH(ug.review) AS review_length,
+                (SELECT COUNT(*) FROM review_comments rc
+                  WHERE rc.target_user_id = ug.user_id AND rc.game_id = ug.game_id AND rc.removed_at IS NULL) AS comment_count
+            FROM user_games ug
+            JOIN users u ON u.id = ug.user_id
+            WHERE ug.game_id = ? AND ug.review IS NOT NULL AND TRIM(ug.review) <> ''
+            ORDER BY ug.id DESC
+            LIMIT $limit");
+        $stmt->execute([$game_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Biblioteca inteira para exportar (CSV), com as tags de cada jogo. */
+    public function getLibraryForExport($user_id) {
+        $stmt = $this->conn->prepare("SELECT g.title, g.release_date, g.genre, ug.status, ug.rating,
+                ug.platinum_at, ug.completion_date, ug.time_spent_hours, ug.review,
+                (SELECT GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ', ')
+                   FROM game_tags gt JOIN tags t ON t.id = gt.tag_id
+                  WHERE gt.user_id = ug.user_id AND gt.game_id = ug.game_id) AS tags
+            FROM user_games ug JOIN games g ON g.id = ug.game_id
+            WHERE ug.user_id = ?
+            ORDER BY g.title ASC");
+        $stmt->execute([$user_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getRecentGamesByUserId($user_id, $limit = 5) {

@@ -38,6 +38,7 @@ use Victi\MyGameLibrary\Controllers\FollowController;
 use Victi\MyGameLibrary\Controllers\FeedController;
 use Victi\MyGameLibrary\Controllers\TopGamesController;
 use Victi\MyGameLibrary\Controllers\NotificationController;
+use Victi\MyGameLibrary\Controllers\YearReviewController;
 
 
 // URLs amigáveis: /perfil/victor vira action=profile&u=victor (veja src/pretty_urls.php).
@@ -68,6 +69,9 @@ $routes = [
     'search'         => [GameController::class, 'search'],
     'ajax_search'    => [GameController::class, 'ajaxSearch'],
     'details'        => [GameController::class, 'details'],
+    'game'           => [GameController::class, 'page'],
+    'export_library' => [GameController::class, 'exportCsv'],
+    'year_review'    => [YearReviewController::class, 'index'],
     'save_review'    => [GameController::class, 'saveReview'],
     'dashboard'      => [DashboardController::class, 'index'],
     'dashboard_data' => [DashboardController::class, 'data'],
@@ -105,6 +109,5 @@ if (array_key_exists($action, $routes)) {
     $controller = new $controllerName();
     $controller->$methodName();
 } else {
-    http_response_code(404);
-    echo "404 - Página não encontrada.";
+    mgl_not_found();
 }

@@ -45,6 +45,8 @@ if (!function_exists('mgl_base_path')) {
             'home'            => ['biblioteca', null],
             'profile'         => ['perfil', 'u'],
             'details'         => ['jogo', 'id'],
+            'game'            => ['jogos', 'id'],
+            'year_review'     => ['retrospectiva', 'u'],
             'feed'            => ['feed', null],
             'dashboard'       => ['dashboard', null],
             'search'          => ['adicionar-jogo', null],
@@ -110,9 +112,7 @@ if (!function_exists('mgl_base_path')) {
             return true;
         }
 
-        http_response_code(404);
-        echo '404 - Página não encontrada.';
-        exit;
+        mgl_not_found();
     }
 
     /**

@@ -316,8 +316,8 @@ class AuthController {
                     $resend->emails->send([
                         'from' => 'My Game Library <suporte@mygamelibrary.com.br>',
                         'to' => [$email],
-                        'subject' => 'Recuperação de Palavra-passe',
-                        'html' => '<p>Olá!</p><p>Clique no link abaixo para redefinir a sua palavra-passe:</p><p><a href="'.$reset_link.'">Redefinir Palavra-passe</a></p>',
+                        'subject' => 'Redefinição de senha',
+                        'html' => '<p>Olá!</p><p>Clique no link abaixo para redefinir sua senha:</p><p><a href="'.$reset_link.'">Redefinir senha</a></p>',
                     ]);
                 } catch (\Exception $e) {
                     error_log('Erro ao enviar e-mail de recuperação: ' . $e->getMessage());

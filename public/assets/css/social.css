@@ -364,6 +364,7 @@
 .st-done { color: var(--s-done); }
 .st-dropped { color: var(--s-dropped); }
 .st-plat { color: var(--s-plat); }
+.st-want { color: #e879f9; }
 
 /* Nota + trecho da análise */
 .feed-rating {
