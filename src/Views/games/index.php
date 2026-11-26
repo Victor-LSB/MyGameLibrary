@@ -186,7 +186,7 @@
                                     <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
                                     <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating'] ?? ''); ?>">
                                     <input type="hidden" name="status" value="Jogando">
-                                    <button type="submit" title="Jogando" data-status-btn="Jogando" class="status-btn seg-item w-full !text-[10px] sm:!text-[11px] !tracking-tight <?php echo $currentStatus === 'Jogando' ? 'is-active' : 'is-inactive'; ?>">Jogando</button>
+                                    <button type="submit" title="Jogando" data-status-btn="Jogando" class="status-btn seg-item w-full !px-0 !text-[9px] min-[400px]:!text-[10px] sm:!text-[11px] !tracking-normal sm:!tracking-wide <?php echo $currentStatus === 'Jogando' ? 'is-active' : 'is-inactive'; ?>">Jogando</button>
                                 </form>
 
                                 <form class="formStatus flex-1 flex" action="index.php?action=change_status" method="post">
@@ -194,7 +194,7 @@
                                     <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
                                     <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating'] ?? ''); ?>">
                                     <input type="hidden" name="status" value="Zerado">
-                                    <button type="submit" title="Zerado" data-status-btn="Zerado" class="status-btn seg-item w-full !text-[10px] sm:!text-[11px] !tracking-tight <?php echo $currentStatus === 'Zerado' ? 'is-active' : 'is-inactive'; ?>">Zerado</button>
+                                    <button type="submit" title="Zerado" data-status-btn="Zerado" class="status-btn seg-item w-full !px-0 !text-[9px] min-[400px]:!text-[10px] sm:!text-[11px] !tracking-normal sm:!tracking-wide <?php echo $currentStatus === 'Zerado' ? 'is-active' : 'is-inactive'; ?>">Zerado</button>
                                 </form>
 
                                 <form class="formStatus flex-1 flex" action="index.php?action=change_status" method="post">
@@ -202,7 +202,7 @@
                                     <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
                                     <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating'] ?? ''); ?>">
                                     <input type="hidden" name="status" value="Dropado">
-                                    <button type="submit" title="Dropado" data-status-btn="Dropado" class="status-btn seg-item w-full !text-[10px] sm:!text-[11px] !tracking-tight <?php echo $currentStatus === 'Dropado' ? 'is-active' : 'is-inactive'; ?>">Dropado</button>
+                                    <button type="submit" title="Dropado" data-status-btn="Dropado" class="status-btn seg-item w-full !px-0 !text-[9px] min-[400px]:!text-[10px] sm:!text-[11px] !tracking-normal sm:!tracking-wide <?php echo $currentStatus === 'Dropado' ? 'is-active' : 'is-inactive'; ?>">Dropado</button>
                                 </form>
                             </div>
 

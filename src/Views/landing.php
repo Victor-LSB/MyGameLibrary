@@ -8,11 +8,11 @@ require_once __DIR__ . '/header.php';
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen selection:bg-violet-600 selection:text-white">
 
     <header class="border-b border-zinc-800">
-        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-            <a href="index.php" class="text-xl font-black text-white tracking-tighter uppercase">MyGameLibrary</a>
-            <nav class="flex items-center gap-5">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
+            <a href="index.php" class="text-lg sm:text-xl font-black text-white tracking-tighter uppercase">MyGameLibrary</a>
+            <nav class="flex items-center gap-3 sm:gap-5 shrink-0">
                 <a href="index.php?action=login" class="text-sm font-bold text-zinc-300 hover:text-white transition-colors">Entrar</a>
-                <a href="index.php?action=register" class="btn btn-primary">Criar conta</a>
+                <a href="index.php?action=register" class="btn btn-primary px-3 sm:px-4">Criar conta</a>
             </nav>
         </div>
     </header>

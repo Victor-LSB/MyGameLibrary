@@ -77,6 +77,11 @@
     // Mini gráfico dos blocos de números (zerados e horas por balde)
     $sparkCount = array_map(fn($b) => count($b['games']), array_values($buckets));
     $sparkHours = array_map(fn($b) => $b['hours'], array_values($buckets));
+    if ($period === 'month') {
+        // ~30 barrinhas não cabem num espaço tão pequeno: no mensal, uma barra por semana do mês
+        $sparkCount = array_map('array_sum', array_chunk($sparkCount, 7));
+        $sparkHours = array_map('array_sum', array_chunk($sparkHours, 7));
+    }
     $renderSpark = function (array $values, string $color) {
         $max = max($values ?: [0]);
         if ($max <= 0) return '';
@@ -137,10 +142,10 @@
                     <?php if ($rangeSub): ?><span class="text-xs text-zinc-500">· <?php echo htmlspecialchars($rangeSub); ?></span><?php endif; ?>
                 </div>
             </div>
-            <nav class="seg self-start sm:self-auto" aria-label="Período">
+            <nav class="seg w-full sm:w-auto self-start sm:self-auto" aria-label="Período">
                 <?php foreach ($periodOptions as $key => $label): ?>
                     <a href="<?php echo htmlspecialchars($navUrl($key, $dash['ref'] ?? null)); ?>"
-                       class="seg-item !px-5 !text-xs <?php echo $key === $period ? 'is-on' : ''; ?>"
+                       class="seg-item !px-2 sm:!px-5 !text-xs <?php echo $key === $period ? 'is-on' : ''; ?>"
                        <?php echo $key === $period ? 'aria-current="page"' : ''; ?>><?php echo htmlspecialchars($label); ?></a>
                 <?php endforeach; ?>
             </nav>
