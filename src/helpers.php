@@ -190,3 +190,28 @@ if (!function_exists('mgl_game_url')) {
         return mgl_url('game', ['id' => (int) $gameId]);
     }
 }
+
+if (!function_exists('mgl_current_user')) {
+    /**
+     * Usuário logado (id, username, display_name, avatar), buscado uma vez por página.
+     * Usado pela navbar para mostrar avatar e nome. Null se ninguém estiver logado.
+     */
+    function mgl_current_user(): ?array {
+        static $cached = false;
+        if ($cached !== false) {
+            return $cached;
+        }
+        $cached = null;
+        if (!empty($_SESSION['user_id'])) {
+            try {
+                $db = (new \Victi\MyGameLibrary\Database\Database())->connect();
+                $stmt = $db->prepare('SELECT id, username, display_name, avatar FROM users WHERE id = ? LIMIT 1');
+                $stmt->execute([$_SESSION['user_id']]);
+                $cached = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+            } catch (\Throwable $e) {
+                error_log('mgl_current_user: ' . $e->getMessage());
+            }
+        }
+        return $cached;
+    }
+}

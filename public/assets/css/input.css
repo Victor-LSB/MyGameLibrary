@@ -4,12 +4,50 @@
 
 /* Componentes customizados para seu projeto */
 @layer components {
+  /* ---- Botões (estilo D: cantos retos, caixa alta, 34px de altura) ----
+     .btn + .btn-primary   = ação principal da tela (branco)
+     .btn + .btn-secondary = ação secundária (contorno escuro)
+     .btn + .btn-accent    = destaque roxo (ex.: Seguir)
+     .btn-link             = ação rara/destrutiva em texto pequeno
+     .btn-lg               = versão alta, para o botão de envio de formulários grandes */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 h-[34px] px-4 text-xs font-extrabold uppercase tracking-wider whitespace-nowrap rounded-none transition-colors select-none disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900;
+  }
+  .btn-lg {
+    @apply h-11 px-6 text-sm;
+  }
   .btn-primary {
-    @apply bg-violet-600 text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors border-b-2 border-zinc-950 hover:border-zinc-900 hover:bg-violet-700;
+    @apply bg-white text-zinc-950 hover:bg-violet-100;
+  }
+  .btn-primary svg {
+    @apply text-violet-600;
+  }
+  .btn-secondary {
+    @apply bg-zinc-950 text-zinc-300 border-2 border-zinc-800 hover:border-zinc-600 hover:text-white;
+  }
+  .btn-accent {
+    @apply bg-violet-600 text-white hover:bg-violet-500;
+  }
+  .btn-link {
+    @apply inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-zinc-500 hover:text-white transition-colors;
+  }
+  .btn-link.is-danger {
+    @apply hover:text-red-400;
   }
 
-  .btn-secondary {
-    @apply bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors border-b-2 border-zinc-950 hover:border-zinc-900;
+  /* ---- Barra encaixada (abas, status, nota): opções lado a lado, a ativa acende ---- */
+  .seg {
+    @apply flex border-2 border-zinc-800 bg-zinc-950;
+  }
+  .seg-item {
+    @apply flex-1 flex items-center justify-center gap-1.5 h-8 px-1 text-[11px] font-extrabold uppercase tracking-wide text-zinc-400 border-r-2 border-zinc-800 transition-colors cursor-pointer hover:bg-zinc-800 hover:text-white;
+  }
+  .seg > :last-child .seg-item,
+  .seg > .seg-item:last-child {
+    @apply border-r-0;
+  }
+  .seg-item.is-on {
+    @apply bg-violet-600 text-white hover:bg-violet-600;
   }
 
   .card-dark {
@@ -28,21 +66,11 @@
     @apply text-xl font-black uppercase tracking-tight text-white border-l-4 border-violet-500 pl-3;
   }
 
-  .status-btn {
-    @apply transform;
-  }
-
-  .status-btn.is-active {
-    @apply scale-105 opacity-100 saturate-100 grayscale-0 ring-2 ring-white/50 ring-offset-2 ring-offset-zinc-900 shadow-lg;
-  }
-
-  .status-btn.is-inactive {
-    @apply scale-95 opacity-40 saturate-50 grayscale;
-  }
-
-  .status-btn.is-inactive:hover {
-    @apply scale-100 opacity-100 saturate-100 grayscale-0;
-  }
+  /* Botões de status dentro de uma .seg: o ativo acende na cor do status.
+     (status.js / details-status.js só trocam is-active / is-inactive) */
+  .status-btn.is-active[data-status-btn="Jogando"], .status-btn.is-active[data-status="Jogando"] { @apply bg-blue-600 text-white; }
+  .status-btn.is-active[data-status-btn="Zerado"],  .status-btn.is-active[data-status="Zerado"]  { @apply bg-emerald-600 text-white; }
+  .status-btn.is-active[data-status-btn="Dropado"], .status-btn.is-active[data-status="Dropado"] { @apply bg-amber-600 text-white; }
 
   .feed-icon-added {
     @apply bg-amber-950 text-amber-400;

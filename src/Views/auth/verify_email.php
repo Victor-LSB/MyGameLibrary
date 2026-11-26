@@ -15,14 +15,14 @@
                 <div class="bg-red-950 border border-red-800 text-red-400 px-4 py-3 rounded-sm mb-6 font-medium text-sm">
                     <?php echo htmlspecialchars($error); ?>
                 </div>
-                <a href="index.php?action=login" class="inline-block bg-violet-600 hover:bg-violet-500 text-white px-6 py-2.5 rounded-sm font-black uppercase tracking-wide text-xs transition-colors">Ir para o login</a>
+                <a href="index.php?action=login" class="btn btn-primary">Ir para o login</a>
             <?php endif; ?>
 
             <?php if (isset($success)): ?>
                 <div class="bg-emerald-950 border border-emerald-800 text-emerald-400 px-4 py-3 rounded-sm mb-6 font-medium text-sm">
                     <?php echo htmlspecialchars($success); ?>
                 </div>
-                <a href="index.php?action=home" class="inline-block bg-violet-600 hover:bg-violet-500 text-white px-6 py-2.5 rounded-sm font-black uppercase tracking-wide text-xs transition-colors">Ir para a minha biblioteca</a>
+                <a href="index.php?action=home" class="btn btn-primary">Ir para a minha biblioteca</a>
             <?php endif; ?>
         </div>
     </main>

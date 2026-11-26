@@ -38,13 +38,13 @@
                 if (isFollowing) {
                     followBtn.textContent = 'Seguir';
                     followBtn.dataset.isFollowing = 'false';
-                    followBtn.classList.remove('bg-zinc-700', 'hover:bg-zinc-600');
-                    followBtn.classList.add('bg-violet-600', 'hover:bg-violet-500');
+                    followBtn.classList.remove('btn-secondary');
+                    followBtn.classList.add('btn-accent');
                 } else {
-                    followBtn.textContent = 'Deixar de Seguir';
+                    followBtn.textContent = 'Deixar de seguir';
                     followBtn.dataset.isFollowing = 'true';
-                    followBtn.classList.remove('bg-violet-600', 'hover:bg-violet-500');
-                    followBtn.classList.add('bg-zinc-700', 'hover:bg-zinc-600');
+                    followBtn.classList.remove('btn-accent');
+                    followBtn.classList.add('btn-secondary');
                 }
 
                 // Avisa o resto da página (contador de seguidores do card de amigos)

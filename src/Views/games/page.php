@@ -31,7 +31,7 @@
     <?php endif; ?>
 
     <?php if (!empty($backUrl)): ?>
-        <a href="<?php echo htmlspecialchars($backUrl); ?>" class="inline-flex items-center gap-2 mb-6 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white px-4 py-2.5 rounded-sm font-bold uppercase tracking-wide text-xs transition-colors">
+        <a href="<?php echo htmlspecialchars($backUrl); ?>" class="btn btn-secondary mb-6">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-4 h-4" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/></svg>
             <?php echo htmlspecialchars($backLabel); ?>
         </a>
@@ -59,7 +59,7 @@
                                 <span class="text-[10px] font-black uppercase px-2 py-1 rounded-sm <?php echo $statuses[$vs]['badge']; ?>"><?php echo htmlspecialchars($vs); ?></span>
                             <?php endif; ?>
                         </div>
-                        <a href="<?php echo htmlspecialchars(mgl_url('details', ['id' => (int) $game['id'], 'u' => $_SESSION['username'] ?? ''])); ?>" class="block text-center bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2.5 rounded-sm font-bold uppercase tracking-wide text-xs transition-colors">Ver / editar minha análise</a>
+                        <a href="<?php echo htmlspecialchars(mgl_url('details', ['id' => (int) $game['id'], 'u' => $_SESSION['username'] ?? ''])); ?>" class="btn btn-secondary w-full">Ver / editar minha análise</a>
                     </div>
                 <?php elseif ($isLoggedIn): ?>
                     <form action="index.php?action=add_game" method="post" class="grid gap-2">
@@ -71,11 +71,11 @@
                         <input type="hidden" name="release_date" value="<?php echo htmlspecialchars((string) ($game['release_date'] ?? '')); ?>">
                         <input type="hidden" name="cover" value="<?php echo htmlspecialchars((string) ($game['cover_image'] ?? '')); ?>">
                         <input type="hidden" name="return_to_game" value="1">
-                        <button type="submit" name="initial_status" value="Backlog" class="bg-violet-600 hover:bg-violet-500 text-white px-5 py-3 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors">+ Adicionar à biblioteca</button>
-                        <button type="submit" name="initial_status" value="Quero jogar" class="bg-zinc-800 hover:bg-fuchsia-700 text-zinc-200 hover:text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-xs transition-colors">Quero jogar</button>
+                        <button type="submit" name="initial_status" value="Backlog" class="btn btn-primary">+ Adicionar à biblioteca</button>
+                        <button type="submit" name="initial_status" value="Quero jogar" class="btn btn-secondary hover:!border-fuchsia-500 hover:!text-fuchsia-300">Quero jogar</button>
                     </form>
                 <?php else: ?>
-                    <a href="index.php?action=register" class="block text-center bg-violet-600 hover:bg-violet-500 text-white px-5 py-3 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors">Crie sua conta para registrar este jogo</a>
+                    <a href="index.php?action=register" class="btn btn-primary w-full">Crie sua conta para registrar este jogo</a>
                 <?php endif; ?>
             </div>
 

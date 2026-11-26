@@ -106,3 +106,19 @@ estar preenchido com o endereço público do site (ex.: `https://seusite.com.br`
   do link no WhatsApp/Discord. As imagens ficam em cache em `storage/cache/cards`.
 - A fonte do card (Inter, licença livre OFL) fica em `resources/fonts`.
 
+
+### Terceira leva: visual dos botões (estilo D)
+
+- Navbar com abas encaixadas (a página atual acende em roxo), busca menor, "Adicionar jogo"
+  em branco, sino com contador e avatar + nome no lugar de "Perfil". Abaixo de 1024px vira o
+  menu recolhível.
+- Botões do site todo seguem a mesma regra (classes em `public/assets/css/input.css`):
+  `btn btn-primary` (branco, ação principal), `btn btn-secondary` (contorno, ação secundária),
+  `btn btn-accent` (roxo, ex.: Seguir), `btn-link` (texto pequeno, ex.: Apagar) e `seg` /
+  `seg-item` para escolhas lado a lado (status, nota, abas).
+- Status e nota viraram barras encaixadas na biblioteca e nos detalhes; o ativo acende na cor
+  do status.
+- Corrigido: o rótulo "Zerado" na tela de detalhes nunca ficava verde.
+
+Lembrete: depois de mexer em classes nas views, rode `npm run build` para recompilar o
+`public/assets/css/output.css` (o pacote já vem com ele compilado).

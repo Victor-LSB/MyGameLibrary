@@ -121,10 +121,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         <input type="hidden" name="genre" value="${safeGenres}">
                         <input type="hidden" name="release_date" value="${game.released || ''}">
                         <div class="grid grid-cols-1 gap-1.5">
-                            <button type="submit" name="initial_status" value="Backlog" class="bg-violet-600 hover:bg-violet-500 text-white font-bold uppercase tracking-wider py-3 rounded-sm transition-colors text-xs flex items-center justify-center gap-2">
+                            <button type="submit" name="initial_status" value="Backlog" class="btn btn-primary">
                                 <span class="text-base leading-none">✚</span> Adicionar
                             </button>
-                            <button type="submit" name="initial_status" value="Quero jogar" title="Adicionar como Quero jogar" class="bg-zinc-800 hover:bg-fuchsia-700 text-zinc-300 hover:text-white font-bold uppercase tracking-wider px-3 py-2 rounded-sm transition-colors text-[10px]">Quero jogar</button>
+                            <button type="submit" name="initial_status" value="Quero jogar" title="Adicionar como Quero jogar" class="btn btn-secondary hover:!border-fuchsia-500 hover:!text-fuchsia-300 w-full">Quero jogar</button>
                         </div>
                     </form>
                 </div>

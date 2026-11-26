@@ -6,7 +6,7 @@
     <main class="max-w-md mx-auto px-6">
         <div class="flex items-center justify-between gap-4 mb-6">
             <h1 class="text-2xl font-black text-white tracking-tighter uppercase">Alterar Senha</h1>
-            <a href="index.php?action=profile" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors">Voltar</a>
+            <a href="index.php?action=profile" class="btn btn-secondary">Voltar</a>
         </div>
 
         <div class="bg-zinc-900 p-6 sm:p-10 rounded-sm border-2 border-zinc-800 shadow-2xl">
@@ -53,7 +53,7 @@
                 </div>
 
                 <div class="pt-4 border-t-2 border-zinc-800 flex justify-end">
-                    <button type="submit" class="bg-violet-600 hover:bg-violet-500 text-white font-black uppercase tracking-widest py-3 px-8 rounded-sm transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed" id="submitBtn">
+                    <button type="submit" class="btn btn-primary disabled:cursor-not-allowed" id="submitBtn">
                         Alterar Senha
                     </button>
                 </div>

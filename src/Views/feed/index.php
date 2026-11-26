@@ -214,7 +214,7 @@
                     <?php if (!empty($feedHasMore)): ?>
                         <?php $lastGroup = end($feedGroups); $lastId = (int) ($lastGroup['items'][0]['id'] ?? 0); ?>
                         <div class="mt-8 text-center">
-                            <a href="index.php?action=feed&amp;limit=<?php echo (int) $feedNextLimit; ?>#act-<?php echo $lastId; ?>" class="inline-block bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors">Carregar mais</a>
+                            <a href="index.php?action=feed&amp;limit=<?php echo (int) $feedNextLimit; ?>#act-<?php echo $lastId; ?>" class="btn btn-secondary">Carregar mais</a>
                         </div>
                     <?php endif; ?>
 

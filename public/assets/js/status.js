@@ -25,7 +25,7 @@ function updateStatusCard(gameId, newStatus) {
 
     const pStatus = cardGame.querySelector('.gameStatus');
     if (pStatus) {
-        pStatus.textContent = 'Status: ' + newStatus;
+        pStatus.textContent = newStatus;
     }
 
     const ratingFormOfGame = cardGame.querySelector('.ratingForm');

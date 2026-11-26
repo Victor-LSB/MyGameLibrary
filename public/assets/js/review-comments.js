@@ -78,8 +78,8 @@
         const canReply = !isReply;
         const actionsHtml = `
             <div class="flex items-center gap-4 mt-2">
-                ${canReply ? '<button type="button" class="comment-reply-btn text-zinc-500 hover:text-violet-400 text-xs font-bold uppercase tracking-wide transition-colors">Responder</button>' : ''}
-                <button type="button" class="comment-delete-btn text-zinc-500 hover:text-red-400 text-xs font-bold uppercase tracking-wide transition-colors">Apagar</button>
+                ${canReply ? '<button type="button" class="comment-reply-btn btn-link">Responder</button>' : ''}
+                <button type="button" class="comment-delete-btn btn-link is-danger">Apagar</button>
             </div>
         `;
 

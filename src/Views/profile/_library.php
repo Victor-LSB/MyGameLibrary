@@ -48,7 +48,7 @@
                 <option value="<?php echo $key; ?>" <?php echo $librarySort === $key ? 'selected' : ''; ?>><?php echo $label; ?></option>
             <?php endforeach; ?>
         </select>
-        <button type="submit" class="bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold uppercase tracking-wider px-4 py-2 rounded-sm transition-colors">Filtrar</button>
+        <button type="submit" class="btn btn-primary">Filtrar</button>
     </form>
 <?php endif; ?>
 

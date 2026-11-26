@@ -24,64 +24,60 @@
     $isProfileArea = in_array($currentAction, ['profile', 'edit_profile', 'change_password'], true);
     $isSearchPage  = $currentAction === 'search';
 
-    // Item ativo = fundo escuro + texto violeta + sublinhado violeta.
-    // Item inativo = fundo escuro + texto branco. A borda de 3px existe nos dois para o tamanho não mudar.
-    $navBase     = 'flex items-center gap-2 px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors border-b-[3px] bg-zinc-800 hover:bg-zinc-700';
-    $navActive   = 'text-violet-400 hover:text-violet-300 border-violet-500';
-    $navInactive = 'text-white border-zinc-950 hover:border-zinc-900';
 ?>
-<header class="bg-zinc-900 border-b-4 border-violet-600 shadow-md py-3 sm:py-5 mb-8">
+<header class="bg-zinc-900 border-b-4 border-violet-600 shadow-md py-3 lg:py-0 mb-8">
     <!-- Mesma largura e respiro lateral do conteúdo das páginas, para o logo alinhar com elas -->
-    <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 flex flex-wrap sm:flex-nowrap justify-between items-center gap-3 sm:gap-4">
+    <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:h-16 flex flex-wrap lg:flex-nowrap justify-between items-center gap-3 lg:gap-4">
         <a href="index.php?action=home" class="text-xl sm:text-2xl font-black text-white tracking-tighter uppercase hover:text-violet-400 transition-colors shrink-0">MyGameLibrary</a>
 
-        <?php if (isset($_SESSION['user_id'])): ?>
-            <!-- Celular: o menu fica recolhido atrás deste botão (o ponto violeta avisa notificação nova) -->
-            <button type="button" id="mainNavToggle" class="sm:hidden relative flex items-center justify-center w-10 h-10 rounded-sm bg-zinc-800 hover:bg-zinc-700 text-white transition-colors" aria-controls="mainNavMenu" aria-expanded="false" aria-label="Abrir menu">
-                <svg id="mainNavIconOpen" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
-                <svg id="mainNavIconClose" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5 hidden"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
-                <span id="unreadDotMobile" class="hidden absolute -top-1 -right-1 w-3 h-3 rounded-full bg-violet-500 ring-2 ring-zinc-900"></span>
+        <?php if (isset($_SESSION['user_id'])): $me = mgl_current_user(); $meAvatar = mgl_avatar_url($me['avatar'] ?? null); $meName = ($me['display_name'] ?? '') ?: ($_SESSION['username'] ?? ''); ?>
+            <!-- Celular/tablet: o menu fica recolhido atrás deste botão (o ponto violeta avisa notificação nova) -->
+            <button type="button" id="mainNavToggle" class="lg:hidden relative flex items-center justify-center w-[34px] h-[34px] bg-zinc-800 hover:bg-zinc-700 text-white transition-colors" aria-controls="mainNavMenu" aria-expanded="false" aria-label="Abrir menu">
+                <svg id="mainNavIconOpen" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-5 h-5"><path stroke-linecap="square" d="M4 7h16M4 12h16M4 17h16"/></svg>
+                <svg id="mainNavIconClose" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-5 h-5 hidden"><path stroke-linecap="square" d="M6 6l12 12M18 6L6 18"/></svg>
+                <span id="unreadDotMobile" class="hidden absolute -top-1 -right-1 w-3 h-3 bg-violet-500 ring-2 ring-zinc-900"></span>
             </button>
 
-            <div id="mainNavMenu" class="hidden sm:flex w-full sm:w-auto flex-wrap items-center justify-center gap-2 pt-2 sm:pt-0">
-                <div class="relative w-full sm:w-auto order-last sm:order-none basis-full sm:basis-auto">
-                    <input type="text" id="userSearchInput" autocomplete="off" placeholder="Buscar usuários..."
-                           class="w-full sm:w-44 bg-zinc-800 border-2 border-zinc-800 focus:border-violet-500 text-white placeholder-zinc-500 text-sm rounded-sm px-3 py-2.5 focus:outline-none transition-colors">
-                    <div id="userSearchDropdown" class="hidden absolute left-0 top-12 w-72 bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-2xl max-h-96 overflow-y-auto z-50 divide-y divide-zinc-800"></div>
+            <div id="mainNavMenu" class="hidden lg:flex lg:flex-1 w-full lg:w-auto flex-wrap lg:flex-nowrap items-center gap-2 lg:gap-3 pt-2 lg:pt-0">
+                <!-- Abas encaixadas: a página atual acende em roxo -->
+                <nav class="seg w-full lg:w-auto lg:ml-4" aria-label="Páginas">
+                    <?php foreach ($navLinks as $key => $link): $isCurrent = $currentAction === $key; ?>
+                        <a href="index.php?action=<?php echo $link['action']; ?>"
+                           <?php echo $isCurrent ? 'aria-current="page"' : ''; ?>
+                           class="seg-item !h-[30px] lg:!px-4 !text-xs !tracking-wider <?php echo $isCurrent ? 'is-on' : ''; ?>">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 shrink-0"><?php echo $link['icon']; ?></svg>
+                            <?php echo $link['label']; ?>
+                        </a>
+                    <?php endforeach; ?>
+                </nav>
+
+                <div class="relative w-full lg:w-auto lg:ml-auto order-last lg:order-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path stroke-linecap="square" d="m20 20-3.5-3.5"/></svg>
+                    <input type="text" id="userSearchInput" autocomplete="off" placeholder="Buscar usuários" aria-label="Buscar usuários"
+                           class="w-full lg:w-36 xl:w-44 2xl:w-52 h-[34px] bg-zinc-950 border-2 border-zinc-800 focus:border-violet-500 text-white placeholder-zinc-500 text-[13px] pl-8 pr-3 focus:outline-none transition-colors">
+                    <div id="userSearchDropdown" class="hidden absolute left-0 top-[calc(100%+8px)] w-72 bg-zinc-900 border-2 border-zinc-800 shadow-2xl max-h-96 overflow-y-auto z-50 divide-y divide-zinc-800"></div>
                 </div>
 
-                <?php foreach ($navLinks as $key => $link): ?>
-                    <a href="index.php?action=<?php echo $link['action']; ?>"
-                       <?php echo $currentAction === $key ? 'aria-current="page"' : ''; ?>
-                       class="<?php echo $navBase . ' ' . ($currentAction === $key ? $navActive : $navInactive); ?>">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-4 h-4 shrink-0"><?php echo $link['icon']; ?></svg>
-                        <?php echo $link['label']; ?>
-                    </a>
-                <?php endforeach; ?>
-
-                <a href="index.php?action=search"
-                   <?php echo $isSearchPage ? 'aria-current="page"' : ''; ?>
-                   class="bg-violet-600 hover:bg-violet-700 border-b-[3px] border-violet-600 hover:border-violet-700 text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors shadow-lg flex items-center gap-2<?php echo $isSearchPage ? ' ring-2 ring-violet-300 ring-offset-2 ring-offset-zinc-900' : ''; ?>">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 shrink-0">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
-                    Adicionar Jogo
+                <a href="index.php?action=search" <?php echo $isSearchPage ? 'aria-current="page"' : ''; ?>
+                   title="Adicionar jogo" class="btn btn-primary flex-1 lg:flex-none lg:px-2.5 xl:px-4<?php echo $isSearchPage ? ' ring-2 ring-violet-400 ring-offset-2 ring-offset-zinc-900' : ''; ?>">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-3.5 h-3.5"><path stroke-linecap="square" d="M12 5v14M5 12h14"/></svg>
+                    <span class="lg:hidden xl:inline">Adicionar jogo</span>
                 </a>
 
                 <div class="relative">
-                    <button id="notificationBell" class="relative flex items-center justify-center w-10 h-10 rounded-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                    <button id="notificationBell" aria-label="Notificações" class="relative flex items-center justify-center w-[34px] h-[34px] bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
                             <path d="M12 2a6 6 0 0 0-6 6v3.586l-1.707 1.707A1 1 0 0 0 5 15h14a1 1 0 0 0 .707-1.707L18 11.586V8a6 6 0 0 0-6-6zm0 20a3 3 0 0 0 3-3H9a3 3 0 0 0 3 3z"/>
                         </svg>
-                        <span id="unreadCount" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 items-center justify-center rounded-full bg-violet-600 text-white text-[10px] font-bold leading-none">0</span>
+                        <span id="unreadCount" class="hidden absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 items-center justify-center bg-violet-600 text-white text-[10px] font-black leading-none">0</span>
                     </button>
 
-                    <div id="notificationPanel" class="hidden absolute right-0 top-12 w-80 sm:w-96 bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-2xl max-h-[28rem] overflow-y-auto z-50">
-                        <div class="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+                    <div id="notificationPanel" class="hidden absolute right-0 top-[calc(100%+8px)] w-80 sm:w-96 bg-zinc-900 border-2 border-zinc-800 shadow-2xl max-h-[28rem] overflow-y-auto z-50">
+                        <div class="flex items-center justify-between px-4 py-3 border-b-2 border-zinc-800">
                             <h3 class="text-white font-black uppercase text-sm tracking-wide">Notificações</h3>
-                            <div class="flex items-center gap-3">
-                                <button id="markAllRead" class="text-violet-400 hover:text-violet-300 text-xs font-bold uppercase tracking-wide">Marcar tudo lido</button>
-                                <button id="clearAllNotifications" class="text-zinc-500 hover:text-red-400 text-xs font-bold uppercase tracking-wide">Limpar</button>
+                            <div class="flex items-center gap-4">
+                                <button id="markAllRead" class="btn-link !text-violet-400 hover:!text-violet-300">Marcar tudo lido</button>
+                                <button id="clearAllNotifications" class="btn-link is-danger">Limpar</button>
                             </div>
                         </div>
                         <div id="notificationsList" class="divide-y divide-zinc-800"></div>
@@ -89,28 +85,28 @@
                 </div>
 
                 <div class="relative">
-                    <button id="profileMenuButton" class="<?php echo $navBase . ' ' . ($isProfileArea ? $navActive : $navInactive); ?>">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-4 h-4 shrink-0">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                        </svg>
-                        Perfil
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5">
-                            <path d="M12 15.5 5 8.5h14z"/>
-                        </svg>
+                    <button id="profileMenuButton" aria-label="Menu do perfil" class="flex items-center h-[34px] border-2 <?php echo $isProfileArea ? 'border-violet-500' : 'border-zinc-800 hover:border-zinc-600'; ?> bg-zinc-950 text-zinc-200 hover:text-white transition-colors">
+                        <?php if ($meAvatar): ?>
+                            <img src="<?php echo htmlspecialchars($meAvatar); ?>" alt="" class="w-[30px] h-[30px] object-cover bg-zinc-800">
+                        <?php else: ?>
+                            <span class="w-[30px] h-[30px] flex items-center justify-center bg-violet-600 text-white text-sm font-black uppercase"><?php echo htmlspecialchars(mb_substr($meName, 0, 1)); ?></span>
+                        <?php endif; ?>
+                        <span class="hidden xl:block max-w-[9rem] truncate pl-2.5 text-xs font-extrabold uppercase tracking-wider"><?php echo htmlspecialchars($meName); ?></span>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5 mx-2 text-zinc-500"><path d="M12 15.5 5 8.5h14z"/></svg>
                     </button>
 
-                    <div id="profileMenuPanel" class="hidden absolute right-0 top-12 w-56 bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-2xl z-50 divide-y divide-zinc-800 overflow-hidden">
-                        <a href="index.php?action=profile" class="block px-4 py-3 text-sm font-bold uppercase tracking-wide text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors">Meu Perfil</a>
-                        <a href="index.php?action=year_review" class="block px-4 py-3 text-sm font-bold uppercase tracking-wide text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors">Retrospectiva <?php echo date('Y'); ?></a>
-                        <a href="index.php?action=export_library" class="block px-4 py-3 text-sm font-bold uppercase tracking-wide text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors">Exportar biblioteca (CSV)</a>
-                        <a href="index.php?action=edit_profile" class="block px-4 py-3 text-sm font-bold uppercase tracking-wide text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors">Editar Perfil</a>
-                        <a href="index.php?action=change_password" class="block px-4 py-3 text-sm font-bold uppercase tracking-wide text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors">Alterar Senha</a>
-                        <a href="index.php?action=logout" class="block px-4 py-3 text-sm font-bold uppercase tracking-wide text-zinc-300 hover:bg-red-600 hover:text-white transition-colors">Sair</a>
+                    <div id="profileMenuPanel" class="hidden absolute right-0 top-[calc(100%+8px)] w-60 bg-zinc-900 border-2 border-zinc-800 shadow-2xl z-50 divide-y divide-zinc-800 overflow-hidden">
+                        <a href="index.php?action=profile" class="block px-4 py-3 text-xs font-extrabold uppercase tracking-wider text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors">Meu Perfil</a>
+                        <a href="index.php?action=year_review" class="block px-4 py-3 text-xs font-extrabold uppercase tracking-wider text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors">Retrospectiva <?php echo date('Y'); ?></a>
+                        <a href="index.php?action=export_library" class="block px-4 py-3 text-xs font-extrabold uppercase tracking-wider text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors">Exportar biblioteca (CSV)</a>
+                        <a href="index.php?action=edit_profile" class="block px-4 py-3 text-xs font-extrabold uppercase tracking-wider text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors">Editar Perfil</a>
+                        <a href="index.php?action=change_password" class="block px-4 py-3 text-xs font-extrabold uppercase tracking-wider text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors">Alterar Senha</a>
+                        <a href="index.php?action=logout" class="block px-4 py-3 text-xs font-extrabold uppercase tracking-wider text-zinc-300 hover:bg-red-600 hover:text-white transition-colors">Sair</a>
                     </div>
                 </div>
             </div>
         <?php else: ?>
-            <a href="index.php?action=login" class="bg-violet-600 hover:bg-violet-500 text-white px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm transition-colors shrink-0">Entrar</a>
+            <a href="index.php?action=login" class="btn btn-primary shrink-0">Entrar</a>
         <?php endif; ?>
     </div>
 </header>

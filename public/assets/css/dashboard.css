@@ -38,20 +38,30 @@
   letter-spacing: -0.01em;
 }
 
+/* Mesmo visual das barras encaixadas do resto do site (estilo D) */
 .dash-tabs {
   display: flex;
-  border: 1px solid var(--d-line);
-  border-radius: 6px;
-  overflow: hidden;
+  border: 2px solid var(--d-line);
+  background: #09090b;
 }
 
 .dash-tab {
-  padding: 0.4rem 1rem;
+  display: flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 1rem;
   color: var(--d-muted);
-  font-size: 0.8125rem;
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   text-decoration: none;
+  border-right: 2px solid var(--d-line);
   transition: background-color 0.15s, color 0.15s;
+}
+
+.dash-tab:last-child {
+  border-right: 0;
 }
 
 .dash-tab:hover {
@@ -128,8 +138,8 @@
 .dash-box {
   padding: 0.25rem 1rem;
   background: var(--d-surface);
-  border: 1px solid var(--d-line);
-  border-radius: 6px;
+  border: 2px solid var(--d-line);
+  border-radius: 2px;
 }
 
 .dash-empty {

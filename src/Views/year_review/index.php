@@ -52,7 +52,7 @@
                             </select>
                         </form>
                     <?php endif; ?>
-                    <button type="button" id="shareReview" data-url="<?php echo htmlspecialchars($shareUrl); ?>" data-title="<?php echo htmlspecialchars($pageTitle); ?>" class="bg-violet-600 hover:bg-violet-500 text-white px-5 py-3 rounded-sm font-bold uppercase tracking-wide text-xs transition-colors">Compartilhar</button>
+                    <button type="button" id="shareReview" data-url="<?php echo htmlspecialchars($shareUrl); ?>" data-title="<?php echo htmlspecialchars($pageTitle); ?>" class="btn btn-primary">Compartilhar</button>
                 </div>
             </div>
 
@@ -197,15 +197,33 @@
                 <h2 id="completedTitle" class="text-xl font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3">Todos os zerados</h2>
                 <button type="button" id="clearMonthFilter" class="hidden text-xs font-bold uppercase tracking-wider text-violet-400 hover:text-violet-300">Ver todos</button>
             </div>
-            <ol class="bg-zinc-900 border-2 border-zinc-800 rounded-sm divide-y divide-zinc-800 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto">
-                <?php foreach ($review['completed'] as $g): ?>
-                    <li class="flex items-center gap-3 px-4 py-3 text-sm" data-month="<?php echo (int) substr($g['completion_date'], 5, 2); ?>">
-                        <span class="w-14 shrink-0 text-xs text-zinc-500"><?php echo date('d/m', strtotime($g['completion_date'])); ?></span>
-                        <a href="<?php echo htmlspecialchars($retroGameUrl($g['id'])); ?>" class="flex-1 min-w-0 font-bold text-white hover:text-violet-300 truncate"><?php echo htmlspecialchars($g['title']); ?></a>
-                        <?php if (!empty($g['platinum_at'])): ?><span title="Platinado">🏆</span><?php endif; ?>
-                        <?php if ($g['rating']): ?><span class="text-amber-400 text-xs shrink-0"><?php echo str_repeat('★', (int) $g['rating']); ?></span><?php endif; ?>
-                        <?php if ($g['time_spent_hours']): ?><span class="w-12 text-right text-xs text-zinc-500 shrink-0"><?php echo $fmtHours($g['time_spent_hours']); ?> h</span><?php endif; ?>
+            <!-- Colunas fixas (data | capa | jogo | platina | nota | horas): tudo alinha mesmo quando falta algum dado -->
+            <ol class="bg-zinc-900 border-2 border-zinc-800 rounded-sm lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto">
+                <?php foreach ($gamesByMonth as $m => $monthGames): if (!$monthGames) continue; ?>
+                    <li data-month="<?php echo $m; ?>" class="sticky top-0 z-10 flex items-center justify-between px-4 py-2 bg-zinc-950/95 backdrop-blur border-b border-zinc-800">
+                        <span class="text-[11px] font-black uppercase tracking-widest text-emerald-400"><?php echo mgl_month_pt($m); ?></span>
+                        <span class="text-[11px] font-bold text-zinc-500"><?php echo count($monthGames); ?> <?php echo count($monthGames) === 1 ? 'jogo' : 'jogos'; ?></span>
                     </li>
+                    <?php foreach ($monthGames as $g): $rating = (int) $g['rating']; ?>
+                        <li data-month="<?php echo $m; ?>" class="grid grid-cols-[2.5rem_2rem_minmax(0,1fr)_1.25rem_4.75rem_2.75rem] items-center gap-3 px-4 py-2.5 text-sm border-b border-zinc-800/70 last:border-b-0 hover:bg-zinc-800/40 transition-colors">
+                            <span class="text-xs tabular-nums text-zinc-500"><?php echo date('d/m', strtotime($g['completion_date'])); ?></span>
+                            <span class="w-8 h-11 rounded-sm overflow-hidden bg-zinc-800 border border-zinc-700">
+                                <?php if (!empty($g['cover_image'])): ?>
+                                    <img src="<?php echo htmlspecialchars($g['cover_image']); ?>" alt="" loading="lazy" class="w-full h-full object-cover">
+                                <?php endif; ?>
+                            </span>
+                            <a href="<?php echo htmlspecialchars($retroGameUrl($g['id'])); ?>" class="min-w-0 font-bold text-white hover:text-violet-300 truncate" title="<?php echo htmlspecialchars($g['title']); ?>"><?php echo htmlspecialchars($g['title']); ?></a>
+                            <span class="text-center"><?php echo !empty($g['platinum_at']) ? '<span title="Platinado">🏆</span>' : ''; ?></span>
+                            <span class="text-xs tracking-tight text-right whitespace-nowrap" aria-label="<?php echo $rating ? "Nota $rating de 5" : 'Sem nota'; ?>">
+                                <?php if ($rating): ?>
+                                    <span class="text-amber-400"><?php echo str_repeat('★', $rating); ?></span><span class="text-zinc-700"><?php echo str_repeat('★', 5 - $rating); ?></span>
+                                <?php else: ?>
+                                    <span class="text-zinc-600">—</span>
+                                <?php endif; ?>
+                            </span>
+                            <span class="text-xs tabular-nums text-right <?php echo $g['time_spent_hours'] ? 'text-zinc-400' : 'text-zinc-600'; ?>"><?php echo $g['time_spent_hours'] ? $fmtHours($g['time_spent_hours']) . ' h' : '—'; ?></span>
+                        </li>
+                    <?php endforeach; ?>
                 <?php endforeach; ?>
             </ol>
         </section>

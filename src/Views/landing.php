@@ -12,7 +12,7 @@ require_once __DIR__ . '/header.php';
             <a href="index.php" class="text-xl font-black text-white tracking-tighter uppercase">MyGameLibrary</a>
             <nav class="flex items-center gap-5">
                 <a href="index.php?action=login" class="text-sm font-bold text-zinc-300 hover:text-white transition-colors">Entrar</a>
-                <a href="index.php?action=register" class="btn-primary">Criar conta</a>
+                <a href="index.php?action=register" class="btn btn-primary">Criar conta</a>
             </nav>
         </div>
     </header>
@@ -29,7 +29,7 @@ require_once __DIR__ . '/header.php';
                     Dê nota, escreva a review e veja o que seus amigos andam jogando.
                 </p>
                 <div class="mt-9 flex flex-wrap items-center gap-4">
-                    <a href="index.php?action=register" class="bg-violet-600 hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white text-white font-black px-7 py-4 rounded-sm border-b-4 border-violet-900 transition-colors">Criar minha biblioteca</a>
+                    <a href="index.php?action=register" class="btn btn-primary btn-lg">Criar minha biblioteca</a>
                     <a href="index.php?action=login" class="text-zinc-300 hover:text-white font-bold underline underline-offset-4 decoration-zinc-600 hover:decoration-violet-500 transition-colors">Já tenho conta</a>
                 </div>
                 <p class="mt-5 text-sm text-zinc-500">Grátis. Você só precisa confirmar seu e-mail.</p>
@@ -137,7 +137,7 @@ require_once __DIR__ . '/header.php';
         <section class="border-t-4 border-violet-600 bg-zinc-900">
             <div class="max-w-6xl mx-auto px-6 py-16 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
                 <h2 class="text-3xl font-black text-white tracking-tighter">Comece pelo backlog.</h2>
-                <a href="index.php?action=register" class="self-start sm:self-auto bg-violet-600 hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white text-white font-black px-7 py-4 rounded-sm border-b-4 border-violet-900 transition-colors">Criar minha biblioteca</a>
+                <a href="index.php?action=register" class="btn btn-primary btn-lg self-start sm:self-auto">Criar minha biblioteca</a>
             </div>
         </section>
     </main>

@@ -81,10 +81,10 @@
                         <?php if ($canReply || $canDelete): ?>
                             <div class="flex items-center gap-4 mt-2">
                                 <?php if ($canReply): ?>
-                                    <button type="button" class="comment-reply-btn text-zinc-500 hover:text-violet-400 text-xs font-bold uppercase tracking-wide transition-colors">Responder</button>
+                                    <button type="button" class="comment-reply-btn btn-link">Responder</button>
                                 <?php endif; ?>
                                 <?php if ($canDelete): ?>
-                                    <button type="button" class="comment-delete-btn text-zinc-500 hover:text-red-400 text-xs font-bold uppercase tracking-wide transition-colors">Apagar</button>
+                                    <button type="button" class="comment-delete-btn btn-link is-danger">Apagar</button>
                                 <?php endif; ?>
                             </div>
                         <?php endif; ?>
@@ -126,8 +126,8 @@
                     <div class="w-full h-full bg-gradient-to-r from-violet-900 to-zinc-900"></div>
                 <?php endif; ?>
                 
-                <button type="button" id="openShareProfile" class="absolute top-4 right-4 bg-black/50 hover:bg-black/80 backdrop-blur-sm text-white px-3 py-2 rounded-sm text-xs font-bold uppercase tracking-wider transition-colors border border-white/10 z-10">
-                    🔗 Compartilhar
+                <button type="button" id="openShareProfile" class="btn btn-secondary absolute top-4 right-4 z-10 !bg-zinc-950/80 backdrop-blur-sm">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" class="w-3.5 h-3.5" aria-hidden="true"><path stroke-linecap="square" d="M7 17 17 7M9 7h8v8"/></svg>Compartilhar
                 </button>
             </div>
 
@@ -161,12 +161,12 @@
                         </div>
                         
                         <?php if ($isOwner): ?>
-                            <a href="index.php?action=edit_profile" class="mt-4 sm:mt-0 bg-zinc-200 hover:bg-white text-zinc-900 px-6 py-2.5 rounded-sm font-black uppercase tracking-wide text-xs transition-colors shadow-lg shrink-0">
-                                Editar Perfil
+                            <a href="index.php?action=edit_profile" class="btn btn-secondary mt-4 sm:mt-0 shrink-0">
+                                Editar perfil
                             </a>
                         <?php elseif ($currentUserId !== null): ?>
-                            <button id="followBtn" class="mt-4 sm:mt-0 <?php echo $isFollowing ? 'bg-zinc-700 hover:bg-zinc-600' : 'bg-violet-600 hover:bg-violet-500'; ?> text-white px-6 py-2.5 rounded-sm font-black uppercase tracking-wide text-xs transition-colors shadow-lg shrink-0" data-user-id="<?= $profileUserId ?>" data-is-following="<?php echo $isFollowing ? 'true' : 'false'; ?>">
-                                <?php echo $isFollowing ? 'Deixar de Seguir' : 'Seguir'; ?>
+                            <button id="followBtn" class="btn mt-4 sm:mt-0 shrink-0 <?php echo $isFollowing ? 'btn-secondary' : 'btn-accent'; ?>" data-user-id="<?= $profileUserId ?>" data-is-following="<?php echo $isFollowing ? 'true' : 'false'; ?>">
+                                <?php echo $isFollowing ? 'Deixar de seguir' : 'Seguir'; ?>
                             </button>
                         <?php endif; ?>
                     </div>
@@ -291,7 +291,7 @@
             <?php if ($currentUserId !== null): ?>
                 <form id="newCommentForm" class="flex flex-col sm:flex-row gap-3 mb-8">
                     <textarea name="content" maxlength="1000" rows="2" required placeholder="Deixe um comentário no perfil de <?php echo htmlspecialchars($profileUser['display_name'] ?: $profileUser['username']); ?>..." class="flex-1 bg-zinc-950 border-2 border-zinc-800 rounded-sm p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-violet-500 resize-none"></textarea>
-                    <button type="submit" class="shrink-0 bg-violet-600 hover:bg-violet-500 text-white px-6 py-2.5 rounded-sm font-black uppercase tracking-wide text-xs transition-colors self-start sm:self-end">Comentar</button>
+                    <button type="submit" class="btn btn-primary shrink-0 self-start sm:self-end">Comentar</button>
                 </form>
             <?php else: ?>
                 <p class="text-zinc-500 text-sm mb-8">
@@ -312,8 +312,8 @@
                 <form class="comment-reply-form flex flex-col sm:flex-row gap-2 mt-3 pl-10">
                     <textarea name="content" maxlength="1000" rows="1" required placeholder="Escreva uma resposta..." class="flex-1 bg-zinc-950 border-2 border-zinc-800 rounded-sm p-2 text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-violet-500 resize-none"></textarea>
                     <div class="flex gap-2 shrink-0 self-start sm:self-end">
-                        <button type="submit" class="bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 rounded-sm font-black uppercase tracking-wide text-[10px] transition-colors">Responder</button>
-                        <button type="button" class="comment-reply-cancel bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-2 rounded-sm font-black uppercase tracking-wide text-[10px] transition-colors">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Responder</button>
+                        <button type="button" class="btn btn-secondary comment-reply-cancel">Cancelar</button>
                     </div>
                 </form>
             </template>
@@ -340,14 +340,14 @@
                 <?php endif; ?>
                 <div class="flex gap-2">
                     <input id="shareProfileUrl" type="text" readonly value="<?php echo htmlspecialchars($profileShareUrl); ?>" class="flex-1 min-w-0 bg-zinc-950 border-2 border-zinc-800 text-zinc-300 text-sm rounded-sm px-3 py-2.5 focus:outline-none focus:border-violet-500">
-                    <button type="button" id="copyProfileUrl" class="shrink-0 bg-violet-600 hover:bg-violet-500 text-white px-4 py-2.5 rounded-sm font-bold uppercase tracking-wide text-xs transition-colors">Copiar link</button>
+                    <button type="button" id="copyProfileUrl" class="btn btn-primary shrink-0 h-auto">Copiar link</button>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <button type="button" id="nativeShareProfile" class="hidden bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2.5 rounded-sm font-bold uppercase tracking-wide text-xs transition-colors">Compartilhar…</button>
+                    <button type="button" id="nativeShareProfile" class="btn btn-secondary hidden">Compartilhar…</button>
                     <?php if ($cardSupported): ?>
-                        <a id="downloadProfileCard" href="<?php echo htmlspecialchars($profileCardUrl); ?>" download="mygamelibrary-<?php echo htmlspecialchars($profileUser['username'] ?? 'perfil'); ?>.jpg" class="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2.5 rounded-sm font-bold uppercase tracking-wide text-xs transition-colors">Baixar imagem</a>
+                        <a id="downloadProfileCard" href="<?php echo htmlspecialchars($profileCardUrl); ?>" download="mygamelibrary-<?php echo htmlspecialchars($profileUser['username'] ?? 'perfil'); ?>.jpg" class="btn btn-secondary">Baixar imagem</a>
                     <?php endif; ?>
-                    <a href="<?php echo htmlspecialchars(mgl_url('year_review', ['u' => $profileUser['username'] ?? ''])); ?>" class="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2.5 rounded-sm font-bold uppercase tracking-wide text-xs transition-colors">Ver retrospectiva <?php echo date('Y'); ?></a>
+                    <a href="<?php echo htmlspecialchars(mgl_url('year_review', ['u' => $profileUser['username'] ?? ''])); ?>" class="btn btn-secondary">Ver retrospectiva <?php echo date('Y'); ?></a>
                 </div>
             </div>
         </div>

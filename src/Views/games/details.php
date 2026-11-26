@@ -79,10 +79,10 @@
                     <?php if ($canReply || $canDelete): ?>
                         <div class="flex items-center gap-4 mt-2">
                             <?php if ($canReply): ?>
-                                <button type="button" class="comment-reply-btn text-zinc-500 hover:text-violet-400 text-xs font-bold uppercase tracking-wide transition-colors">Responder</button>
+                                <button type="button" class="comment-reply-btn btn-link">Responder</button>
                             <?php endif; ?>
                             <?php if ($canDelete): ?>
-                                <button type="button" class="comment-delete-btn text-zinc-500 hover:text-red-400 text-xs font-bold uppercase tracking-wide transition-colors">Apagar</button>
+                                <button type="button" class="comment-delete-btn btn-link is-danger">Apagar</button>
                             <?php endif; ?>
                         </div>
                     <?php endif; ?>
@@ -119,10 +119,10 @@
                 <?php endif; ?>
             </h1>
             <?php if (!empty($game['id'])): ?>
-                <a href="<?php echo htmlspecialchars(mgl_game_url($game['id'])); ?>" class="hidden sm:inline-block bg-zinc-800 hover:bg-zinc-700 text-violet-300 px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm border-b-2 border-zinc-950 transition-colors shrink-0">Página do jogo</a>
+                <a href="<?php echo htmlspecialchars(mgl_game_url($game['id'])); ?>" class="btn btn-secondary hidden sm:inline-flex shrink-0 !text-violet-300"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-3.5 h-3.5" aria-hidden="true"><path stroke-linecap="square" d="M7 17 17 7M9 7h8v8"/></svg>Página do jogo</a>
             <?php endif; ?>
-            <a href="<?php echo $isOwner ? 'index.php?action=home' : 'index.php?action=profile&u=' . urlencode($username_profile); ?>" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-5 py-2.5 rounded-sm font-bold uppercase tracking-wide text-sm border-b-2 border-zinc-950 hover:border-zinc-900 transition-colors shrink-0">
-                <?php echo $isOwner ? 'Voltar à Biblioteca' : 'Voltar ao Perfil'; ?>
+            <a href="<?php echo $isOwner ? 'index.php?action=home' : 'index.php?action=profile&u=' . urlencode($username_profile); ?>" class="btn btn-secondary shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-3.5 h-3.5" aria-hidden="true"><path stroke-linecap="square" d="M15 18l-6-6 6-6"/></svg><?php echo $isOwner ? 'Biblioteca' : 'Perfil'; ?>
             </a>
         </div>
 
@@ -150,46 +150,46 @@
                 </div>
                 
                 <div class="bg-zinc-950 border-2 border-zinc-800 p-4 rounded-sm text-center" id="statusCard">
-                    <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-1">Status Atual</span>
+                    <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-1">Status</span>
                     <?php if ($isOwner): ?>
                         <?php $currentStatus = $game['status'] ?? ''; ?>
                         <span id="statusLabel" class="text-xl font-bold <?php
                             echo isset($game['status']) ? match($game['status']) {
                                 'Jogando' => 'text-blue-400',
-                                'Completo' => 'text-emerald-400',
+                                'Zerado' => 'text-emerald-400',
                                 'Dropado' => 'text-amber-400',
                                 'Quero jogar' => 'text-fuchsia-400',
                                 default => 'text-white'
                             } : 'text-zinc-600';
                         ?> uppercase tracking-tight block mb-3"><?php echo isset($game['status']) ? htmlspecialchars($game['status']) : 'N/A'; ?></span>
 
-                        <div class="grid grid-cols-3 gap-1.5">
-                            <form class="detailStatusForm" data-status="Jogando">
+                        <div class="seg">
+                            <form class="detailStatusForm flex-1 flex" data-status="Jogando">
                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                                 <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($game_id ?? ''); ?>">
                                 <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating'] ?? ''); ?>">
                                 <input type="hidden" name="status" value="Jogando">
-                                <button type="submit" class="detail-status-btn status-btn w-full text-[10px] font-bold uppercase py-2 bg-blue-600 text-white rounded-sm hover:bg-blue-500 transition-all duration-200 <?php echo $currentStatus === 'Jogando' ? 'is-active' : 'is-inactive'; ?>">Jogando</button>
+                                <button type="submit" data-status-btn="Jogando" class="detail-status-btn status-btn seg-item w-full <?php echo $currentStatus === 'Jogando' ? 'is-active' : 'is-inactive'; ?>">Jogando</button>
                             </form>
-                            <form class="detailStatusForm" data-status="Zerado">
+                            <form class="detailStatusForm flex-1 flex" data-status="Zerado">
                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                                 <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($game_id ?? ''); ?>">
                                 <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating'] ?? ''); ?>">
                                 <input type="hidden" name="status" value="Zerado">
-                                <button type="submit" class="detail-status-btn status-btn w-full text-[10px] font-bold uppercase py-2 bg-emerald-600 text-white rounded-sm hover:bg-emerald-500 transition-all duration-200 <?php echo $currentStatus === 'Zerado' ? 'is-active' : 'is-inactive'; ?>">Zerado</button>
+                                <button type="submit" data-status-btn="Zerado" class="detail-status-btn status-btn seg-item w-full <?php echo $currentStatus === 'Zerado' ? 'is-active' : 'is-inactive'; ?>">Zerado</button>
                             </form>
-                            <form class="detailStatusForm" data-status="Dropado">
+                            <form class="detailStatusForm flex-1 flex" data-status="Dropado">
                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                                 <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($game_id ?? ''); ?>">
                                 <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating'] ?? ''); ?>">
                                 <input type="hidden" name="status" value="Dropado">
-                                <button type="submit" class="detail-status-btn status-btn w-full text-[10px] font-bold uppercase py-2 bg-amber-600 text-white rounded-sm hover:bg-amber-500 transition-all duration-200 <?php echo $currentStatus === 'Dropado' ? 'is-active' : 'is-inactive'; ?>">Dropado</button>
+                                <button type="submit" data-status-btn="Dropado" class="detail-status-btn status-btn seg-item w-full <?php echo $currentStatus === 'Dropado' ? 'is-active' : 'is-inactive'; ?>">Dropado</button>
                             </form>
                         </div>
 
                         <?php $isPlatinum = !empty($game['platinum_at']); $isZerado = $currentStatus === 'Zerado'; ?>
                         <button type="button" id="detailPlatinumBtn"
-                            class="mt-2 w-full flex items-center justify-center gap-2 text-[10px] font-bold uppercase py-2 rounded-sm border transition-colors <?php echo $isPlatinum ? 'bg-amber-400 border-amber-400 text-zinc-900' : ($isZerado ? 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-amber-400 hover:border-amber-400' : 'bg-zinc-900/60 border-zinc-800 text-zinc-700 cursor-not-allowed'); ?>"
+                            class="btn btn-secondary mt-2 w-full <?php echo $isPlatinum ? '!bg-amber-400 !border-amber-400 !text-zinc-950' : ($isZerado ? '!text-amber-400 hover:!border-amber-400' : ''); ?>"
                             data-game-id="<?php echo htmlspecialchars($game_id ?? ''); ?>"
                             data-platinum="<?php echo $isPlatinum ? '1' : '0'; ?>"
                             <?php echo $isZerado ? '' : 'disabled'; ?>
@@ -197,13 +197,13 @@
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5 pointer-events-none">
                                 <path d="M6 3h12v2h2a1 1 0 0 1 1 1v1a5 5 0 0 1-4.53 4.98A6.02 6.02 0 0 1 13 15.9V18h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.1a6.02 6.02 0 0 1-3.47-3.92A5 5 0 0 1 3 7V6a1 1 0 0 1 1-1h2V3Zm-2 4v0a3 3 0 0 0 2.4 2.94A9 9 0 0 1 6 7V6H4v1Zm14 0V6h-2v1a9 9 0 0 1-.4 2.94A3 3 0 0 0 18 7Z"/>
                             </svg>
-                            <?php echo $isPlatinum ? 'Platinado' : 'Marcar Platina'; ?>
+                            <?php echo $isPlatinum ? 'Platinado' : 'Marcar platina'; ?>
                         </button>
                     <?php else: ?>
                         <span class="text-xl font-bold <?php
                             echo isset($game['status']) ? match($game['status']) {
                                 'Jogando' => 'text-blue-400',
-                                'Completo' => 'text-emerald-400',
+                                'Zerado' => 'text-emerald-400',
                                 'Dropado' => 'text-amber-400',
                                 'Quero jogar' => 'text-fuchsia-400',
                                 default => 'text-white'
@@ -223,17 +223,17 @@
 
                 <?php if ($isOwner || (isset($game['rating']) && $game['rating'])): ?>
                 <div class="bg-zinc-950 border-2 border-zinc-800 p-4 rounded-sm text-center">
-                    <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-1">A Sua Nota</span>
+                    <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-3"><?php echo $isOwner ? 'Sua nota' : 'Nota'; ?></span>
                     <?php if ($isOwner): ?>
                         <form id="detailRatingForm">
                             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                             <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($game_id ?? ''); ?>">
                             <input type="hidden" name="status" value="<?php echo htmlspecialchars($game['status'] ?? ''); ?>">
-                            <div class="flex gap-1 w-full">
+                            <div class="seg">
                                 <?php for($i=1; $i<=5; $i++): ?>
-                                <label class="flex-1 cursor-pointer">
+                                <label class="flex-1 cursor-pointer border-r-2 border-zinc-800 last:border-r-0">
                                     <input type="radio" name="rating" value="<?php echo $i; ?>" class="peer sr-only" <?php if (isset($game['rating']) && $game['rating'] == $i) echo 'checked'; ?>>
-                                    <div class="py-1.5 text-center bg-zinc-900 text-zinc-600 peer-checked:bg-amber-400 peer-checked:text-zinc-900 border border-zinc-800 peer-checked:border-amber-400 font-black rounded-sm text-sm hover:bg-zinc-800 hover:text-zinc-300 transition-all">
+                                    <div class="h-8 flex items-center justify-center text-xs font-extrabold text-zinc-400 hover:bg-zinc-800 hover:text-white peer-checked:bg-amber-400 peer-checked:text-zinc-950 peer-focus-visible:ring-2 peer-focus-visible:ring-violet-400 transition-colors">
                                         <?php echo $i; ?>
                                     </div>
                                 </label>
@@ -273,7 +273,7 @@
                 <?php endif; ?>
             </div>
 
-            <div class="w-full md:w-2/3 flex flex-col">
+            <div class="w-full md:flex-1 min-w-0 flex flex-col">
                 
                 <div>
                     <h3 class="text-xl font-bold text-white mb-2 uppercase tracking-tight">Descrição</h3>
@@ -309,7 +309,7 @@
                     <?php endif; ?>
                 </div>
 
-                <div class="mt-6 flex-grow">
+                <div class="mt-6">
                     <h3 class="text-xl font-bold text-white mb-2 uppercase tracking-tight">Análise</h3>
                     
                     <?php if (isset($isOwner) && $isOwner): ?>
@@ -328,7 +328,7 @@
                                 </label>
                             </div>
                             <div>
-                                <button type="submit" class="w-full sm:w-auto bg-violet-600 hover:bg-violet-500 text-white px-8 py-3 rounded-sm font-black uppercase tracking-widest text-sm transition-colors shadow-lg">Salvar Análise</button>
+                                <button type="submit" class="btn btn-primary btn-lg w-full sm:w-auto">Salvar Análise</button>
                             </div>
                         </form>
                     <?php else: ?>
@@ -351,7 +351,7 @@
                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                                 <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($game_id ?? ''); ?>">
                                 <input type="text" name="tags" id="addTagInput" placeholder="Adicionar tags separadas por vírgula" class="flex-1 bg-zinc-900 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
-                                <button type="submit" class="shrink-0 bg-violet-600 hover:bg-violet-500 text-white px-6 rounded-sm font-black uppercase tracking-wide text-xs transition-colors">Adicionar</button>
+                                <button type="submit" class="btn btn-secondary shrink-0 sm:h-auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-3.5 h-3.5" aria-hidden="true"><path stroke-linecap="square" d="M12 5v14M5 12h14"/></svg>Adicionar</button>
                             </form>
                             <span class="block mt-2 text-xs text-zinc-500">Exemplo: RPG, Coop, Relaxante</span>
                         <?php endif; ?>
@@ -378,7 +378,7 @@
                 <?php if ($currentUserId !== null): ?>
                     <form id="newReviewCommentForm" class="flex flex-col sm:flex-row gap-3">
                         <textarea name="content" maxlength="1000" rows="2" required placeholder="Comente esta análise..." class="flex-1 bg-zinc-900 border-2 border-zinc-800 rounded-sm p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-violet-500 resize-none"></textarea>
-                        <button type="submit" class="shrink-0 bg-violet-600 hover:bg-violet-500 text-white px-6 rounded-sm font-black uppercase tracking-wide text-xs transition-colors">Comentar</button>
+                        <button type="submit" class="btn btn-primary shrink-0 sm:h-auto">Comentar</button>
                     </form>
                 <?php else: ?>
                     <p class="text-zinc-500 text-sm">
@@ -407,8 +407,8 @@
         <form class="comment-reply-form flex flex-col sm:flex-row gap-2 mt-3 pl-10">
             <textarea name="content" maxlength="1000" rows="1" required placeholder="Escreva uma resposta..." class="flex-1 bg-zinc-950 border-2 border-zinc-800 rounded-sm p-2 text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-violet-500 resize-none"></textarea>
             <div class="flex gap-2 shrink-0 self-start sm:self-end">
-                <button type="submit" class="bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 rounded-sm font-black uppercase tracking-wide text-[10px] transition-colors">Responder</button>
-                <button type="button" class="comment-reply-cancel bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-2 rounded-sm font-black uppercase tracking-wide text-[10px] transition-colors">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Responder</button>
+                <button type="button" class="btn btn-secondary comment-reply-cancel">Cancelar</button>
             </div>
         </form>
     </template>
@@ -441,7 +441,7 @@
 
                 <div class="mt-6 flex items-center justify-end gap-3">
                     <button type="button" id="detailCancelCompletionModal" class="rounded-sm border-2 border-zinc-800 px-4 py-2 text-sm font-bold uppercase tracking-widest text-zinc-300 transition-colors hover:border-zinc-600 hover:text-white">Cancelar</button>
-                    <button type="submit" class="rounded-sm bg-violet-600 px-5 py-2.5 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-violet-500">Salvar Zerado</button>
+                    <button type="submit" class="btn btn-primary">Salvar Zerado</button>
                 </div>
             </form>
         </div>

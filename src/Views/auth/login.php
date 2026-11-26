@@ -28,7 +28,7 @@
                 <form action="index.php?action=resend_verification_public" method="post" class="mb-6">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                     <input type="hidden" name="email" value="<?php echo htmlspecialchars($unverifiedEmail); ?>">
-                    <button type="submit" class="w-full bg-amber-800/60 hover:bg-amber-800 text-amber-100 px-4 py-2.5 rounded-sm font-bold uppercase tracking-wide text-xs transition-colors">
+                    <button type="submit" class="btn btn-secondary w-full !text-amber-300 hover:!border-amber-500">
                         Reenviar e-mail de confirmação
                     </button>
                 </form>
@@ -48,7 +48,7 @@
                         class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium">
                 </div>
                 
-                <button type="submit" class="w-full bg-violet-600 hover:bg-violet-500 text-white font-black uppercase tracking-widest py-4 rounded-sm transition-colors shadow-lg mt-6">
+                <button type="submit" class="btn btn-primary btn-lg w-full mt-6">
                     Entrar
                 </button>
                 
