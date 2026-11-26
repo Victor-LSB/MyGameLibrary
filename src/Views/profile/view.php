@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-PT">
+<html lang="pt-BR">
 <head>
     <?php echo mgl_base_tag(); ?>
     <meta charset="UTF-8">

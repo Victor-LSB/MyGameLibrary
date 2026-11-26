@@ -1121,11 +1121,17 @@ class GameAPI {
         $isFree = str_ends_with($authKey, ':fx');
         $url = $isFree ? 'https://api-free.deepl.com/v2/translate' : 'https://api.deepl.com/v2/translate';
 
-        $data = http_build_query([
+        $params = [
             'text' => $htmlText,
-            'target_lang' => $targetLang ?: 'PT-BR',
+            // "PT" no DeepL é português de Portugal; força PT-BR mesmo se alguém passar só "PT"
+            'target_lang' => (!$targetLang || strtoupper($targetLang) === 'PT') ? 'PT-BR' : $targetLang,
             'tag_handling' => 'html'
-        ]);
+        ];
+        // $sourceLang vazio ('' ou null) = deixa o DeepL detectar o idioma de origem
+        if (!empty($sourceLang)) {
+            $params['source_lang'] = $sourceLang;
+        }
+        $data = http_build_query($params);
 
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
