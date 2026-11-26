@@ -140,29 +140,34 @@
 .dash-col:hover .dash-bar.is-on,
 .dash-col:focus-visible .dash-bar.is-on { border-color: #fff; }
 
+/* Capas de todos os jogos do dia/mês, inteiras (3:4), em mosaico de 1 ou 2 colunas */
 .dash-bar__covers {
-  display: flex;
-  height: 112px;
+  display: grid;
+  gap: 2px;
   flex-shrink: 0;
+  background: #10b981;
   border-bottom: 2px solid #10b981;
 }
 .dash-bar__covers img,
-.dash-bar__covers span {
-  flex: 1 1 0;
-  min-width: 0;
+.dash-bar__covers span,
+.dash-bar__fill {
+  display: block;
   width: 100%;
-  height: 100%;
+  min-width: 0;
+  aspect-ratio: 3 / 4;
   object-fit: cover;
-  object-position: center 20%;
 }
-.dash-bar__covers > * + * { border-left: 2px solid #10b981; }
 .dash-bar__covers span {
   display: grid;
   place-items: center;
-  background: #18181b;
-  color: #71717a;
+  background: linear-gradient(160deg, #3f3f46, #18181b);
+  color: #d4d4d8;
+  font-size: 11px;
   font-weight: 900;
+  overflow: hidden;
 }
+.dash-bar__fill { background: #18181b; }
+.dash-bar__stripe { flex-shrink: 0; }
 
 .dash-lbl {
   padding-top: 8px;
@@ -219,11 +224,10 @@
 @media (max-width: 639px) {
   .dash-chart { gap: 4px; }
   .dash-col { min-height: 220px; }
-  .dash-bar__covers { height: 64px; }
   .dash-lbl span { font-size: 9px; letter-spacing: 0.04em; }
   .dash-lbl b { font-size: 12px; }
   .dash-chart--year .dash-lbl span { font-size: 8px; }
-  .dash-val { font-size: 9px; }
+  .dash-val { font-size: 9px; white-space: normal; line-height: 1.1; }
 }
 
 /* ---- Diário ---- */

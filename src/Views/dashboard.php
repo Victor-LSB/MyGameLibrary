@@ -65,11 +65,13 @@
     $barArea = 232;                         // px da área do gráfico
     $withCovers = $period !== 'month';     // no mensal são ~30 barras finas demais para capa
     $minBar = $withCovers ? 140 : 24;       // altura mínima de uma barra com jogo (cabe a capa)
-    $barHeight = function (array $b) use ($maxHours, $maxCount, $barArea, $minBar): int {
+    $barRatio = fn(array $b): float => $maxHours > 0 ? $b['hours'] / $maxHours : count($b['games']) / max(1, $maxCount);
+    $barHeight = function (array $b) use ($barRatio, $barArea, $minBar): int {
         if (empty($b['games'])) return 4;
-        $ratio = $maxHours > 0 ? $b['hours'] / $maxHours : count($b['games']) / max(1, $maxCount);
-        return (int) max($minBar, round($ratio * $barArea));
+        return (int) max($minBar, round($barRatio($b) * $barArea));
     };
+    // Com capa: a capa aparece inteira (3:4) e só a faixa listrada embaixo varia com as horas
+    $stripeHeight = fn(array $b): int => (int) max(14, round($barRatio($b) * 130));
     $bucketCount = count($buckets);
 
     // Mini gráfico dos blocos de números (zerados e horas por balde)
@@ -201,13 +203,13 @@
                                     $ts = strtotime($b['date']);
                                     $has = !empty($b['games']);
                                     $tipSide = $i > $bucketCount * 0.6 ? 'right-0' : ($i <= $bucketCount * 0.4 ? 'left-0' : 'left-1/2 -translate-x-1/2');
-                                    // capa: no semanal, de cada jogo do dia; no anual, do jogo com mais horas do mês
+                                    // Capas de todos os jogos do dia/mês, inteiras, em mosaico (mais horas primeiro)
                                     $coverGames = [];
                                     if ($has && $withCovers) {
-                                        $sorted = $b['games'];
-                                        usort($sorted, fn($x, $y) => (float) $y['time_spent_hours'] <=> (float) $x['time_spent_hours']);
-                                        $coverGames = $period === 'year' ? array_slice($sorted, 0, 1) : array_slice($sorted, 0, 3);
+                                        $coverGames = $b['games'];
+                                        usort($coverGames, fn($x, $y) => (float) $y['time_spent_hours'] <=> (float) $x['time_spent_hours']);
                                     }
+                                    $mosaicCols = count($coverGames) > 1 ? 2 : 1;
                                     if ($period === 'year') {
                                         $lb = mb_substr(mgl_month_pt((int) date('n', $ts)), 0, 3);
                                         $num = null;
@@ -221,17 +223,20 @@
                                         <?php if ($has): ?>
                                             <span class="dash-val"><?php echo $b['hours'] > 0 ? $fmtHours($b['hours']) . ' h' : count($b['games']) . (count($b['games']) === 1 ? ' jogo' : ' jogos'); ?></span>
                                         <?php endif; ?>
-                                        <div class="dash-bar<?php echo $has ? ' is-on' : ''; ?><?php echo $b['future'] ? ' is-future' : ''; ?>" style="height: <?php echo $barHeight($b); ?>px">
+                                        <div class="dash-bar<?php echo $has ? ' is-on' : ''; ?><?php echo $b['future'] ? ' is-future' : ''; ?>" style="<?php echo $coverGames ? '' : 'height: ' . $barHeight($b) . 'px'; ?>">
                                             <?php if ($coverGames): ?>
-                                                <div class="dash-bar__covers">
+                                                <div class="dash-bar__covers" style="grid-template-columns: repeat(<?php echo $mosaicCols; ?>, minmax(0, 1fr))">
                                                     <?php foreach ($coverGames as $cg): ?>
                                                         <?php if (!empty($cg['cover_image'])): ?>
-                                                            <img src="<?php echo htmlspecialchars($cg['cover_image']); ?>" alt="" loading="lazy">
+                                                            <img src="<?php echo htmlspecialchars($cg['cover_image']); ?>" alt="" title="<?php echo htmlspecialchars($cg['title']); ?>" loading="lazy">
                                                         <?php else: ?>
-                                                            <span><?php echo htmlspecialchars(mb_substr($cg['title'], 0, 1)); ?></span>
+                                                            <?php $initials = mb_strtoupper(implode('', array_map(fn($w) => mb_substr($w, 0, 1), array_slice(preg_split('/\s+/u', trim(preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $cg['title']))), 0, 3)))); ?>
+                                                            <span title="<?php echo htmlspecialchars($cg['title']); ?>"><?php echo htmlspecialchars($initials); ?></span>
                                                         <?php endif; ?>
                                                     <?php endforeach; ?>
+                                                    <?php if ($mosaicCols === 2 && count($coverGames) % 2 === 1): ?><i class="dash-bar__fill"></i><?php endif; ?>
                                                 </div>
+                                                <div class="dash-bar__stripe" style="height: <?php echo $stripeHeight($b); ?>px"></div>
                                             <?php endif; ?>
                                         </div>
                                         <div class="dash-lbl<?php echo $has ? ' is-on' : ''; ?>">

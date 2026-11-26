@@ -128,9 +128,9 @@ Lembrete: depois de mexer em classes nas views, rode `npm run build` para recomp
 - Períodos de calendário (semana de segunda a domingo, mês e ano) com setas para ir ao
   período anterior/seguinte. Ao abrir, mostra o período do último jogo zerado.
 - Números com comparação com o período anterior; Platinas entrou como quarto número.
-- Gráfico "Ritmo": barras pelas horas, com a capa do jogo no topo (semanal: todos os jogos
-  do dia; anual: o jogo com mais horas do mês; mensal: só as barras). Passar o mouse mostra
-  os jogos.
+- Gráfico "Ritmo": no semanal e no anual, cada barra mostra as capas inteiras de todos os
+  jogos zerados no dia/mês (mosaico), com uma faixa listrada embaixo proporcional às horas;
+  no mensal, só as barras. Passar o mouse lista os jogos com nota e horas.
 - Coluna da direita: biblioteca por status com estimativa de horas do backlog, "Jogando
   agora" e gêneros do período.
 - Gêneros que vêm da Steam ("action", "rpg"...) agora aparecem traduzidos.
