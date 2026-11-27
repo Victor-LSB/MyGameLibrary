@@ -44,7 +44,7 @@
                     <?php foreach ($navLinks as $key => $link): $isCurrent = $currentAction === $key; ?>
                         <a href="index.php?action=<?php echo $link['action']; ?>"
                            <?php echo $isCurrent ? 'aria-current="page"' : ''; ?>
-                           class="seg-item !h-[30px] lg:!px-4 !text-xs !tracking-wider <?php echo $isCurrent ? 'is-on' : ''; ?>">
+                           class="seg-item !h-[30px] lg:!px-4 !text-[11px] min-[400px]:!text-xs !tracking-normal min-[400px]:!tracking-wider <?php echo $isCurrent ? 'is-on' : ''; ?>">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 shrink-0"><?php echo $link['icon']; ?></svg>
                             <?php echo $link['label']; ?>
                         </a>

@@ -40,7 +40,7 @@
     @apply flex border-2 border-zinc-800 bg-zinc-950;
   }
   .seg-item {
-    @apply flex-1 flex items-center justify-center gap-1.5 h-8 px-1 text-[11px] font-extrabold uppercase tracking-wide text-zinc-400 border-r-2 border-zinc-800 transition-colors cursor-pointer hover:bg-zinc-800 hover:text-white;
+    @apply min-w-0 overflow-hidden whitespace-nowrap flex-1 flex items-center justify-center gap-1.5 h-8 px-1 text-[11px] font-extrabold uppercase tracking-wide text-zinc-400 border-r-2 border-zinc-800 transition-colors cursor-pointer hover:bg-zinc-800 hover:text-white;
   }
   .seg > :last-child .seg-item,
   .seg > .seg-item:last-child {

@@ -180,13 +180,27 @@
 
                         <div class="pt-3 border-t-2 border-zinc-800">
                             <?php $currentStatus = $game['status'] ?? ''; ?>
-                            <div class="seg mt-2">
+                            <!-- Celular: os três botões não cabem com folga, então vira um seletor nativo -->
+                            <?php $cardStatus = $game['status'] ?? ''; ?>
+                            <label class="sm:hidden relative block mt-2">
+                                <span class="sr-only">Status</span>
+                                <select class="statusSelect w-full h-9 appearance-none bg-zinc-950 border-2 border-zinc-800 text-white text-[11px] font-extrabold uppercase tracking-wide pl-3 pr-7 focus:outline-none focus:border-violet-500" data-current="<?php echo htmlspecialchars($cardStatus); ?>" data-status-select="<?php echo htmlspecialchars($cardStatus); ?>">
+                                    <?php if (!in_array($cardStatus, ['Jogando', 'Zerado', 'Dropado'], true)): ?>
+                                        <option value="<?php echo htmlspecialchars($cardStatus); ?>" selected disabled><?php echo htmlspecialchars($cardStatus ?: 'Status'); ?></option>
+                                    <?php endif; ?>
+                                    <?php foreach (['Jogando', 'Zerado', 'Dropado'] as $opt): ?>
+                                        <option value="<?php echo $opt; ?>" <?php echo $cardStatus === $opt ? 'selected' : ''; ?>><?php echo $opt; ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <svg viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" aria-hidden="true"><path d="M12 15.5 5 8.5h14z"/></svg>
+                            </label>
+                            <div class="seg mt-2 hidden sm:flex">
                                 <form class="formStatus flex-1 flex" action="index.php?action=change_status" method="post">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                                     <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
                                     <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating'] ?? ''); ?>">
                                     <input type="hidden" name="status" value="Jogando">
-                                    <button type="submit" title="Jogando" data-status-btn="Jogando" class="status-btn seg-item w-full !text-[10px] sm:!text-[11px] !tracking-tight <?php echo $currentStatus === 'Jogando' ? 'is-active' : 'is-inactive'; ?>">Jogando</button>
+                                    <button type="submit" title="Jogando" data-status-btn="Jogando" class="status-btn seg-item w-full !px-1.5 !text-[9px] min-[400px]:!text-[10px] !tracking-normal <?php echo $currentStatus === 'Jogando' ? 'is-active' : 'is-inactive'; ?>">Jogando</button>
                                 </form>
 
                                 <form class="formStatus flex-1 flex" action="index.php?action=change_status" method="post">
@@ -194,7 +208,7 @@
                                     <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
                                     <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating'] ?? ''); ?>">
                                     <input type="hidden" name="status" value="Zerado">
-                                    <button type="submit" title="Zerado" data-status-btn="Zerado" class="status-btn seg-item w-full !text-[10px] sm:!text-[11px] !tracking-tight <?php echo $currentStatus === 'Zerado' ? 'is-active' : 'is-inactive'; ?>">Zerado</button>
+                                    <button type="submit" title="Zerado" data-status-btn="Zerado" class="status-btn seg-item w-full !px-1.5 !text-[9px] min-[400px]:!text-[10px] !tracking-normal <?php echo $currentStatus === 'Zerado' ? 'is-active' : 'is-inactive'; ?>">Zerado</button>
                                 </form>
 
                                 <form class="formStatus flex-1 flex" action="index.php?action=change_status" method="post">
@@ -202,7 +216,7 @@
                                     <input type="hidden" name="game_id" value="<?php echo $game['id']; ?>">
                                     <input type="hidden" name="rating" value="<?php echo htmlspecialchars($game['rating'] ?? ''); ?>">
                                     <input type="hidden" name="status" value="Dropado">
-                                    <button type="submit" title="Dropado" data-status-btn="Dropado" class="status-btn seg-item w-full !text-[10px] sm:!text-[11px] !tracking-tight <?php echo $currentStatus === 'Dropado' ? 'is-active' : 'is-inactive'; ?>">Dropado</button>
+                                    <button type="submit" title="Dropado" data-status-btn="Dropado" class="status-btn seg-item w-full !px-1.5 !text-[9px] min-[400px]:!text-[10px] !tracking-normal <?php echo $currentStatus === 'Dropado' ? 'is-active' : 'is-inactive'; ?>">Dropado</button>
                                 </form>
                             </div>
 

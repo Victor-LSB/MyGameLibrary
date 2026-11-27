@@ -34,6 +34,14 @@ function updateStatusCard(gameId, newStatus) {
         if (hiddenStatus) hiddenStatus.value = newStatus;
     }
 
+    // Seletor do celular acompanha o status salvo
+    const statusSelect = cardGame.querySelector('.statusSelect');
+    if (statusSelect) {
+        statusSelect.dataset.current = newStatus;
+        statusSelect.dataset.statusSelect = newStatus;
+        statusSelect.value = newStatus;
+    }
+
     const statusButtons = cardGame.querySelectorAll('.status-btn');
     statusButtons.forEach(function(btn) {
         const isActive = btn.dataset.statusBtn === newStatus;
@@ -83,6 +91,10 @@ function openCompletionModal(form) {
 
 function closeCompletionModal() {
     if (!completionModal) return;
+    // Cancelou o "Zerado": o seletor do celular volta para o status de antes
+    document.querySelectorAll('.statusSelect').forEach((sel) => {
+        if (sel.value !== sel.dataset.current) sel.value = sel.dataset.current;
+    });
     completionModal.classList.add('hidden');
     completionModal.classList.remove('flex');
     pendingCompletionForm = null;
@@ -317,5 +329,17 @@ platinumButtons.forEach(function(btn) {
                 text: error.message
             });
         });
+    });
+});
+
+// Celular: escolher no seletor envia o mesmo formulário dos botões (mesmo fluxo, inclusive
+// a janela de data de conclusão quando a escolha é "Zerado")
+document.querySelectorAll('.statusSelect').forEach(function (sel) {
+    sel.addEventListener('change', function () {
+        const card = sel.closest('.gameItem');
+        const btn = card && card.querySelector('.status-btn[data-status-btn="' + sel.value + '"]');
+        const form = btn && btn.closest('form');
+        if (!form) return;
+        if (form.requestSubmit) form.requestSubmit(btn); else btn.click();
     });
 });
