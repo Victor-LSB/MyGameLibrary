@@ -119,7 +119,7 @@
                 preventOnFilter: false,
                 animation: 150,
                 emptyInsertThreshold: 40,
-                ghostClass: 'opacity-40',
+                ghostClass: 'top5-ghost',
                 onAdd(evt) {
                     // Card veio da biblioteca (não de outro slot do Top 5): substitui o jogo do slot
                     if (!evt.from.hasAttribute('data-top5-source')) return;
@@ -278,9 +278,16 @@
     if (editable && !document.getElementById('top5ReceivingStyle')) {
         const style = document.createElement('style');
         style.id = 'top5ReceivingStyle';
-        style.textContent = '#top5.top5-receiving .top5-drop{outline:2px dashed rgb(139 92 246);outline-offset:2px;border-radius:2px;pointer-events:auto}'
-            // Prévia do card da biblioteca dentro do slot: cobre o slot em vez de esticar o layout
-            + '#top5 .top5-drop > [data-top5-game]{position:absolute;inset:0;opacity:.6;overflow:hidden;z-index:20}';
+        style.textContent =
+            // Enquanto arrasta da biblioteca, o Top 5 "gruda" no topo da tela para estar sempre alcançável
+            // (margens negativas compensam o padding, então nada pula de lugar)
+            '#top5.top5-receiving{position:sticky;top:8px;z-index:40;background:rgba(9,9,11,.96);padding:8px;margin:-8px -8px calc(2.5rem - 8px);border-radius:4px;box-shadow:0 12px 32px rgba(0,0,0,.7)}'
+            + '#top5.top5-receiving .top5-drop{outline:2px dashed rgb(139 92 246);outline-offset:2px;border-radius:2px;pointer-events:auto}'
+            // Prévia do card que está chegando: cobre o slot inteiro...
+            + '#top5 .top5-drop > .top5-ghost{position:absolute;inset:0;opacity:.85;overflow:hidden;z-index:20;outline:2px solid rgb(139 92 246);border-radius:2px}'
+            // ...e o jogo que já estava no slot some da prévia (é ele que vai sair)
+            + '#top5 .top5-drop:has(> .top5-ghost) > :not(.top5-ghost){visibility:hidden}'
+            + '#biblioteca .top5-ghost{opacity:.4}';
         document.head.appendChild(style);
     }
 
@@ -299,12 +306,13 @@
             sort: false,
             draggable: '[data-top5-game]',
             animation: 150,
-            ghostClass: 'opacity-40',
+            ghostClass: 'top5-ghost',
             // No celular só começa a arrastar depois de segurar um pouco (pra não atrapalhar a rolagem)
             delay: 200,
             delayOnTouchOnly: true,
             scroll: true,
-            scrollSensitivity: 80,
+            scrollSensitivity: 120,
+            scrollSpeed: 25,
             onStart() { root.classList.add('top5-receiving'); },
             onEnd() { root.classList.remove('top5-receiving'); },
         });
