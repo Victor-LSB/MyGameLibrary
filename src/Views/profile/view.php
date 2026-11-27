@@ -190,7 +190,7 @@
                              data-slots="<?php echo htmlspecialchars(json_encode($topGames, JSON_UNESCAPED_UNICODE), ENT_QUOTES); ?>">
                         <h2 class="text-2xl font-black text-white uppercase tracking-tight border-l-4 border-violet-500 pl-3 mb-2">Top 5</h2>
                         <?php if ($isOwner): ?>
-                            <p class="text-xs text-zinc-500 mb-4">Clique em um slot vazio para adicionar um jogo da sua biblioteca. Arraste os cards para trocar de posição.</p>
+                            <p class="text-xs text-zinc-500 mb-4">Clique em um slot vazio para adicionar um jogo da sua biblioteca, ou arraste um jogo da biblioteca para um slot (ele substitui o que estiver lá). Arraste os cards para trocar de posição.</p>
                         <?php else: ?>
                             <div class="mb-4"></div>
                         <?php endif; ?>

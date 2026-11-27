@@ -120,6 +120,15 @@
                 animation: 150,
                 emptyInsertThreshold: 40,
                 ghostClass: 'opacity-40',
+                onAdd(evt) {
+                    // Card veio da biblioteca (não de outro slot do Top 5): substitui o jogo do slot
+                    if (!evt.from.hasAttribute('data-top5-source')) return;
+                    const to = parseInt(evt.to.dataset.pos, 10);
+                    const game = gameFromLibraryCard(evt.item);
+                    evt.item.remove(); // tira o card da biblioteca que o Sortable jogou no slot
+                    if (!game || Number.isNaN(to)) { setTimeout(render, 0); return; }
+                    placeGame(to, game);
+                },
                 onEnd(evt) {
                     const from = parseInt(evt.from.dataset.pos, 10);
                     const to = parseInt(evt.to.dataset.pos, 10);
@@ -238,14 +247,76 @@
     }
 
     function pick(pos, game) {
-        // Se o jogo já estava em outro rank, ele muda de lugar (não duplica)
+        closePicker();
+        placeGame(pos, game);
+    }
+
+    // Coloca um jogo no rank `pos`. O jogo que estava ali sai do Top 5.
+    // Se o jogo já estava em outro rank, ele muda de lugar (não duplica).
+    function placeGame(pos, game) {
         const old = slots.findIndex((s) => s && s.id === game.id);
+        if (old === pos) { setTimeout(render, 0); return; }
         if (old >= 0) slots[old] = null;
         slots[pos] = { id: game.id, title: game.title, cover: game.cover };
-        closePicker();
-        render();
+        setTimeout(render, 0);
         persist();
     }
 
+    // ---------- Arrastar da biblioteca para o Top 5 ----------
+
+    function gameFromLibraryCard(el) {
+        const card = el && el.closest ? el.closest('[data-top5-game]') : null;
+        if (!card) return null;
+        const id = parseInt(card.dataset.gameId, 10);
+        if (!id) return null;
+        return { id, title: card.dataset.gameTitle || '', cover: card.dataset.gameCover || null };
+    }
+
+    let librarySortable = null;
+
+    // Destaca os slots enquanto um jogo da biblioteca está sendo arrastado
+    if (editable && !document.getElementById('top5ReceivingStyle')) {
+        const style = document.createElement('style');
+        style.id = 'top5ReceivingStyle';
+        style.textContent = '#top5.top5-receiving .top5-drop{outline:2px dashed rgb(139 92 246);outline-offset:2px;border-radius:2px;pointer-events:auto}'
+            // Prévia do card da biblioteca dentro do slot: cobre o slot em vez de esticar o layout
+            + '#top5 .top5-drop > [data-top5-game]{position:absolute;inset:0;opacity:.6;overflow:hidden;z-index:20}';
+        document.head.appendChild(style);
+    }
+
+    function bindLibrary() {
+        if (librarySortable) { librarySortable.destroy(); librarySortable = null; }
+        if (!editable || typeof Sortable === 'undefined') return;
+        const source = document.querySelector('#biblioteca [data-top5-source]');
+        if (!source) return;
+
+        source.querySelectorAll('[data-top5-game] a, [data-top5-game] img').forEach((el) => {
+            el.setAttribute('draggable', 'false');
+        });
+
+        librarySortable = new Sortable(source, {
+            group: { name: 'top5', pull: 'clone', put: false },
+            sort: false,
+            draggable: '[data-top5-game]',
+            animation: 150,
+            ghostClass: 'opacity-40',
+            // No celular só começa a arrastar depois de segurar um pouco (pra não atrapalhar a rolagem)
+            delay: 200,
+            delayOnTouchOnly: true,
+            scroll: true,
+            scrollSensitivity: 80,
+            onStart() { root.classList.add('top5-receiving'); },
+            onEnd() { root.classList.remove('top5-receiving'); },
+        });
+    }
+
+    // A biblioteca é trocada inteira pelo profile-library.js (filtro/paginação), então religa quando mudar.
+    const librarySection = document.getElementById('biblioteca');
+    if (librarySection && librarySection.parentNode && editable) {
+        new MutationObserver(() => bindLibrary())
+            .observe(librarySection.parentNode, { childList: true });
+    }
+
     render();
+    bindLibrary();
 })();

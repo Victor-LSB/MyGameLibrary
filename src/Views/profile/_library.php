@@ -53,9 +53,14 @@
 <?php endif; ?>
 
 <?php if (!empty($gamesToShow) && count($gamesToShow) > 0): ?>
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-6">
+    <!-- data-top5-source: o top-games.js deixa arrastar estes cards para o Top 5 (só no perfil do dono) -->
+    <div data-top5-source class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-6">
         <?php foreach ($gamesToShow as $game): ?>
-            <div class="bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl flex flex-col overflow-hidden group">
+            <div class="bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-xl flex flex-col overflow-hidden group"
+                 data-top5-game
+                 data-game-id="<?php echo (int) $game['id']; ?>"
+                 data-game-title="<?php echo htmlspecialchars($game['title'], ENT_QUOTES); ?>"
+                 data-game-cover="<?php echo htmlspecialchars($game['cover_image'] ?? '', ENT_QUOTES); ?>">
                 <!-- AQUI ESTÁ A CORREÇÃO: O link agora carrega o ID do jogo e o nome de usuário dono do perfil (&u=...) -->
                 <a href="index.php?action=details&id=<?php echo $game['id']; ?>&u=<?php echo urlencode($profileUser['username']); ?>" class="block aspect-[3/4] bg-zinc-950 border-b-2 border-zinc-800 overflow-hidden relative">
                     <?php if (!empty($game['cover_image'])): ?>
