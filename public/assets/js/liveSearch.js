@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const grid = document.getElementById('resultsGrid');
     const title = document.getElementById('searchTitle');
     const spinner = document.getElementById('searchSpinner');
+    const popular = document.getElementById('popularSection'); // jogos populares (só com o campo vazio)
     
     if (!input || !grid || !title) return;
 
@@ -19,6 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
     input.addEventListener('input', () => {
         clearTimeout(typingTimer);
         const query = input.value.trim();
+
+        if (popular) popular.hidden = query.length > 0;
 
         if (query.length >= 3) {
             title.style.display = 'block';

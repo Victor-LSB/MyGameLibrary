@@ -107,6 +107,12 @@ class GameController {
         if ($query) {
             $searchResults = $this->api->searchGames($query);
         }
+        // A view lê $q e $results (antes não recebia nada e a busca via ?q= vinha vazia)
+        $q = $query ?: '';
+        $results = is_array($searchResults) ? ($searchResults['results'] ?? []) : [];
+
+        // Campo vazio: mostra os jogos populares do momento
+        $popularGames = $q === '' ? $this->api->getPopularGames(20) : [];
 
         include __DIR__ . '/../Views/games/search.php';
     }

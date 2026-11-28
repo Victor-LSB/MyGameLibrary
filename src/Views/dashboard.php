@@ -387,7 +387,7 @@
                         <div class="dash-ph"><h2 id="playingTitle" class="dash-h2">Jogando agora</h2></div>
                         <ul class="p-5 grid gap-3">
                             <?php foreach ($playing as $pg): ?>
-                                <li>
+                                <li class="min-w-0">
                                     <a href="<?php echo htmlspecialchars($gameUrl($pg['game_id'])); ?>" class="flex items-center gap-3 group">
                                         <span class="dash-thumb shrink-0 border-2 border-zinc-800 bg-zinc-800 overflow-hidden">
                                             <?php if (!empty($pg['cover_image'])): ?><img src="<?php echo htmlspecialchars(mgl_cover_thumb($pg['cover_image'])); ?>" srcset="<?php echo htmlspecialchars(mgl_cover_srcset($pg['cover_image'], 'small')); ?>" alt="" loading="lazy" class="w-full h-full object-cover"><?php endif; ?>
@@ -398,7 +398,6 @@
                                                 <span class="block text-xs text-zinc-500 mt-0.5"><?php echo $days <= 0 ? 'começou hoje' : 'jogando há ' . $days . ($days === 1 ? ' dia' : ' dias'); ?></span>
                                             <?php endif; ?>
                                         </span>
-                                        <span class="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 bg-blue-600 text-white">Jogando</span>
                                     </a>
                                 </li>
                             <?php endforeach; ?>

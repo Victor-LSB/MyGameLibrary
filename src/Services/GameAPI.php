@@ -8,6 +8,7 @@ class GameAPI {
     private $twitchClientId;
     private $twitchClientSecret;
     private $igdbUrl = 'https://api.igdb.com/v4/games';
+    private $igdbPopularityUrl = 'https://api.igdb.com/v4/popularity_primitives';
     private $cacheDir;
     private $cacheTtl = 300; // 5 minutos: buscas repetidas (ex: "the", "witcher", "the witcher") saem do cache
 
@@ -371,8 +372,8 @@ class GameAPI {
     }
 
     // Monta o handle cURL de uma query Apicalypse (POST com o corpo em texto puro)
-    private function buildIgdbHandle($body, $token, $timeout = 3, $connectTimeout = 2) {
-        $ch = curl_init($this->igdbUrl);
+    private function buildIgdbHandle($body, $token, $timeout = 3, $connectTimeout = 2, $url = null) {
+        $ch = curl_init($url ?? $this->igdbUrl);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
@@ -394,13 +395,13 @@ class GameAPI {
     // Faz uma query na IGDB e devolve o array decodificado (lista de jogos) ou null se falhou.
     // Se a IGDB responder 401 (token revogado/expirado), descarta o token em cache e
     // tenta UMA vez de novo com um token novo.
-    private function igdbRequest($body, $timeout = 5, $connectTimeout = 3, $retry = true) {
+    private function igdbRequest($body, $timeout = 5, $connectTimeout = 3, $retry = true, $url = null) {
         $token = $this->getIgdbToken();
         if ($token === null) {
             return null;
         }
 
-        $ch = $this->buildIgdbHandle($body, $token, $timeout, $connectTimeout);
+        $ch = $this->buildIgdbHandle($body, $token, $timeout, $connectTimeout, $url);
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_errno($ch) ? curl_error($ch) : null;
@@ -408,7 +409,7 @@ class GameAPI {
 
         if ($httpCode === 401 && $retry) {
             $this->invalidateIgdbToken();
-            return $this->igdbRequest($body, $timeout, $connectTimeout, false);
+            return $this->igdbRequest($body, $timeout, $connectTimeout, false, $url);
         }
 
         if ($curlError !== null || $httpCode >= 400 || $response === false) {
@@ -424,6 +425,65 @@ class GameAPI {
         return 'search "' . $this->apicalypseString($query) . '"; '
             . 'fields ' . $this->igdbListFields . '; '
             . 'limit 25;';
+    }
+
+    /**
+     * Jogos populares agora, pelo ranking de popularidade da IGDB (PopScore,
+     * popularity_type 1 = visitas às páginas dos jogos no IGDB.com).
+     * Guarda em cache por 6 horas; se a IGDB falhar, usa o último cache, mesmo vencido.
+     * Devolve a mesma estrutura de cada item de searchGames()['results'].
+     */
+    public function getPopularGames($limit = 20) {
+        $path = $this->cacheDir . '/popular_games.json';
+        $stale = null;
+        if (is_file($path)) {
+            $stale = json_decode((string) @file_get_contents($path), true);
+            if (is_array($stale) && time() - filemtime($path) < 6 * 3600) {
+                return array_slice($stale, 0, $limit);
+            }
+        }
+        $fallback = is_array($stale) ? array_slice($stale, 0, $limit) : [];
+
+        // Pega bem mais que o limite: alguns saem no filtro (DLC, versões, sem capa...)
+        $pop = $this->igdbRequest(
+            'fields game_id,value; sort value desc; limit 80; where popularity_type = 1;',
+            5, 3, true, $this->igdbPopularityUrl
+        );
+        if (!is_array($pop) || !array_is_list($pop) || !$pop) {
+            return $fallback;
+        }
+
+        $ids = array_values(array_unique(array_filter(array_map(fn($p) => (int) ($p['game_id'] ?? 0), $pop))));
+        if (!$ids) {
+            return $fallback;
+        }
+
+        $games = $this->igdbRequest('fields ' . $this->igdbListFields . '; where id = (' . implode(',', $ids) . '); limit ' . count($ids) . ';');
+        if (!is_array($games) || !array_is_list($games)) {
+            return $fallback;
+        }
+
+        $byId = [];
+        foreach ($this->filterIgdbGameTypes($games) as $g) {
+            $byId[(int) $g['id']] = $g;
+        }
+
+        // Mantém a ordem do ranking
+        $out = [];
+        foreach ($ids as $id) {
+            if (!isset($byId[$id])) continue;
+            $item = $this->trimGameForList($this->normalizeGameData($byId[$id]));
+            unset($item['_added']);
+            if (empty($item['background_image'])) continue;
+            $out[] = $item;
+            if (count($out) >= $limit) break;
+        }
+
+        if ($out) {
+            @file_put_contents($path, json_encode($out), LOCK_EX);
+            return $out;
+        }
+        return $fallback;
     }
 
     public function searchGames($query) {
