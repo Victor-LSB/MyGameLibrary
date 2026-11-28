@@ -58,6 +58,7 @@ class ProfileController {
         $isOwner = ($currentUserId !== null && $currentUserId === $profileUserId);
         $recentGames = $this->gameModel->getRecentGamesByUserId($profileUser['id'], 12);
         $topGames = $this->gameModel->getTopGames($profileUser['id']);
+        $playingGames = $this->gameModel->getPlayingGames($profileUser['id'], 4);
 
         // Biblioteca completa (?view=all): paginada, com busca e ordenação por data de adição, nome ou nota
         $libraryTotalAll = $this->gameModel->countGamesByUserId($profileUser['id']);

@@ -66,3 +66,15 @@ html.mgl-crop-open { overflow: hidden; }
     .mgl-crop-modal { padding: 14px; }
     .mgl-crop-actions .mgl-btn { flex: 1; }
 }
+
+/* Tamanho final do recorte (e aviso quando vai ficar borrado) */
+.mgl-crop-size {
+    margin: 10px 0 0;
+    font-size: 13px;
+    color: #a1a1aa;
+}
+
+.mgl-crop-size.is-low {
+    color: #fbbf24;
+    font-weight: 700;
+}

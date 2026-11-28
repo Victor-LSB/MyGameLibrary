@@ -280,6 +280,37 @@
                         <?php endforeach; ?>
                     </section>
                 <?php endif; ?>
+
+                <?php if (!empty($playingGames)): ?>
+                    <section class="playing-now" aria-labelledby="playingTitle">
+                        <h2 id="playingTitle" class="feed-aside__title">Jogando agora</h2>
+                        <ul>
+                            <?php foreach ($playingGames as $pg): ?>
+                                <?php
+                                    $pgCover = mgl_cover_thumb($pg['cover_image'] ?? null);
+                                    $pgSince = '';
+                                    if (!empty($pg['since'])) {
+                                        $pgDays = (int) floor((time() - strtotime($pg['since'])) / 86400);
+                                        $pgSince = $pgDays <= 0 ? 'começou hoje' : 'há ' . $pgDays . ($pgDays === 1 ? ' dia' : ' dias');
+                                    }
+                                ?>
+                                <li>
+                                    <a href="<?php echo htmlspecialchars(mgl_url('details', ['id' => (int) $pg['id'], 'u' => $profileUser['username']]), ENT_QUOTES); ?>">
+                                        <?php if ($pgCover): ?>
+                                            <img src="<?php echo htmlspecialchars($pgCover, ENT_QUOTES); ?>" alt="" loading="lazy">
+                                        <?php else: ?>
+                                            <span class="playing-now__nocover" aria-hidden="true"><?php echo htmlspecialchars(mb_substr($pg['title'], 0, 1)); ?></span>
+                                        <?php endif; ?>
+                                        <span class="playing-now__text">
+                                            <b><?php echo htmlspecialchars($pg['title']); ?></b>
+                                            <?php if ($pgSince !== ''): ?><small><i aria-hidden="true"></i><?php echo $pgSince; ?></small><?php endif; ?>
+                                        </span>
+                                    </a>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </section>
+                <?php endif; ?>
             </aside>
         </div>
 

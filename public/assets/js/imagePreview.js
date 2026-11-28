@@ -6,7 +6,10 @@
  * O formulário é enviado normalmente, então o backend não muda.
  *
  * - Avatar: recorte quadrado (1:1), saída de até 512x512.
- * - Banner: recorte 3:1, saída de até 1500x500.
+ * - Banner: recorte 3:1, saída de até 2400x800 (nítido também em telas de alta densidade).
+ * - Saída em WebP quando o navegador suporta (mais qualidade por byte); senão JPEG.
+ *   PNG continua PNG (pode ter transparência), a menos que fique grande demais.
+ * - Mostra o tamanho final enquanto a pessoa ajusta e avisa quando vai ficar borrado.
  * - GIF: NÃO é recortado (o recorte no navegador acabaria com a animação); segue direto.
  * - Se o navegador não suportar (sem Cropper/DataTransfer), cai no comportamento antigo:
  *   só pré-visualização, sem recorte.
@@ -19,9 +22,17 @@ document.addEventListener('DOMContentLoaded', function () {
     var MAX_IMAGE_BYTES = 25 * 1024 * 1024;    // demais: o recorte reduz bastante o arquivo
     var MAX_UPLOAD_BYTES = 5 * 1024 * 1024;    // limite do arquivo FINAL enviado
 
+    // O navegador sabe gerar WebP? (Safari antigo não: aí usamos JPEG)
+    var WEBP_OK = (function () {
+        try {
+            var c = document.createElement('canvas'); c.width = c.height = 1;
+            return c.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+        } catch (e) { return false; }
+    })();
+
     var CONFIGS = {
-        avatar: { inputId: 'avatar', previewId: 'avatar-preview', prefix: 'avatar', title: 'Ajustar foto de perfil', aspect: 1, outWidth: 512 },
-        banner: { inputId: 'banner', previewId: 'banner-preview', prefix: 'banner', title: 'Ajustar banner', aspect: 3, outWidth: 1500 }
+        avatar: { inputId: 'avatar', previewId: 'avatar-preview', prefix: 'avatar', title: 'Ajustar foto de perfil', aspect: 1, outWidth: 512, minGood: 300, label: 'Foto' },
+        banner: { inputId: 'banner', previewId: 'banner-preview', prefix: 'banner', title: 'Ajustar banner', aspect: 3, outWidth: 2400, minGood: 1200, label: 'Banner' }
     };
 
     var cropSupported = (function () {
@@ -194,6 +205,10 @@ document.addEventListener('DOMContentLoaded', function () {
             tools.appendChild(b);
         });
 
+        var size = document.createElement('p');
+        size.className = 'mgl-crop-size';
+        size.setAttribute('aria-live', 'polite');
+
         var actions = document.createElement('div');
         actions.className = 'mgl-crop-actions';
         var cancel = document.createElement('button');
@@ -211,6 +226,7 @@ document.addEventListener('DOMContentLoaded', function () {
         box.appendChild(help);
         box.appendChild(stage);
         box.appendChild(tools);
+        box.appendChild(size);
         box.appendChild(actions);
         overlay.appendChild(box);
         document.body.appendChild(overlay);
@@ -221,8 +237,25 @@ document.addEventListener('DOMContentLoaded', function () {
             if (e.key === 'Escape' && !overlay.hidden) closeModal(true);
         });
 
-        modal = { overlay: overlay, title: title, img: img, apply: apply };
+        modal = { overlay: overlay, title: title, img: img, apply: apply, size: size };
         return modal;
+    }
+
+    // Tamanho final do recorte: nunca amplia além do que a imagem original tem
+    function outputSize(cfg, data) {
+        var width = Math.max(1, Math.round(data.width * Math.min(1, cfg.outWidth / data.width)));
+        return { width: width, height: Math.max(1, Math.round(width / cfg.aspect)) };
+    }
+
+    function updateSizeHint() {
+        if (!cropper || !session || !modal) return;
+        var data = cropper.getData(true);
+        if (!data.width) return;
+        var out = outputSize(session.cfg, data);
+        var low = out.width < session.cfg.minGood;
+        modal.size.textContent = session.cfg.label + ' final: ' + out.width + ' × ' + out.height + ' px'
+            + (low ? ' · vai ficar borrado. Use uma imagem maior ou diminua o zoom.' : '');
+        modal.size.classList.toggle('is-low', low);
     }
 
     function destroyCropper() {
@@ -258,7 +291,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 guides: true,            // grade de terços
                 highlight: false,
                 toggleDragModeOnDblclick: false,
-                ready: function () { m.apply.disabled = false; }
+                ready: function () { m.apply.disabled = false; updateSizeHint(); },
+                crop: updateSizeHint
             });
         };
         m.img.onerror = function () {
@@ -303,8 +337,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!data.width || !data.height) return;
 
         // Nunca amplia: se o recorte é menor que o tamanho de saída, mantém o tamanho dele
-        var width = Math.max(1, Math.round(data.width * Math.min(1, s.cfg.outWidth / data.width)));
-        var height = Math.max(1, Math.round(width / s.cfg.aspect));
+        var out = outputSize(s.cfg, data);
+        var width = out.width;
+        var height = out.height;
 
         var isPng = s.file.type === 'image/png';
         var canvasOptions = { width: width, height: height, imageSmoothingEnabled: true, imageSmoothingQuality: 'high' };
@@ -326,7 +361,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            var file = new File([blob], s.cfg.prefix + (mime === 'image/png' ? '.png' : '.jpg'), { type: mime, lastModified: Date.now() });
+            var ext = mime === 'image/png' ? '.png' : (mime === 'image/webp' ? '.webp' : '.jpg');
+            var file = new File([blob], s.cfg.prefix + ext, { type: mime, lastModified: Date.now() });
             var transfer = new DataTransfer();
             transfer.items.add(file);
             s.input.files = transfer.files; // atribuir assim NÃO dispara "change" (sem loop)
@@ -339,15 +375,27 @@ document.addEventListener('DOMContentLoaded', function () {
             canvas.toBlob(function (blob) {
                 if (session !== s || !cropper) return;
                 if (blob && blob.size > MAX_UPLOAD_BYTES) {
-                    // PNG de foto pode ficar grande: reencoda como JPEG
+                    // PNG de foto pode ficar grande: reencoda (WebP se der, senão JPEG)
                     var flat = cropper.getCroppedCanvas({ width: width, height: height, imageSmoothingQuality: 'high', fillColor: '#18181b' });
-                    flat.toBlob(function (jpg) { finish(jpg, 'image/jpeg'); }, 'image/jpeg', 0.9);
+                    encodeLossy(flat, finish);
                 } else {
                     finish(blob, 'image/png');
                 }
             }, 'image/png');
         } else {
-            canvas.toBlob(function (blob) { finish(blob, 'image/jpeg'); }, 'image/jpeg', 0.92);
+            encodeLossy(canvas, finish);
+        }
+    }
+
+    // WebP (qualidade 0.9) quando possível; se o navegador devolver outra coisa, cai para JPEG 0.92
+    function encodeLossy(canvas, done) {
+        if (WEBP_OK) {
+            canvas.toBlob(function (blob) {
+                if (blob && blob.type === 'image/webp') { done(blob, 'image/webp'); return; }
+                canvas.toBlob(function (jpg) { done(jpg, 'image/jpeg'); }, 'image/jpeg', 0.92);
+            }, 'image/webp', 0.9);
+        } else {
+            canvas.toBlob(function (jpg) { done(jpg, 'image/jpeg'); }, 'image/jpeg', 0.92);
         }
     }
 });

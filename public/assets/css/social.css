@@ -924,3 +924,89 @@ html.fmodal-open {
 .feed-filter-empty[hidden] {
   display: none;
 }
+
+/* ------------------------------------------------------------------ */
+/* Perfil: Jogando agora (lateral)                                     */
+/* ------------------------------------------------------------------ */
+
+.playing-now {
+  margin-top: 2rem;
+}
+
+.playing-now .feed-aside__title {
+  margin-bottom: 0.75rem;
+}
+
+.playing-now ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.playing-now a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #fff;
+}
+
+.playing-now img,
+.playing-now__nocover {
+  width: 40px;
+  height: 53px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border: 1px solid #27272a;
+  border-radius: 2px;
+  background: #18181b;
+}
+
+.playing-now__nocover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #71717a;
+  font-weight: 900;
+}
+
+.playing-now a:hover img,
+.playing-now a:hover .playing-now__nocover {
+  border-color: #8b5cf6;
+}
+
+.playing-now a:hover b {
+  color: #c4b5fd;
+}
+
+.playing-now__text {
+  min-width: 0;
+}
+
+.playing-now__text b {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.playing-now__text small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  color: #a1a1aa;
+}
+
+.playing-now__text small i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a78bfa;
+}

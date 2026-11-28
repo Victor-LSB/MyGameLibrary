@@ -567,6 +567,26 @@ class Game {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Jogos com status "Jogando", do mais recente para o mais antigo.
+     * "since" = última vez que o status virou Jogando no feed (null se não houver registro).
+     */
+    public function getPlayingGames($user_id, $limit = 4) {
+        $stmt = $this->conn->prepare("
+            SELECT g.id, g.title, g.cover_image,
+                   (SELECT MAX(ua.created_at) FROM user_activity ua
+                     WHERE ua.user_id = ug.user_id AND ua.game_id = ug.game_id
+                       AND ua.type = 'status_changed' AND ua.extra = 'Jogando') AS since
+            FROM user_games ug JOIN games g ON g.id = ug.game_id
+            WHERE ug.user_id = ? AND ug.status = 'Jogando'
+            ORDER BY since DESC, ug.id DESC
+            LIMIT ?");
+        $stmt->bindValue(1, (int) $user_id, PDO::PARAM_INT);
+        $stmt->bindValue(2, (int) $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function getRecentGamesByUserId($user_id, $limit = 5) {
         $sql = "SELECT g.*, ug.status, ug.rating FROM games g JOIN user_games ug ON g.id = ug.game_id WHERE ug.user_id = ? ORDER BY ug.id DESC LIMIT ?";
         $stmt = $this->conn->prepare($sql);
