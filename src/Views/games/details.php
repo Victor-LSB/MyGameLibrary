@@ -121,8 +121,16 @@
             <?php if (!empty($game['id'])): ?>
                 <a href="<?php echo htmlspecialchars(mgl_game_url($game['id'])); ?>" class="btn btn-secondary hidden sm:inline-flex shrink-0 !text-violet-300"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-3.5 h-3.5" aria-hidden="true"><path stroke-linecap="square" d="M7 17 17 7M9 7h8v8"/></svg>Página do jogo</a>
             <?php endif; ?>
-            <a href="<?php echo $isOwner ? 'index.php?action=home' : 'index.php?action=profile&u=' . urlencode($username_profile); ?>" class="btn btn-secondary shrink-0">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-3.5 h-3.5" aria-hidden="true"><path stroke-linecap="square" d="M15 18l-6-6 6-6"/></svg><?php echo $isOwner ? 'Biblioteca' : 'Perfil'; ?>
+            <?php
+                // Botão de voltar: leva para onde a pessoa veio. Vindo de um perfil (o seu ou
+                // de outra pessoa) volta para o perfil; o dono vindo da biblioteca volta para ela.
+                $cameFrom = (string) ($_SERVER['HTTP_REFERER'] ?? '');
+                $fromProfile = preg_match('#/perfil/|[?&]action=profile\b#', $cameFrom) === 1;
+                $backToProfile = !$isOwner || $fromProfile;
+                $backUrl = $backToProfile ? mgl_url('profile', ['u' => $username_profile]) : 'index.php?action=home';
+            ?>
+            <a href="<?php echo htmlspecialchars($backUrl, ENT_QUOTES); ?>" class="btn btn-secondary shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-3.5 h-3.5" aria-hidden="true"><path stroke-linecap="square" d="M15 18l-6-6 6-6"/></svg><?php echo $backToProfile ? 'Perfil' : 'Biblioteca'; ?>
             </a>
         </div>
 
