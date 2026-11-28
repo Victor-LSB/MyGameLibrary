@@ -67,13 +67,14 @@
                 $isRemoved = $comment['removed_at'] !== null;
                 $isAuthor = $currentUserId !== null && (int) $currentUserId === (int) $comment['author_id'];
                 $isOwner = $currentUserId !== null && (int) $currentUserId === (int) $profileUserId;
-                $canDelete = !$isRemoved && ($isAuthor || $isOwner);
+                $canDelete = (!$isRemoved && ($isAuthor || $isOwner)) || ($isRemoved && !$isReply && $isOwner);
+                $deletesThread = !$isReply && $isOwner;
                 $canReply = !$isReply && !$isRemoved && $currentUserId !== null;
                 $wrapClasses = $isReply ? 'flex gap-3 py-3 pl-10' : 'flex gap-3 py-4';
 
                 ob_start();
                 ?>
-                <article id="comment-<?php echo (int) $comment['id']; ?>" class="<?php echo $wrapClasses; ?>" data-comment-id="<?php echo (int) $comment['id']; ?>" data-author-id="<?php echo (int) $comment['author_id']; ?>">
+                <article id="comment-<?php echo (int) $comment['id']; ?>" class="<?php echo $wrapClasses; ?>" data-comment-id="<?php echo (int) $comment['id']; ?>" data-author-id="<?php echo (int) $comment['author_id']; ?>"<?php echo $isRemoved ? ' data-removed="1"' : ''; ?>>
                     <?php echo mgl_render_comment_avatar($comment, $isReply ? 'w-8 h-8' : 'w-10 h-10'); ?>
                     <div class="comment-body flex-1 min-w-0">
                         <div class="flex items-center gap-2 flex-wrap">
@@ -89,7 +90,7 @@
                                     <button type="button" class="comment-reply-btn btn-link">Responder</button>
                                 <?php endif; ?>
                                 <?php if ($canDelete): ?>
-                                    <button type="button" class="comment-delete-btn btn-link is-danger">Apagar</button>
+                                    <button type="button" class="comment-delete-btn btn-link is-danger"<?php echo $deletesThread ? ' data-thread="1"' : ''; ?>><?php echo $isRemoved ? 'Apagar conversa' : 'Apagar'; ?></button>
                                 <?php endif; ?>
                             </div>
                         <?php endif; ?>

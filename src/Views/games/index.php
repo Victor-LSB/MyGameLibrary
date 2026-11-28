@@ -12,6 +12,7 @@
     $sort = $sort ?? 'recent';
     // Mantém a ordenação escolhida nos links de tag/limpar (só quando não é a padrão)
     $keepSort = $sort !== 'recent' ? '&sort=' . urlencode($sort) : '';
+    $extraStyles = array_merge($extraStyles ?? [], ['assets/css/tags.css']);
 ?>
 <?php require_once __DIR__ . '/../header.php'; ?>
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen selection:bg-violet-600 selection:text-white">
@@ -42,10 +43,9 @@
         </div>
 
         <?php if (!empty($filter_tag)): ?>
-            <div class="mb-4 inline-flex items-center gap-2 bg-violet-600/15 text-violet-300 border border-violet-500/30 px-4 py-2 rounded-full text-sm font-semibold">
-                <span>Filtrando por tag:</span>
-                <span>#<?php echo htmlspecialchars($filter_tag ?? ''); ?></span>
-                <a href="index.php?action=home<?php echo !empty($search_query) ? '&search=' . urlencode($search_query) : ''; ?><?php echo !empty($filter_status) ? '&filter_status=' . urlencode($filter_status) : ''; ?><?php echo $keepSort; ?>" class="text-white/70 hover:text-white ml-1">Limpar</a>
+            <div class="mgl-tag-filter">
+                <span><em>Filtrando por</em> <b>#<?php echo htmlspecialchars($filter_tag ?? ''); ?></b></span>
+                <a href="index.php?action=home<?php echo !empty($search_query) ? '&search=' . urlencode($search_query) : ''; ?><?php echo !empty($filter_status) ? '&filter_status=' . urlencode($filter_status) : ''; ?><?php echo $keepSort; ?>">Limpar</a>
             </div>
         <?php endif; ?>
 
@@ -60,18 +60,15 @@
                 <div class="flex flex-wrap gap-2">
                     <?php foreach ($userTags as $tag): ?>
                         <?php $isActiveTag = !empty($filter_tag) && $filter_tag === $tag['name']; ?>
-                        <div class="inline-flex items-center overflow-hidden rounded-full border transition-colors <?php echo $isActiveTag ? 'bg-violet-600 text-white border-violet-400' : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:border-violet-500 hover:text-violet-300'; ?>">
-                            <a href="index.php?action=home&tag=<?php echo urlencode($tag['name']); ?><?php echo !empty($search_query) ? '&search=' . urlencode($search_query) : ''; ?><?php echo !empty($filter_status) ? '&filter_status=' . urlencode($filter_status) : ''; ?><?php echo $keepSort; ?>" class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold transition-colors">
-                                <span>#</span>
-                                <span><?php echo htmlspecialchars($tag['name']); ?></span>
-                                <span class="text-[10px] <?php echo $isActiveTag ? 'text-violet-100/80' : 'text-zinc-500'; ?>">(<?php echo (int) ($tag['usage_count'] ?? 0); ?>)</span>
+                        <div class="mgl-tag<?php echo $isActiveTag ? ' is-active' : ''; ?>">
+                            <a href="index.php?action=home&tag=<?php echo urlencode($tag['name']); ?><?php echo !empty($search_query) ? '&search=' . urlencode($search_query) : ''; ?><?php echo !empty($filter_status) ? '&filter_status=' . urlencode($filter_status) : ''; ?><?php echo $keepSort; ?>"<?php echo $isActiveTag ? ' aria-current="true"' : ''; ?>>
+                                <b>#</b><?php echo htmlspecialchars($tag['name']); ?>
+                                <span class="mgl-tag-count"><?php echo (int) ($tag['usage_count'] ?? 0); ?></span>
                             </a>
-                            <form action="index.php?action=delete_saved_tag" method="POST" class="flex">
+                            <form action="index.php?action=delete_saved_tag" method="POST">
                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                                 <input type="hidden" name="tag_id" value="<?php echo (int) $tag['id']; ?>">
-                                <button type="submit" class="inline-flex h-full min-h-[32px] w-9 items-center justify-center border-l border-zinc-700 bg-zinc-800 text-zinc-400 transition-colors hover:bg-red-600 hover:text-white" title="Excluir tag salva" aria-label="Excluir tag salva">
-                                    <span class="text-sm font-black leading-none">×</span>
-                                </button>
+                                <button type="submit" class="mgl-tag-remove" title="Excluir tag salva" aria-label="Excluir tag <?php echo htmlspecialchars($tag['name']); ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" aria-hidden="true"><path stroke-linecap="square" d="M6 6l12 12M18 6L6 18"/></svg></button>
                             </form>
                         </div>
                     <?php endforeach; ?>

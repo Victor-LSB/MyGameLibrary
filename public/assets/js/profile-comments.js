@@ -196,11 +196,13 @@
 
         const deleteBtn = event.target.closest('.comment-delete-btn');
         if (deleteBtn) {
-            if (!confirm('Apagar este comentário?')) return;
-
             const article = deleteBtn.closest('article[data-comment-id]');
             const commentId = article.dataset.commentId;
-            const hasReplies = article.querySelector('.comment-replies') && article.querySelector('.comment-replies').children.length > 0;
+            const repliesBox = article.querySelector(':scope > .comment-body > .comment-replies');
+            const hasReplies = !!(repliesBox && repliesBox.children.length > 0);
+            const wipesThread = deleteBtn.dataset.thread === '1' && hasReplies;
+
+            if (!confirm(wipesThread ? 'Apagar a conversa inteira, junto com as respostas?' : 'Apagar este comentário?')) return;
 
             const dados = new FormData();
             dados.set('csrf_token', csrfToken());
@@ -215,27 +217,35 @@
                 const data = await response.json();
                 if (!data.success) throw new Error(data.message || 'Erro ao apagar comentário');
 
-                if (hasReplies) {
-                    // Mantém a thread: vira um placeholder "removido" em vez de sumir.
+                if (hasReplies && !data.thread) {
+                    // Autor apagou um comentário com respostas: vira placeholder.
                     article.querySelector('.comment-content').innerHTML = '<span class="italic text-zinc-600">Comentário removido.</span>';
+                    article.dataset.removed = '1';
                     const actions = article.querySelector('.flex.items-center.gap-4.mt-2');
                     if (actions) actions.remove();
-                    bumpCount(-1);
                 } else {
                     const parentReplies = article.closest('.comment-replies');
                     article.remove();
-                    bumpCount(-1);
 
                     if (parentReplies) {
                         // Era uma resposta: atualiza o contador "Respostas (N)" do comentário pai.
+                        const parentArticle = parentReplies.closest('article[data-comment-id]');
                         const parentToggleBtn = parentReplies.previousElementSibling;
+                        const newCount = parentReplies.children.length;
                         if (parentToggleBtn && parentToggleBtn.classList.contains('comment-toggle-replies-btn')) {
-                            const countSpan = parentToggleBtn.querySelector('.comment-replies-count');
-                            const newCount = Math.max(0, parseInt(countSpan.textContent, 10) - 1);
-                            countSpan.textContent = String(newCount);
+                            parentToggleBtn.querySelector('.comment-replies-count').textContent = String(newCount);
                             if (newCount === 0) parentToggleBtn.classList.add('hidden');
                         }
-                    } else if (commentsList.children.length === 0 && noCommentsMsg) {
+                        // Pai já apagado e sem mais respostas: some também.
+                        if (newCount === 0 && parentArticle && parentArticle.dataset.removed === '1') {
+                            parentArticle.remove();
+                            bumpCount(-1);
+                        }
+                    } else {
+                        bumpCount(-1);
+                    }
+
+                    if (commentsList.children.length === 0 && noCommentsMsg) {
                         noCommentsMsg.classList.remove('hidden');
                     }
                 }
@@ -278,8 +288,7 @@
             toggleBtn.dataset.expanded = 'true';
             const chevron = toggleBtn.querySelector('.comment-toggle-chevron');
             if (chevron) chevron.classList.add('rotate-180');
-
-            bumpCount(1);
+            // O contador é de conversas (comentários de topo), igual ao servidor.
             form.remove();
         } catch (error) {
             console.error('Erro:', error);

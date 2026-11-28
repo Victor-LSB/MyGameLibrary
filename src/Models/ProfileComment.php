@@ -99,7 +99,8 @@ class ProfileComment {
         if ($parentId === null) {
             $sql .= " AND pc.parent_id IS NULL";
         } else {
-            $sql .= " AND pc.parent_id = ?";
+            // Respostas apagadas somem de vez (não viram placeholder).
+            $sql .= " AND pc.parent_id = ? AND pc.removed_at IS NULL";
             $params[] = $parentId;
         }
 
@@ -118,11 +119,17 @@ class ProfileComment {
     }
 
     /**
-     * Marca o comentário como removido (soft delete) se $requestingUserId
-     * for o autor ou o dono do perfil. Retorna false se não encontrado ou
-     * sem permissão.
+     * Apaga um comentário se $requestingUserId for o autor ou o dono
+     * (profile_owner). Retorna false se não encontrado ou sem permissão; senão
+     * ['thread' => bool].
+     *
+     * - Resposta, ou comentário de topo sem respostas: some da tela.
+     * - Autor apagando um comentário de topo que tem respostas: vira o
+     *   placeholder "Comentário removido." pra não quebrar a conversa.
+     * - Dono apagando um comentário de topo (inclusive o placeholder): a
+     *   conversa inteira some, junto com as respostas ('thread' => true).
      */
-    public function delete($commentId, $requestingUserId): bool {
+    public function delete($commentId, $requestingUserId) {
         $comment = $this->find($commentId);
         if (!$comment) {
             return false;
@@ -136,6 +143,22 @@ class ProfileComment {
             return false;
         }
 
+        if ($isProfileOwner && $comment['parent_id'] === null) {
+            $stmt = $this->conn->prepare("
+                UPDATE profile_comments
+                SET content = '',
+                    removed_by = IF(author_id = ?, 'author', 'profile_owner'),
+                    removed_at = NOW()
+                WHERE (id = ? OR parent_id = ?) AND removed_at IS NULL
+            ");
+            $stmt->execute([$requestingUserId, $commentId, $commentId]);
+            return ['thread' => true];
+        }
+
+        if ($comment['removed_at'] !== null) {
+            return false;
+        }
+
         $removedBy = $isAuthor ? 'author' : 'profile_owner';
 
         $stmt = $this->conn->prepare("
@@ -143,6 +166,9 @@ class ProfileComment {
             SET content = '', removed_by = ?, removed_at = NOW()
             WHERE id = ?
         ");
-        return $stmt->execute([$removedBy, $commentId]);
+        if (!$stmt->execute([$removedBy, $commentId])) {
+            return false;
+        }
+        return ['thread' => false];
     }
 }

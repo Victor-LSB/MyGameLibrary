@@ -1,0 +1,94 @@
+/* Chips de tag da biblioteca, no mesmo estilo das tags da análise:
+   retângulo escuro com borda de 2px, # roxo e remover discreto. */
+.mgl-tag {
+  display: inline-flex;
+  align-items: stretch;
+  border: 2px solid #27272a;
+  border-radius: 2px;
+  background: #09090b;
+  color: #e4e4e7;
+  font: 700 13px/1 Inter, sans-serif;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.mgl-tag:hover { border-color: #3f3f46; }
+
+.mgl-tag > a {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 10px 8px 9px;
+  color: inherit;
+}
+
+.mgl-tag > a b { color: #8b5cf6; font-weight: 900; }
+.mgl-tag > a:hover { color: #fff; }
+
+.mgl-tag-count {
+  margin-left: 3px;
+  color: #71717a;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.mgl-tag form { display: flex; }
+
+.mgl-tag-remove {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  border-left: 2px solid #27272a;
+  color: #52525b;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.mgl-tag-remove svg { width: 10px; height: 10px; }
+
+.mgl-tag-remove:hover,
+.mgl-tag-remove:focus-visible {
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+/* tag que está filtrando a biblioteca agora */
+.mgl-tag.is-active {
+  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.14);
+}
+
+.mgl-tag.is-active > a b,
+.mgl-tag.is-active .mgl-tag-count { color: #c4b5fd; }
+.mgl-tag.is-active .mgl-tag-remove { border-left-color: rgba(139, 92, 246, 0.45); }
+
+/* aviso "filtrando por tag" acima da biblioteca */
+.mgl-tag-filter {
+  display: inline-flex;
+  align-items: stretch;
+  margin-bottom: 1rem;
+  border: 2px solid #8b5cf6;
+  border-left-width: 4px;
+  border-radius: 2px;
+  background: rgba(139, 92, 246, 0.1);
+  font: 700 13px/1 Inter, sans-serif;
+  color: #e4e4e7;
+}
+
+.mgl-tag-filter span { display: flex; align-items: center; gap: 6px; padding: 9px 12px; }
+.mgl-tag-filter span em { font-style: normal; color: #a1a1aa; font-weight: 600; }
+.mgl-tag-filter span b { color: #c4b5fd; }
+
+.mgl-tag-filter a {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-left: 2px solid rgba(139, 92, 246, 0.45);
+  color: #a1a1aa;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: color 0.15s, background 0.15s;
+}
+
+.mgl-tag-filter a:hover { color: #fff; background: #7c3aed; }

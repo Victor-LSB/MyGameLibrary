@@ -109,7 +109,7 @@ class ProfileCommentController {
             return;
         }
 
-        echo json_encode(['success' => true]);
+        echo json_encode(['success' => true, 'thread' => !empty($deleted['thread'])]);
     }
 
     /**
