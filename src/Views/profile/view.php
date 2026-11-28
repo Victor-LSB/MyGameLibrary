@@ -23,6 +23,11 @@
     $profileLink = mgl_url('profile', ['u' => $profileUser['username'] ?? '']);
     $profileShareUrl = $appUrl !== '' ? $appUrl . '/' . ltrim(preg_replace('#^' . preg_quote(mgl_base_path(), '#') . '#', '', $profileLink), '/') : '';
     $extraStyles = ['assets/css/social.css'];
+    if (!empty($isOwner)) {
+        // edição no próprio perfil usa o mesmo recorte da página de edição
+        $extraStyles[] = 'assets/lib/cropperjs/cropper.min.css';
+        $extraStyles[] = 'assets/css/image-cropper.css';
+    }
     require __DIR__ . '/../header.php';
 ?>
     <?php $isOwner = $isOwner ?? false; ?>
@@ -113,17 +118,29 @@
     <?php require_once __DIR__ . '/../partials/navbar.php'; ?>
 
     <main class="max-w-screen-2xl mx-auto px-4 sm:px-6 mt-8">
-        
-        <div class="bg-zinc-900 rounded-sm border-2 border-zinc-800 shadow-xl overflow-hidden mb-10 relative">
+        <?php if ($isOwner): ?>
+        <form id="profileEditForm" class="pe-form" action="index.php?action=update_profile" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
+        <?php endif; ?>
+        <div class="bg-zinc-900 rounded-sm border-2 border-zinc-800 shadow-xl overflow-hidden mb-10 relative" data-profile-card>
             <div class="h-48 sm:h-64 md:h-80 w-full relative bg-zinc-800 overflow-hidden group">
                 <?php if (!empty($profileUser['banner'])): ?>
                     <?php 
                         $bannerVal = $profileUser['banner'];
                         $bannerPath = str_starts_with($bannerVal, 'http') ? $bannerVal : './uploads/profile/' . basename($bannerVal); 
                     ?>
-                    <img src="<?php echo htmlspecialchars($bannerPath); ?>" alt="Banner" class="w-full h-full min-w-full object-cover object-center bg-zinc-800">
+                    <img src="<?php echo htmlspecialchars($bannerPath); ?>" alt="Banner" class="w-full h-full min-w-full object-cover object-center bg-zinc-800" data-crop-target="banner">
                 <?php else: ?>
-                    <div class="w-full h-full bg-gradient-to-r from-violet-900 to-zinc-900"></div>
+                    <div class="w-full h-full bg-gradient-to-r from-violet-900 to-zinc-900" data-crop-placeholder="banner"></div>
+                    <?php if ($isOwner): ?><img src="" alt="Banner" class="w-full h-full min-w-full object-cover object-center absolute inset-0" data-crop-target="banner" hidden><?php endif; ?>
+                <?php endif; ?>
+
+                <?php if ($isOwner): ?>
+                    <label class="pe-swap pe-swap--banner">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M4 7h3l2-3h6l2 3h3v13H4z"/><circle cx="12" cy="13" r="4"/></svg>
+                        Trocar banner
+                        <input type="file" id="banner" name="banner" class="pe-file" accept="image/png, image/jpeg, image/gif, image/webp">
+                    </label>
                 <?php endif; ?>
                 
                 <button type="button" id="openShareProfile" class="btn btn-secondary absolute top-4 right-4 z-10 !bg-zinc-950/80 backdrop-blur-sm">
@@ -139,19 +156,31 @@
                                 $avatarVal = $profileUser['avatar'];
                                 $avatarPath = str_starts_with($avatarVal, 'http') ? $avatarVal : './uploads/profile/' . basename($avatarVal); 
                             ?>
-                            <img src="<?php echo htmlspecialchars($avatarPath); ?>" alt="Avatar" class="w-full h-full min-w-full object-cover object-center absolute inset-0 bg-zinc-950">
+                            <img src="<?php echo htmlspecialchars($avatarPath); ?>" alt="Avatar" class="w-full h-full min-w-full object-cover object-center absolute inset-0 bg-zinc-950" data-crop-target="avatar">
                         <?php else: ?>
-                            <div class="w-full h-full flex items-center justify-center text-5xl sm:text-7xl bg-zinc-800 font-black text-zinc-600 uppercase">
+                            <div class="w-full h-full flex items-center justify-center text-5xl sm:text-7xl bg-zinc-800 font-black text-zinc-600 uppercase" data-crop-placeholder="avatar">
                                 <?php echo substr($profileUser['username'], 0, 1); ?>
                             </div>
+                            <?php if ($isOwner): ?><img src="" alt="Avatar" class="w-full h-full min-w-full object-cover object-center absolute inset-0" data-crop-target="avatar" hidden><?php endif; ?>
+                        <?php endif; ?>
+                        <?php if ($isOwner): ?>
+                            <label class="pe-swap pe-swap--avatar">
+                                Trocar foto
+                                <input type="file" id="avatar" name="avatar" class="pe-file" accept="image/png, image/jpeg, image/gif, image/webp">
+                            </label>
                         <?php endif; ?>
                     </div>
                     
                     <div class="flex-1 text-center sm:text-left z-10 pt-2 sm:pt-0 pb-2 flex flex-col sm:flex-row justify-between items-center sm:items-end w-full">
                         <div>
-                            <h1 class="text-3xl sm:text-4xl font-black text-white uppercase tracking-tight">
+                            <h1 class="text-3xl sm:text-4xl font-black text-white uppercase tracking-tight pe-view">
                                 <?php echo htmlspecialchars($profileUser['display_name'] ?: $profileUser['username']); ?>
                             </h1>
+                            <?php if ($isOwner): ?>
+                                <input type="text" name="display_name" class="pe-input pe-input--name" maxlength="50"
+                                       value="<?php echo htmlspecialchars($profileUser['display_name'] ?? ''); ?>"
+                                       placeholder="<?php echo htmlspecialchars($profileUser['username']); ?>" aria-label="Nome de exibição">
+                            <?php endif; ?>
                             <p class="text-violet-400 font-bold uppercase tracking-widest text-sm mt-1 flex items-center justify-center sm:justify-start gap-2">
                                 @<?php echo htmlspecialchars($profileUser['username']); ?>
                                 <?php if (!$isOwner && $followsMe): ?>
@@ -161,9 +190,13 @@
                         </div>
                         
                         <?php if ($isOwner): ?>
-                            <a href="index.php?action=edit_profile" class="btn btn-secondary mt-4 sm:mt-0 shrink-0">
+                            <a href="index.php?action=edit_profile" class="btn btn-secondary mt-4 sm:mt-0 shrink-0 pe-view" data-edit-profile>
                                 Editar perfil
                             </a>
+                            <div class="pe-actions mt-4 sm:mt-0 shrink-0">
+                                <button type="button" class="btn btn-secondary" data-edit-cancel>Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Salvar</button>
+                            </div>
                         <?php elseif ($currentUserId !== null): ?>
                             <button id="followBtn" class="btn mt-4 sm:mt-0 shrink-0 <?php echo $isFollowing ? 'btn-secondary' : 'btn-accent'; ?>" data-user-id="<?= $profileUserId ?>" data-is-following="<?php echo $isFollowing ? 'true' : 'false'; ?>">
                                 <?php echo $isFollowing ? 'Deixar de seguir' : 'Seguir'; ?>
@@ -173,12 +206,21 @@
                 </div>
 
                 <?php if (!empty($profileUser['bio'])): ?>
-                    <div class="bg-zinc-950 border border-zinc-800 p-4 sm:p-5 rounded-sm mt-4 relative z-10">
+                    <div class="bg-zinc-950 border border-zinc-800 p-4 sm:p-5 rounded-sm mt-4 relative z-10 pe-view">
                         <p class="text-zinc-300 whitespace-pre-wrap text-sm sm:text-base leading-relaxed"><?php echo htmlspecialchars($profileUser['bio']); ?></p>
+                    </div>
+                <?php endif; ?>
+                <?php if ($isOwner): ?>
+                    <div class="pe-edit-only mt-4 relative z-10">
+                        <textarea name="bio" rows="3" class="pe-input pe-input--bio" placeholder="Fale um pouco sobre seus jogos favoritos..." aria-label="Bio"><?php echo htmlspecialchars($profileUser['bio'] ?? ''); ?></textarea>
+                        <p class="pe-hint">Banner: 3:1, 2400 × 800 px ou maior. Foto: quadrada, 512 × 512 px ou maior. JPG, PNG, WEBP ou GIF, até 5 MB.</p>
                     </div>
                 <?php endif; ?>
             </div>
         </div>
+        <?php if ($isOwner): ?>
+        </form>
+        <?php endif; ?>
 
         <div class="flex flex-col lg:flex-row gap-8 items-start">
             <div class="flex-1 min-w-0">
@@ -477,6 +519,9 @@
 
     <?php if ($isOwner): ?>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+    <script src="<?php echo mgl_asset('assets/lib/cropperjs/cropper.min.js'); ?>"></script>
+    <script src="<?php echo mgl_asset('assets/js/imagePreview.js'); ?>"></script>
+    <script src="<?php echo mgl_asset('assets/js/profile-edit.js'); ?>"></script>
     <?php endif; ?>
     <script src="<?php echo mgl_asset('assets/js/top-games.js'); ?>"></script>
     <script src="<?php echo mgl_asset('assets/js/friends.js'); ?>"></script>
@@ -484,6 +529,14 @@
     <script src="<?php echo mgl_asset('assets/js/notifications.js'); ?>"></script>
     <script src="<?php echo mgl_asset('assets/js/profile-comments.js'); ?>"></script>
     <script src="<?php echo mgl_asset('assets/js/profile-library.js'); ?>"></script>
+
+    <?php if ($isOwner && isset($_SESSION['profile_error'])): ?>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.documentElement.dataset.openProfileEdit = '1';
+        Swal.fire({ icon: 'error', title: <?php echo json_encode($_SESSION['profile_error'], JSON_UNESCAPED_UNICODE); ?> });
+    </script>
+    <?php unset($_SESSION['profile_error']); endif; ?>
 
     <?php if (isset($_SESSION['profile_success'])): ?>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

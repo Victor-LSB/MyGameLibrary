@@ -1010,3 +1010,119 @@ html.fmodal-open {
   border-radius: 50%;
   background: #a78bfa;
 }
+
+/* ------------------------------------------------------------------ */
+/* Perfil: edição na própria página (só aparece para o dono)           */
+/* ------------------------------------------------------------------ */
+
+.pe-swap,
+.pe-input,
+.pe-actions,
+.pe-edit-only,
+.pe-form .mgl-preview {
+  display: none;
+}
+
+.pe-on .pe-view,
+.pe-on #openShareProfile {
+  display: none !important;
+}
+
+.pe-on .pe-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pe-on .pe-edit-only,
+.pe-on .pe-input {
+  display: block;
+}
+
+.pe-swap {
+  position: absolute;
+  z-index: 20;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 38px;
+  padding: 0 0.875rem;
+  background: rgba(9, 9, 11, 0.85);
+  border: 2px solid #3f3f46;
+  border-radius: 2px;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.pe-on .pe-swap {
+  display: inline-flex;
+}
+
+.pe-swap:hover,
+.pe-swap:focus-within {
+  border-color: #8b5cf6;
+}
+
+.pe-swap--banner {
+  right: 1rem;
+  bottom: 1rem;
+}
+
+.pe-swap--avatar {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  justify-content: center;
+  min-height: 34px;
+  border: 0;
+  border-top: 2px solid #3f3f46;
+  font-size: 0.6875rem;
+}
+
+.pe-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.pe-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #09090b;
+  border: 2px solid #3f3f46;
+  border-radius: 2px;
+  color: #fff;
+  outline: none;
+  font-family: inherit;
+}
+
+.pe-input:focus {
+  border-color: #8b5cf6;
+}
+
+.pe-input--name {
+  max-width: 26rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 1.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+.pe-input--bio {
+  min-height: 5.25rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.pe-hint {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #a1a1aa;
+}

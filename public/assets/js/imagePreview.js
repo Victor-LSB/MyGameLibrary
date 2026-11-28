@@ -147,6 +147,14 @@ document.addEventListener('DOMContentLoaded', function () {
         note.hidden = !noteText;
         box.querySelector('.mgl-preview-readjust').hidden = !state.original;
         box.style.display = 'block';
+        // Edição no próprio perfil: mostra o resultado direto no banner/avatar da página
+        var target = document.querySelector('[data-crop-target="' + cfg.key + '"]');
+        if (target) {
+            target.src = state.previewUrl;
+            target.hidden = false;
+            var ph = document.querySelector('[data-crop-placeholder="' + cfg.key + '"]');
+            if (ph) ph.hidden = true;
+        }
     }
 
     function hidePreview(cfg, state) {

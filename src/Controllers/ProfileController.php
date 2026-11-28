@@ -434,7 +434,7 @@ class ProfileController {
                     $avatar = $uploadResult;
                 } else {
                     $_SESSION['profile_error'] = "A foto de perfil deve ser uma imagem válida (JPG, PNG, GIF, WEBP).";
-                    header("Location: index.php?action=edit_profile");
+                    header("Location: index.php?action=profile&u=" . urlencode($_SESSION['username']));
                     exit();
                 }
             }
@@ -446,7 +446,7 @@ class ProfileController {
                     $banner = $uploadResult;
                 } else {
                     $_SESSION['profile_error'] = "O banner deve ser uma imagem válida (JPG, PNG, GIF, WEBP).";
-                    header("Location: index.php?action=edit_profile");
+                    header("Location: index.php?action=profile&u=" . urlencode($_SESSION['username']));
                     exit();
                 }
             }
