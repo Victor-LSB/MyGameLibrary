@@ -224,3 +224,25 @@ if (!function_exists('mgl_current_user')) {
         return $cached;
     }
 }
+
+if (!function_exists('mgl_cover_thumb')) {
+    /**
+     * Versão pequena de uma capa, para miniaturas (até ~90 px na tela).
+     * Só muda o endereço na exibição; o banco continua com a capa grande.
+     *   - IGDB: troca o tamanho (t_cover_big_2x etc.) por t_cover_small_2x (180x240).
+     *   - RAWG (capas antigas, de antes da migração): usa o redimensionamento do próprio
+     *     RAWG; sem isso a imagem original chega com até 4000 px de largura.
+     * Qualquer outro endereço volta como está.
+     */
+    function mgl_cover_thumb(?string $url): ?string {
+        if ($url === null || $url === '') return $url;
+        $url = preg_replace('#^http://(?!localhost|127\.)#i', 'https://', $url);
+        if (str_contains($url, 'images.igdb.com/igdb/image/upload/')) {
+            return preg_replace('#/upload/t_[a-z0-9_]+/#i', '/upload/t_cover_small_2x/', $url);
+        }
+        if (str_contains($url, 'media.rawg.io/media/') && !str_contains($url, '/media/resize/') && !str_contains($url, '/media/crop/')) {
+            return str_replace('media.rawg.io/media/', 'media.rawg.io/media/resize/200/-/', $url);
+        }
+        return $url;
+    }
+}

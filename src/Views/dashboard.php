@@ -240,7 +240,7 @@
                                                     <div class="dash-bar__covers" style="grid-template-columns: repeat(<?php echo $mosaicCols; ?>, minmax(0, 1fr))">
                                                         <?php foreach ($coverGames as $cg): ?>
                                                             <?php if (!empty($cg['cover_image'])): ?>
-                                                                <img src="<?php echo htmlspecialchars($cg['cover_image']); ?>" alt="" loading="lazy">
+                                                                <img src="<?php echo htmlspecialchars(mgl_cover_thumb($cg['cover_image'])); ?>" alt="" loading="lazy">
                                                             <?php else: ?>
                                                                 <?php $initials = mb_strtoupper(implode('', array_map(fn($w) => mb_substr($w, 0, 1), array_slice(preg_split('/\s+/u', trim(preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $cg['title']))), 0, 3)))); ?>
                                                                 <span><?php echo htmlspecialchars($initials); ?></span>
@@ -315,7 +315,7 @@
                                 <div class="dash-date"><b><?php echo (int) date('j', $ts); ?></b><span><?php echo mgl_weekday_short_pt((int) date('w', $ts)); ?></span></div>
                                 <a href="<?php echo htmlspecialchars($gameUrl($entry['game_id'])); ?>" class="dash-cover" tabindex="-1" aria-hidden="true">
                                     <?php if (!empty($entry['cover_image'])): ?>
-                                        <img src="<?php echo htmlspecialchars($entry['cover_image']); ?>" alt="" loading="lazy">
+                                        <img src="<?php echo htmlspecialchars(mgl_cover_thumb($entry['cover_image'])); ?>" alt="" loading="lazy">
                                     <?php else: ?>
                                         <span><?php echo htmlspecialchars(mb_substr($entry['title'], 0, 1)); ?></span>
                                     <?php endif; ?>
@@ -390,7 +390,7 @@
                                 <li>
                                     <a href="<?php echo htmlspecialchars($gameUrl($pg['game_id'])); ?>" class="flex items-center gap-3 group">
                                         <span class="w-11 h-[58px] shrink-0 border-2 border-zinc-800 bg-zinc-800 overflow-hidden">
-                                            <?php if (!empty($pg['cover_image'])): ?><img src="<?php echo htmlspecialchars($pg['cover_image']); ?>" alt="" loading="lazy" class="w-full h-full object-cover"><?php endif; ?>
+                                            <?php if (!empty($pg['cover_image'])): ?><img src="<?php echo htmlspecialchars(mgl_cover_thumb($pg['cover_image'])); ?>" alt="" loading="lazy" class="w-full h-full object-cover"><?php endif; ?>
                                         </span>
                                         <span class="min-w-0 flex-1">
                                             <span class="block text-sm font-extrabold text-white truncate group-hover:text-violet-300"><?php echo htmlspecialchars($pg['title']); ?></span>
