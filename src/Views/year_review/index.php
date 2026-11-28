@@ -4,7 +4,17 @@
     $metaDescription = $review['completedCount'] > 0
         ? "$displayName zerou {$review['completedCount']} " . ($review['completedCount'] === 1 ? 'jogo' : 'jogos') . " em $year. Veja a retrospectiva completa no MyGameLibrary."
         : "Retrospectiva $year de $displayName no MyGameLibrary.";
-    $ogImage = $review['favorites'][0]['cover_image'] ?? ($review['completed'][0]['cover_image'] ?? null);
+    // Card de compartilhar (imagem gerada com o banner do perfil de fundo). "v" muda quando
+    // o card muda, para o WhatsApp/Discord não mostrarem a versão antiga do cache deles.
+    $cardSupported = \Victi\MyGameLibrary\Controllers\ProfileCardController::isSupported();
+    $yearCardVersion = substr(md5(json_encode([
+        $profileUser['banner'] ?? null, $displayName, $review['completedCount'], round((float) $review['hours']),
+        $review['platinums'], $review['avgRating'], array_column($review['favorites'], 'id'),
+    ])), 0, 8);
+    $yearCardUrl = 'index.php?' . http_build_query(['action' => 'year_card', 'u' => $profileUser['username'], 'y' => $year, 'v' => $yearCardVersion]);
+    $ogImage = $cardSupported
+        ? $yearCardUrl
+        : ($review['favorites'][0]['cover_image'] ?? ($review['completed'][0]['cover_image'] ?? null));
     require __DIR__ . '/../header.php';
 
     $maxMonth = max($review['byMonth']) ?: 1;
@@ -274,23 +284,99 @@
     clear.addEventListener('click', () => apply(null));
 })();
 
+</script>
+
+<!-- Janela de compartilhar: prévia do card + copiar link / baixar imagem (igual à do perfil) -->
+<div id="shareReviewModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="shareReviewTitle">
+    <div class="w-full max-w-2xl bg-zinc-900 border-2 border-zinc-800 rounded-sm shadow-2xl">
+        <div class="flex items-center justify-between px-5 py-4 border-b-2 border-zinc-800">
+            <h2 id="shareReviewTitle" class="text-white font-black uppercase tracking-tight">Compartilhar retrospectiva <?php echo $year; ?></h2>
+            <button type="button" data-close-share class="w-9 h-9 flex items-center justify-center rounded-sm text-zinc-400 hover:text-white hover:bg-zinc-800" aria-label="Fechar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+        </div>
+        <div class="p-5 space-y-4">
+            <?php if ($cardSupported): ?>
+                <div class="relative aspect-[1200/630] bg-zinc-950 border-2 border-zinc-800 rounded-sm overflow-hidden">
+                    <div id="shareReviewLoading" class="absolute inset-0 flex items-center justify-center text-zinc-600 text-sm font-bold uppercase tracking-widest">Gerando prévia…</div>
+                    <img id="shareReviewImg" data-src="<?php echo htmlspecialchars($yearCardUrl); ?>" alt="Prévia do card da retrospectiva" class="relative w-full h-full object-cover opacity-0 transition-opacity duration-300">
+                </div>
+                <p class="text-xs text-zinc-500">É assim que o link aparece no WhatsApp, Discord e redes sociais.</p>
+            <?php endif; ?>
+            <div class="flex gap-2">
+                <input id="shareReviewUrl" type="text" readonly value="<?php echo htmlspecialchars($shareUrl); ?>" aria-label="Link da retrospectiva" class="flex-1 min-w-0 bg-zinc-950 border-2 border-zinc-800 text-zinc-300 text-sm rounded-sm px-3 py-2.5 focus:outline-none focus:border-violet-500">
+                <button type="button" id="copyReviewUrl" class="btn btn-primary shrink-0 h-auto">Copiar link</button>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button type="button" id="nativeShareReview" class="btn btn-secondary hidden">Compartilhar…</button>
+                <?php if ($cardSupported): ?>
+                    <a href="<?php echo htmlspecialchars($yearCardUrl); ?>" download="retrospectiva-<?php echo $year; ?>-<?php echo htmlspecialchars($profileUser['username']); ?>.jpg" class="btn btn-secondary">Baixar imagem</a>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
 (function () {
     const btn = document.getElementById('shareReview');
-    if (!btn) return;
-    btn.addEventListener('click', async () => {
-        const url = btn.dataset.url.startsWith('http') ? btn.dataset.url : location.href;
-        if (navigator.share) {
-            try { await navigator.share({ title: btn.dataset.title, url }); } catch (e) { /* cancelado */ }
-            return;
+    const modal = document.getElementById('shareReviewModal');
+    if (!btn || !modal) return;
+    const urlInput = document.getElementById('shareReviewUrl');
+    const copyBtn = document.getElementById('copyReviewUrl');
+    const nativeBtn = document.getElementById('nativeShareReview');
+    const img = document.getElementById('shareReviewImg');
+    // APP_URL vazio no .env: usa o endereço da própria página
+    if (!/^https?:/.test(urlInput.value)) urlInput.value = location.href;
+
+    function open() {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        // A imagem só é pedida (e gerada no servidor) quando a janela abre
+        if (img && !img.src) {
+            img.addEventListener('load', () => {
+                img.classList.remove('opacity-0');
+                document.getElementById('shareReviewLoading')?.remove();
+            }, { once: true });
+            img.src = img.dataset.src;
         }
+        copyBtn.focus();
+    }
+    function close() {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        btn.focus();
+    }
+
+    btn.addEventListener('click', open);
+    modal.addEventListener('click', (e) => { if (e.target === modal || e.target.closest('[data-close-share]')) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.classList.contains('hidden')) close(); });
+
+    copyBtn.addEventListener('click', async () => {
         try {
-            await navigator.clipboard.writeText(url);
-            btn.textContent = 'Link copiado!';
-            setTimeout(() => { btn.textContent = 'Compartilhar'; }, 2000);
+            await navigator.clipboard.writeText(urlInput.value);
         } catch (e) {
-            prompt('Copie o link:', url);
+            urlInput.select();
+            document.execCommand('copy');
         }
+        copyBtn.textContent = 'Copiado!';
+        setTimeout(() => { copyBtn.textContent = 'Copiar link'; }, 2000);
     });
+
+    if (navigator.share) {
+        nativeBtn.classList.remove('hidden');
+        nativeBtn.addEventListener('click', async () => {
+            const data = { title: btn.dataset.title || document.title, url: urlInput.value };
+            // No celular, manda junto a imagem do card quando o navegador aceita arquivos
+            try {
+                if (img && img.src && navigator.canShare) {
+                    const blob = await (await fetch(img.src)).blob();
+                    const file = new File([blob], 'retrospectiva.jpg', { type: 'image/jpeg' });
+                    if (navigator.canShare({ files: [file] })) data.files = [file];
+                }
+                await navigator.share(data);
+            } catch (e) { /* cancelado */ }
+        });
+    }
 })();
 </script>
 </body>

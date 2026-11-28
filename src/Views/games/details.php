@@ -9,6 +9,7 @@
         $ogImage = $game['cover_image'] ?? null;
         $ogType = 'article';
     }
+    $extraStyles = ['assets/css/review.css'];
     require_once __DIR__ . '/../header.php';
 ?>
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen pb-12 selection:bg-violet-600 selection:text-white">
@@ -110,14 +111,10 @@
 <?php require_once __DIR__ . '/../partials/navbar.php'; ?>
 
     <main class="max-w-screen-2xl mx-auto px-4 sm:px-6">
-        <div class="flex items-center justify-between gap-4 mb-6">
-            <h1 class="text-2xl font-black text-white tracking-tighter uppercase line-clamp-1 flex-1">
-                <?php if (!empty($game['id'])): ?>
-                    <a href="<?php echo htmlspecialchars(mgl_game_url($game['id'])); ?>" class="hover:text-violet-400 transition-colors" title="Ver o que a comunidade acha deste jogo"><?php echo htmlspecialchars($game['title']); ?></a>
-                <?php else: ?>
-                    Jogo não encontrado
-                <?php endif; ?>
-            </h1>
+        <div class="flex items-center justify-end gap-4 mb-6">
+            <?php if (empty($game['id'])): ?>
+                <h1 class="text-2xl font-black text-white tracking-tighter uppercase flex-1">Jogo não encontrado</h1>
+            <?php endif; ?>
             <?php if (!empty($game['id'])): ?>
                 <a href="<?php echo htmlspecialchars(mgl_game_url($game['id'])); ?>" class="btn btn-secondary hidden sm:inline-flex shrink-0 !text-violet-300"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-3.5 h-3.5" aria-hidden="true"><path stroke-linecap="square" d="M7 17 17 7M9 7h8v8"/></svg>Página do jogo</a>
             <?php endif; ?>
@@ -145,32 +142,30 @@
             </div>
         <?php else: ?>
 
-        <div class="bg-zinc-900 rounded-sm border-2 border-zinc-800 p-6 sm:p-8 shadow-2xl">
-        <div class="flex flex-col md:flex-row gap-8">
-            
-            <div class="w-full md:w-72 xl:w-80 shrink-0 flex flex-col gap-4">
-                <div class="bg-zinc-950 border-4 border-zinc-800 rounded-sm overflow-hidden shadow-xl aspect-[3/4]">
+        <?php $currentStatus = $game['status'] ?? ''; ?>
+        <!-- Cabeçalho: capa + o que você acha do jogo (status, nota, platina, conclusão) -->
+        <section class="rv-head" aria-labelledby="gameTitle">
+            <div class="rv-cover">
                     <?php if (!empty($game['cover_image'])): ?>
                         <img src="<?php echo htmlspecialchars($game['cover_image']); ?>" alt="Capa de <?php echo htmlspecialchars($game['title']); ?>" class="w-full h-full object-cover">
                     <?php else: ?>
                         <div class="w-full h-full flex items-center justify-center text-zinc-600 font-black uppercase text-2xl text-center p-4">Sem Capa</div>
                     <?php endif; ?>
+            </div>
+            <div class="rv-info">
+                <div>
+                    <h1 id="gameTitle" class="rv-title">
+                        <a href="<?php echo htmlspecialchars(mgl_game_url($game['id'])); ?>" title="Ver o que a comunidade acha deste jogo"><?php echo htmlspecialchars($game['title']); ?></a>
+                    </h1>
+                    <p class="rv-by">
+                        <?php if ($isOwner): ?>Na sua biblioteca<?php else: ?>Na biblioteca de <a href="<?php echo htmlspecialchars(mgl_url('profile', ['u' => $username_profile]), ENT_QUOTES); ?>"><?php echo htmlspecialchars($username_profile); ?></a><?php endif; ?>
+                    </p>
                 </div>
-                
-                <div class="bg-zinc-950 border-2 border-zinc-800 p-4 rounded-sm text-center" id="statusCard">
-                    <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-1">Status</span>
-                    <?php if ($isOwner): ?>
-                        <?php $currentStatus = $game['status'] ?? ''; ?>
-                        <span id="statusLabel" class="text-xl font-bold <?php
-                            echo isset($game['status']) ? match($game['status']) {
-                                'Jogando' => 'text-blue-400',
-                                'Zerado' => 'text-emerald-400',
-                                'Dropado' => 'text-amber-400',
-                                'Quero jogar' => 'text-fuchsia-400',
-                                default => 'text-white'
-                            } : 'text-zinc-600';
-                        ?> uppercase tracking-tight block mb-3"><?php echo isset($game['status']) ? htmlspecialchars($game['status']) : 'N/A'; ?></span>
 
+                <div class="rv-row">
+                    <div class="rv-block rv-block--status" id="statusCard">
+                        <span class="rv-lbl">Status</span>
+                        <?php if ($isOwner): ?>
                         <div class="seg">
                             <form class="detailStatusForm flex-1 flex" data-status="Jogando">
                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
@@ -194,20 +189,7 @@
                                 <button type="submit" data-status-btn="Dropado" class="detail-status-btn status-btn seg-item w-full <?php echo $currentStatus === 'Dropado' ? 'is-active' : 'is-inactive'; ?>">Dropado</button>
                             </form>
                         </div>
-
-                        <?php $isPlatinum = !empty($game['platinum_at']); $isZerado = $currentStatus === 'Zerado'; ?>
-                        <button type="button" id="detailPlatinumBtn"
-                            class="btn btn-secondary mt-2 w-full <?php echo $isPlatinum ? '!bg-amber-400 !border-amber-400 !text-zinc-950' : ($isZerado ? '!text-amber-400 hover:!border-amber-400' : ''); ?>"
-                            data-game-id="<?php echo htmlspecialchars($game_id ?? ''); ?>"
-                            data-platinum="<?php echo $isPlatinum ? '1' : '0'; ?>"
-                            <?php echo $isZerado ? '' : 'disabled'; ?>
-                            title="<?php echo $isZerado ? ($isPlatinum ? 'Platinado — clique para desmarcar' : 'Marcar como platinado') : 'Disponível depois de marcar como Zerado'; ?>">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5 pointer-events-none">
-                                <path d="M6 3h12v2h2a1 1 0 0 1 1 1v1a5 5 0 0 1-4.53 4.98A6.02 6.02 0 0 1 13 15.9V18h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.1a6.02 6.02 0 0 1-3.47-3.92A5 5 0 0 1 3 7V6a1 1 0 0 1 1-1h2V3Zm-2 4v0a3 3 0 0 0 2.4 2.94A9 9 0 0 1 6 7V6H4v1Zm14 0V6h-2v1a9 9 0 0 1-.4 2.94A3 3 0 0 0 18 7Z"/>
-                            </svg>
-                            <?php echo $isPlatinum ? 'Platinado' : 'Marcar platina'; ?>
-                        </button>
-                    <?php else: ?>
+                        <?php else: ?>
                         <span class="text-xl font-bold <?php
                             echo isset($game['status']) ? match($game['status']) {
                                 'Jogando' => 'text-blue-400',
@@ -226,13 +208,13 @@
                                 Platinado
                             </div>
                         <?php endif; ?>
-                    <?php endif; ?>
-                </div>
+                        <?php endif; ?>
+                    </div>
 
-                <?php if ($isOwner || (isset($game['rating']) && $game['rating'])): ?>
-                <div class="bg-zinc-950 border-2 border-zinc-800 p-4 rounded-sm text-center">
-                    <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-3"><?php echo $isOwner ? 'Sua nota' : 'Nota'; ?></span>
-                    <?php if ($isOwner): ?>
+                    <?php if ($isOwner || (isset($game['rating']) && $game['rating'])): ?>
+                    <div class="rv-block rv-block--rating">
+                        <span class="rv-lbl"><?php echo $isOwner ? 'Sua nota' : 'Nota'; ?></span>
+                        <?php if ($isOwner): ?>
                         <form id="detailRatingForm">
                             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                             <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($game_id ?? ''); ?>">
@@ -248,7 +230,7 @@
                                 <?php endfor; ?>
                             </div>
                         </form>
-                    <?php else: ?>
+                        <?php else: ?>
                         <div class="text-3xl text-amber-400 font-black tracking-widest">
                             <?php
                                 for($i=1; $i<=5; $i++) {
@@ -256,35 +238,134 @@
                                 }
                             ?>
                         </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if ($isOwner): ?>
+                    <div class="rv-block">
+                        <span class="rv-lbl">Platina</span>
+                        <?php $isPlatinum = !empty($game['platinum_at']); $isZerado = $currentStatus === 'Zerado'; ?>
+                        <button type="button" id="detailPlatinumBtn"
+                            class="btn btn-secondary rv-plat-btn <?php echo $isPlatinum ? '!bg-amber-400 !border-amber-400 !text-zinc-950' : ($isZerado ? '!text-amber-400 hover:!border-amber-400' : ''); ?>"
+                            data-game-id="<?php echo htmlspecialchars($game_id ?? ''); ?>"
+                            data-platinum="<?php echo $isPlatinum ? '1' : '0'; ?>"
+                            <?php echo $isZerado ? '' : 'disabled'; ?>
+                            title="<?php echo $isZerado ? ($isPlatinum ? 'Platinado — clique para desmarcar' : 'Marcar como platinado') : 'Disponível depois de marcar como Zerado'; ?>">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5 pointer-events-none">
+                                <path d="M6 3h12v2h2a1 1 0 0 1 1 1v1a5 5 0 0 1-4.53 4.98A6.02 6.02 0 0 1 13 15.9V18h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.1a6.02 6.02 0 0 1-3.47-3.92A5 5 0 0 1 3 7V6a1 1 0 0 1 1-1h2V3Zm-2 4v0a3 3 0 0 0 2.4 2.94A9 9 0 0 1 6 7V6H4v1Zm14 0V6h-2v1a9 9 0 0 1-.4 2.94A3 3 0 0 0 18 7Z"/>
+                            </svg>
+                            <?php echo $isPlatinum ? 'Platinado' : 'Marcar platina'; ?>
+                        </button>
+                    </div>
+                    <?php endif; ?>
+                </div>
+
+                <?php if (!empty($game['completion_date']) || !empty($game['time_spent_hours'])): ?>
+                <div class="rv-meta">
+                    <?php if (!empty($game['completion_date'])): ?>
+                        <div><b><?php echo htmlspecialchars(date('d/m/Y', strtotime($game['completion_date']))); ?></b><span>concluído em</span></div>
+                    <?php endif; ?>
+                    <?php if (!empty($game['time_spent_hours'])): ?>
+                        <div><b><?php echo htmlspecialchars(number_format((float) $game['time_spent_hours'], 2, ',', '.')); ?> h</b><span>jogadas</span></div>
                     <?php endif; ?>
                 </div>
                 <?php endif; ?>
+            </div>
+        </section>
 
-                <?php if (!empty($game['completion_date']) || !empty($game['time_spent_hours'])): ?>
-                <div class="bg-zinc-950 border-2 border-zinc-800 p-4 rounded-sm text-center">
-                    <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-3">Conclusão</span>
-                    <div class="space-y-2 text-sm">
-                        <?php if (!empty($game['completion_date'])): ?>
-                            <div>
-                                <span class="block text-zinc-500 uppercase tracking-widest text-[10px] mb-1">Data</span>
-                                <span class="font-bold text-white"><?php echo htmlspecialchars(date('d/m/Y', strtotime($game['completion_date']))); ?></span>
+        <div class="rv-body">
+            <div class="rv-main">
+                <!-- Análise em primeiro lugar -->
+                <section class="rv-review">
+                    <h2 class="rv-h">Análise</h2>
+                    
+                    <?php if (isset($isOwner) && $isOwner): ?>
+                        <form action="index.php?action=save_review" method="POST" class="space-y-4">
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
+                            <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($game_id ?? ''); ?>">
+                            <textarea name="review" rows="6" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors resize-y font-medium text-sm sm:text-base min-h-[160px]" placeholder="Escreva o que achou da experiência..."><?php echo htmlspecialchars($game['review'] ?? ''); ?></textarea>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <label class="block">
+                                    <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Data de conclusão</span>
+                                    <input type="date" name="completion_date" max="<?php echo date('Y-m-d'); ?>" value="<?php echo htmlspecialchars($game['completion_date'] ?? ''); ?>" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
+                                </label>
+                                <label class="block">
+                                    <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Tempo gasto (horas)</span>
+                                    <input type="number" name="time_spent_hours" min="0" step="0.25" value="<?php echo htmlspecialchars(isset($game['time_spent_hours']) ? (string) $game['time_spent_hours'] : ''); ?>" placeholder="Ex.: 15.5" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
+                                </label>
                             </div>
-                        <?php endif; ?>
-                        <?php if (!empty($game['time_spent_hours'])): ?>
                             <div>
-                                <span class="block text-zinc-500 uppercase tracking-widest text-[10px] mb-1">Horas gastas</span>
-                                <span class="font-bold text-white"><?php echo htmlspecialchars(number_format((float) $game['time_spent_hours'], 2, ',', '.')); ?> h</span>
+                                <button type="submit" class="btn btn-primary btn-lg w-full sm:w-auto">Salvar Análise</button>
                             </div>
+                        </form>
+                    <?php else: ?>
+                        <div class="bg-zinc-950 border-2 border-zinc-800 p-5 rounded-sm">
+                            <?php if (!empty($game['review'])): ?>
+                                <p class="text-zinc-300 leading-relaxed whitespace-pre-wrap text-sm sm:text-base"><?php echo nl2br(htmlspecialchars($game['review'] ?? '')); ?></p>
+                            <?php else: ?>
+                                <p class="text-zinc-600 italic">Este jogador ainda não escreveu uma análise para este jogo.</p>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                </section>
+
+        <div class="rv-comments" id="reviewComments" data-target-user-id="<?php echo (int) ($target_user_id ?? 0); ?>" data-game-id="<?php echo htmlspecialchars($game_id ?? ''); ?>">
+            <h2 class="rv-h">
+                Comentários (<span id="reviewCommentsCount"><?php echo count($reviewComments); ?></span>)
+            </h2>
+
+            <div class="bg-zinc-950 border-2 border-zinc-800 rounded-sm p-5">
+                <?php if ($currentUserId !== null): ?>
+                    <form id="newReviewCommentForm" class="flex flex-col sm:flex-row gap-3">
+                        <textarea name="content" maxlength="1000" rows="2" required placeholder="Comente esta análise..." class="flex-1 bg-zinc-900 border-2 border-zinc-800 rounded-sm p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-violet-500 resize-none"></textarea>
+                        <button type="submit" class="btn btn-primary shrink-0 sm:h-auto">Comentar</button>
+                    </form>
+                <?php else: ?>
+                    <p class="text-zinc-500 text-sm">
+                        <a href="index.php?action=login" class="text-violet-400 hover:underline">Faça login</a> para comentar nesta análise.
+                    </p>
+                <?php endif; ?>
+
+                <div id="reviewCommentsList" class="divide-y divide-zinc-800 <?php echo $currentUserId !== null || !empty($reviewComments) ? 'mt-4' : ''; ?>">
+                    <?php foreach ($reviewComments as $comment): ?>
+                        <?php echo mgl_render_review_comment($comment, $currentUserId, $target_user_id ?? 0); ?>
+                    <?php endforeach; ?>
+                </div>
+                <p id="noReviewCommentsMsg" class="text-zinc-500 text-sm py-6 text-center <?php echo !empty($reviewComments) ? 'hidden' : ''; ?>">
+                    Seja o primeiro a comentar esta análise.
+                </p>
+            </div>
+        </div>
+            </div>
+
+            <aside class="rv-side">
+                <?php if ($isOwner || !empty($gameTags)): ?>
+                <div id="gameTagsSection" data-game-id="<?php echo htmlspecialchars($game_id ?? ''); ?>">
+                    <h2 class="rv-h">Tags</h2>
+                    <div class="bg-zinc-950 border-2 border-zinc-800 rounded-sm p-5">
+                        <?php if ($isOwner): ?>
+                            <form id="addTagForm" class="flex flex-col sm:flex-row gap-3">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
+                                <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($game_id ?? ''); ?>">
+                                <input type="text" name="tags" id="addTagInput" placeholder="Ex.: RPG, Coop" class="flex-1 bg-zinc-900 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
+                                <button type="submit" class="btn btn-secondary rv-tag-add" aria-label="Adicionar tag" title="Adicionar tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-4 h-4" aria-hidden="true"><path stroke-linecap="square" d="M12 5v14M5 12h14"/></svg></button>
+                            </form>
+                            <span class="block mt-2 text-xs text-zinc-500">Separe várias tags por vírgula.</span>
                         <?php endif; ?>
+
+                        <div class="flex flex-wrap gap-2 <?php echo $isOwner ? 'mt-4' : ''; ?>" id="gameTagsList">
+                            <?php foreach ($gameTags as $tag): ?>
+                                <?php echo mgl_render_game_tag_chip($tag, $isOwner); ?>
+                            <?php endforeach; ?>
+                        </div>
+                        <p id="noGameTagsMsg" class="text-zinc-500 text-sm <?php echo !empty($gameTags) ? 'hidden' : ''; ?>">Nenhuma tag adicionada ainda.</p>
                     </div>
                 </div>
                 <?php endif; ?>
-            </div>
 
-            <div class="w-full md:flex-1 min-w-0 flex flex-col">
-                
-                <div>
-                    <h3 class="text-xl font-bold text-white mb-2 uppercase tracking-tight">Descrição</h3>
+                <section>
+                    <h2 class="rv-h">Sobre o jogo</h2>
                     <?php if (!empty($game['description'])): ?>
                         <?php
                             // 1. Troca tags de fechamento de parágrafo e quebras de linha HTML por \n reais
@@ -315,96 +396,8 @@
                             <p class="text-zinc-600 italic">Nenhuma descrição disponível para este jogo.</p>
                         </div>
                     <?php endif; ?>
-                </div>
-
-                <div class="mt-6">
-                    <h3 class="text-xl font-bold text-white mb-2 uppercase tracking-tight">Análise</h3>
-                    
-                    <?php if (isset($isOwner) && $isOwner): ?>
-                        <form action="index.php?action=save_review" method="POST" class="space-y-4">
-                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
-                            <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($game_id ?? ''); ?>">
-                            <textarea name="review" rows="6" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors resize-y font-medium text-sm sm:text-base min-h-[160px]" placeholder="Escreva o que achou da experiência..."><?php echo htmlspecialchars($game['review'] ?? ''); ?></textarea>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <label class="block">
-                                    <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Data de conclusão</span>
-                                    <input type="date" name="completion_date" max="<?php echo date('Y-m-d'); ?>" value="<?php echo htmlspecialchars($game['completion_date'] ?? ''); ?>" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
-                                </label>
-                                <label class="block">
-                                    <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Tempo gasto (horas)</span>
-                                    <input type="number" name="time_spent_hours" min="0" step="0.25" value="<?php echo htmlspecialchars(isset($game['time_spent_hours']) ? (string) $game['time_spent_hours'] : ''); ?>" placeholder="Ex.: 15.5" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
-                                </label>
-                            </div>
-                            <div>
-                                <button type="submit" class="btn btn-primary btn-lg w-full sm:w-auto">Salvar Análise</button>
-                            </div>
-                        </form>
-                    <?php else: ?>
-                        <div class="bg-zinc-950 border-2 border-zinc-800 p-5 rounded-sm min-h-[150px]">
-                            <?php if (!empty($game['review'])): ?>
-                                <p class="text-zinc-300 leading-relaxed whitespace-pre-wrap text-sm sm:text-base"><?php echo nl2br(htmlspecialchars($game['review'] ?? '')); ?></p>
-                            <?php else: ?>
-                                <p class="text-zinc-600 italic">Este jogador ainda não escreveu uma análise para este jogo.</p>
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-                </div>
-
-                <?php if ($isOwner || !empty($gameTags)): ?>
-                <div class="mt-6" id="gameTagsSection" data-game-id="<?php echo htmlspecialchars($game_id ?? ''); ?>">
-                    <h3 class="text-xl font-bold text-white mb-2 uppercase tracking-tight">Tags</h3>
-                    <div class="bg-zinc-950 border-2 border-zinc-800 rounded-sm p-5">
-                        <?php if ($isOwner): ?>
-                            <form id="addTagForm" class="flex flex-col sm:flex-row gap-3">
-                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
-                                <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($game_id ?? ''); ?>">
-                                <input type="text" name="tags" id="addTagInput" placeholder="Adicionar tags separadas por vírgula" class="flex-1 bg-zinc-900 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
-                                <button type="submit" class="btn btn-secondary shrink-0 sm:h-auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-3.5 h-3.5" aria-hidden="true"><path stroke-linecap="square" d="M12 5v14M5 12h14"/></svg>Adicionar</button>
-                            </form>
-                            <span class="block mt-2 text-xs text-zinc-500">Exemplo: RPG, Coop, Relaxante</span>
-                        <?php endif; ?>
-
-                        <div class="flex flex-wrap gap-2 <?php echo $isOwner ? 'mt-4' : ''; ?>" id="gameTagsList">
-                            <?php foreach ($gameTags as $tag): ?>
-                                <?php echo mgl_render_game_tag_chip($tag, $isOwner); ?>
-                            <?php endforeach; ?>
-                        </div>
-                        <p id="noGameTagsMsg" class="text-zinc-500 text-sm <?php echo !empty($gameTags) ? 'hidden' : ''; ?>">Nenhuma tag adicionada ainda.</p>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-            </div>
-        </div>
-
-        <div class="mt-8" id="reviewComments" data-target-user-id="<?php echo (int) ($target_user_id ?? 0); ?>" data-game-id="<?php echo htmlspecialchars($game_id ?? ''); ?>">
-            <h3 class="text-xl font-bold text-white mb-2 uppercase tracking-tight">
-                Comentários (<span id="reviewCommentsCount"><?php echo count($reviewComments); ?></span>)
-            </h3>
-
-            <div class="bg-zinc-950 border-2 border-zinc-800 rounded-sm p-5">
-                <?php if ($currentUserId !== null): ?>
-                    <form id="newReviewCommentForm" class="flex flex-col sm:flex-row gap-3">
-                        <textarea name="content" maxlength="1000" rows="2" required placeholder="Comente esta análise..." class="flex-1 bg-zinc-900 border-2 border-zinc-800 rounded-sm p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-violet-500 resize-none"></textarea>
-                        <button type="submit" class="btn btn-primary shrink-0 sm:h-auto">Comentar</button>
-                    </form>
-                <?php else: ?>
-                    <p class="text-zinc-500 text-sm">
-                        <a href="index.php?action=login" class="text-violet-400 hover:underline">Faça login</a> para comentar nesta análise.
-                    </p>
-                <?php endif; ?>
-
-                <div id="reviewCommentsList" class="divide-y divide-zinc-800 <?php echo $currentUserId !== null || !empty($reviewComments) ? 'mt-4' : ''; ?>">
-                    <?php foreach ($reviewComments as $comment): ?>
-                        <?php echo mgl_render_review_comment($comment, $currentUserId, $target_user_id ?? 0); ?>
-                    <?php endforeach; ?>
-                </div>
-                <p id="noReviewCommentsMsg" class="text-zinc-500 text-sm py-6 text-center <?php echo !empty($reviewComments) ? 'hidden' : ''; ?>">
-                    Seja o primeiro a comentar esta análise.
-                </p>
-            </div>
-        </div>
-
+                </section>
+            </aside>
         </div>
 
         <?php endif; ?>

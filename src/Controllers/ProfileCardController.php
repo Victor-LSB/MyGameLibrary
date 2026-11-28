@@ -7,10 +7,13 @@ use Victi\MyGameLibrary\Models\Game;
 use Victi\MyGameLibrary\Models\User;
 
 /**
- * Card de compartilhamento do perfil (imagem 1200x630, tamanho padrão de prévia de link
- * do WhatsApp/Discord/X): avatar, nome, números da biblioteca e o Top 5.
+ * Cards de compartilhamento (imagem 1200x630, tamanho padrão de prévia de link do
+ * WhatsApp/Discord/X). O fundo é o banner do perfil, escurecido (sem banner: fundo roxo).
  *
- * index.php?action=profile_card&u=victor
+ *   Perfil:         index.php?action=profile_card&u=victor
+ *                   avatar, nome, números da biblioteca e o Top 5
+ *   Retrospectiva:  index.php?action=year_card&u=victor&y=2026
+ *                   ano, nome, números do ano e os favoritos do ano
  *
  * A imagem fica em cache em storage/cache/cards e só é desenhada de novo quando algo que
  * aparece nela muda. Precisa da extensão GD do PHP (pacote php-gd); sem ela, redireciona
@@ -47,19 +50,66 @@ class ProfileCardController {
         }
 
         $data = $this->collect($user);
+        $this->serve((string) (int) $user['id'], $data, fn($file) => $this->render($data, $file));
+    }
+
+    /** Card da retrospectiva do ano. */
+    public function yearImage() {
+        $username = trim((string) ($_GET['u'] ?? ''));
+        $user = $username !== '' ? (new User($this->db))->getUserByUsername($username) : null;
+        $year = (int) ($_GET['y'] ?? date('Y'));
+        if (!$user || $year < 1980 || $year > (int) date('Y')) {
+            http_response_code(404);
+            exit;
+        }
+
+        if (!self::isSupported()) {
+            error_log('ProfileCard: extensão GD (com FreeType) não instalada; instale php-gd.');
+            header('Location: ' . (mgl_avatar_url($user['banner'] ?? null) ?: 'assets/icon/icong.png'));
+            exit;
+        }
+
+        $review = (new YearReviewController())->buildReview((int) $user['id'], $year);
+        $gameModel = new Game($this->db);
+        // Capas: favoritos do ano; se forem poucos, completa com os outros zerados
+        $covers = [];
+        foreach (array_merge($review['favorites'], array_reverse($review['completed'])) as $g) {
+            $cover = !empty($g['cover_image']) ? $gameModel->normalizeCover($g['cover_image']) : null;
+            if ($cover && !in_array($cover, $covers, true)) $covers[] = $cover;
+            if (count($covers) >= 5) break;
+        }
+        $data = [
+            'name'      => ($user['display_name'] ?? '') ?: $user['username'],
+            'username'  => $user['username'],
+            'banner'    => $user['banner'] ?? null,
+            'year'      => $year,
+            'completed' => (int) $review['completedCount'],
+            'hours'     => (int) round((float) $review['hours']),
+            'platinums' => (int) $review['platinums'],
+            'rating'    => $review['avgRating'] !== null ? round((float) $review['avgRating'], 1) : null,
+            'covers'    => $covers,
+        ];
+        $this->serve('y' . $year . '-' . (int) $user['id'], $data, fn($file) => $this->renderYear($data, $file));
+    }
+
+    /**
+     * Entrega a imagem do cache (storage/cache/cards), desenhando de novo só quando
+     * algo que aparece nela mudou. $key separa os cards (perfil, cada ano...).
+     */
+    private function serve(string $key, array $data, callable $draw): void {
         $cacheDir = dirname(__DIR__, 2) . '/storage/cache/cards';
         if (!is_dir($cacheDir)) {
             @mkdir($cacheDir, 0775, true);
         }
         $hash = substr(md5(json_encode($data)), 0, 12);
-        $file = $cacheDir . '/' . (int) $user['id'] . '-' . $hash . '.jpg';
+        $file = $cacheDir . '/' . $key . '-' . $hash . '.jpg';
 
         if (!is_file($file)) {
-            // Versões antigas deste perfil não servem mais
-            foreach (glob($cacheDir . '/' . (int) $user['id'] . '-*.jpg') ?: [] as $old) {
+            // Versões antigas deste card não servem mais
+            foreach (glob($cacheDir . '/' . $key . '-*.jpg') ?: [] as $old) {
                 @unlink($old);
             }
-            $this->render($data, $file);
+            $draw($file);
         }
 
         header('Content-Type: image/jpeg');
@@ -102,6 +152,7 @@ class ProfileCardController {
             'name'      => ($user['display_name'] ?? '') ?: $user['username'],
             'username'  => $user['username'],
             'avatar'    => $user['avatar'] ?? null,
+            'banner'    => $user['banner'] ?? null,
             'games'     => (int) ($stats['games'] ?? 0),
             'completed' => (int) ($stats['completed'] ?? 0),
             'platinums' => (int) ($stats['platinums'] ?? 0),
@@ -120,13 +171,7 @@ class ProfileCardController {
         $bold = $this->font('Bold');
         $medium = $this->font('Medium');
 
-        // Fundo escuro com um brilho violeta no canto (degradê feito em faixas)
-        imagefilledrectangle($im, 0, 0, self::W, self::H, $c('#09090b'));
-        for ($i = 0; $i < 40; $i++) {
-            // camadas quase transparentes empilhadas: mais forte no canto, some em direção ao centro
-            imagefilledellipse($im, 0, 0, 1400 - $i * 30, 1000 - $i * 22, $c('#6d28d9', 124));
-        }
-        imagefilledrectangle($im, 0, 0, self::W, 8, $c('#7c3aed'));
+        $this->paintBackground($im, $c, $d['banner'] ?? null);
 
         // Avatar
         $ax = 64; $ay = 64; $as = 200;
@@ -202,6 +247,108 @@ class ProfileCardController {
         imagedestroy($im);
     }
 
+    /**
+     * Fundo do card: o banner do perfil cobrindo tudo, escurecido para o texto ficar
+     * legível (mais escuro à esquerda, onde fica o texto). Sem banner: fundo escuro
+     * com brilho roxo. Sempre termina com a faixa roxa no topo.
+     */
+    private function paintBackground($im, callable $c, ?string $banner): void {
+        imagefilledrectangle($im, 0, 0, self::W, self::H, $c('#09090b'));
+        $img = $this->loadImage($banner);
+        if ($img) {
+            $this->copyCover($im, $img, 0, 0, self::W, self::H);
+            imagedestroy($img);
+            // véu escuro por cima de tudo (alpha GD: 0 = opaco, 127 = transparente)
+            imagefilledrectangle($im, 0, 0, self::W, self::H, $c('#09090b', 40));
+            // e mais escuro da esquerda para a direita, em faixas
+            for ($x = 0; $x < self::W; $x += 20) {
+                $alpha = (int) min(127, 50 + ($x / self::W) * 110);
+                imagefilledrectangle($im, $x, 0, $x + 19, self::H, $c('#09090b', $alpha));
+            }
+        } else {
+            for ($i = 0; $i < 40; $i++) {
+                // camadas quase transparentes empilhadas: mais forte no canto, some em direção ao centro
+                imagefilledellipse($im, 0, 0, 1400 - $i * 30, 1000 - $i * 22, $c('#6d28d9', 124));
+            }
+        }
+        imagefilledrectangle($im, 0, 0, self::W, 8, $c('#7c3aed'));
+    }
+
+    /** Card da retrospectiva: ano grande, nome, números do ano e as capas dos favoritos. */
+    private function renderYear(array $d, string $file): void {
+        $im = imagecreatetruecolor(self::W, self::H);
+        imagealphablending($im, true);
+        $c = fn($hex, $alpha = 0) => imagecolorallocatealpha($im, hexdec(substr($hex, 1, 2)), hexdec(substr($hex, 3, 2)), hexdec(substr($hex, 5, 2)), $alpha);
+        $black = $this->font('Black');
+        $bold = $this->font('Bold');
+        $medium = $this->font('Medium');
+
+        $this->paintBackground($im, $c, $d['banner']);
+
+        // "RETROSPECTIVA" espaçado, ano enorme, "O ano em jogos de ..."
+        $x = 64;
+        foreach (mb_str_split('RETROSPECTIVA') as $ch) {
+            imagettftext($im, 16, 0, $x, 84, $c('#c4b5fd'), $black, $ch);
+            $x += $this->textWidth(16, $black, $ch) + 6;
+        }
+        imagettftext($im, 120, 0, 58, 222, $c('#ffffff'), $black, (string) $d['year']);
+        $line = 'O ano em jogos de ' . $d['name'];
+        imagettftext($im, 26, 0, 64, 272, $c('#d4d4d8'), $medium, $this->fit($line, 26, $medium, self::W - 128));
+
+        // Números do ano (grade 2x2 à esquerda)
+        $tiles = [
+            ['ZERADOS', (string) $d['completed'], '#34d399'],
+            ['HORAS JOGADAS', number_format($d['hours'], 0, ',', '.'), '#ffffff'],
+            ['PLATINAS', (string) $d['platinums'], '#fbbf24'],
+            ['NOTA MÉDIA', $d['rating'] !== null ? number_format($d['rating'], 1, ',', '') : '—', '#fbbf24'],
+        ];
+        $tw = 250; $th = 86; $gap = 12; $ty0 = 302;
+        foreach ($tiles as $i => [$label, $value, $color]) {
+            $tx = 64 + ($i % 2) * ($tw + $gap);
+            $ty = $ty0 + intdiv($i, 2) * ($th + $gap);
+            imagefilledrectangle($im, $tx, $ty, $tx + $tw, $ty + $th, $c('#18181b', 20));
+            imagerectangle($im, $tx, $ty, $tx + $tw, $ty + $th, $c('#3f3f46'));
+            $vs = 36;
+            while ($vs > 22 && $this->textWidth($vs, $black, $value) > $tw - 36) $vs -= 2;
+            imagettftext($im, $vs, 0, $tx + 18, $ty + 50, $c($color), $black, $value);
+            imagettftext($im, 12, 0, $tx + 18, $ty + 74, $c('#a1a1aa'), $bold, $label);
+        }
+
+        // Capas dos favoritos à direita, sobrepostas em leque (a 1ª fica por cima)
+        $images = $this->fetchImages($d['covers']);
+        $n = count($d['covers']);
+        if ($n > 0) {
+            $ch = 300; $cw = (int) round($ch * 3 / 4);
+            $areaX = 640; $areaW = self::W - 64 - $areaX;
+            $step = $n > 1 ? (int) floor(($areaW - $cw) / ($n - 1)) : 0;
+            $step = min($step, $cw + 12);
+            $startX = $areaX + (int) (($areaW - ($cw + $step * ($n - 1))) / 2);
+            imagettftext($im, 14, 0, $startX, 128, $c('#a1a1aa'), $bold, 'FAVORITOS DO ANO');
+            for ($i = $n - 1; $i >= 0; $i--) {
+                $cx = $startX + $i * $step;
+                $cy = 150 + $i * 14;
+                // moldura escura separa as capas sobrepostas
+                imagefilledrectangle($im, $cx - 4, $cy - 4, $cx + $cw + 3, $cy + $ch + 3, $c('#09090b'));
+                if (isset($images[$i])) {
+                    $this->copyCover($im, $images[$i], $cx, $cy, $cw, $ch);
+                } else {
+                    imagefilledrectangle($im, $cx, $cy, $cx + $cw - 1, $cy + $ch - 1, $c('#18181b'));
+                }
+                imagerectangle($im, $cx, $cy, $cx + $cw - 1, $cy + $ch - 1, $i === 0 ? $c('#fbbf24') : $c('#3f3f46'));
+            }
+        }
+        foreach ($images as $img) imagedestroy($img);
+
+        // Marca no rodapé
+        imagettftext($im, 26, 0, 64, 560, $c('#ffffff'), $black, 'MYGAMELIBRARY');
+        imagefilledrectangle($im, 64, 576, 124, 581, $c('#7c3aed'));
+        $host = parse_url((string) ($_ENV['APP_URL'] ?? ''), PHP_URL_HOST);
+        imagettftext($im, 17, 0, 64, 610, $c('#a1a1aa'), $medium, $host ?: 'Sua biblioteca de jogos');
+
+        imagejpeg($im, $file, 86);
+        imagedestroy($im);
+    }
+
     private function font(string $weight): string {
         return $this->fontDir . '/Inter-' . $weight . '.otf';
     }
@@ -237,14 +384,19 @@ class ProfileCardController {
     }
 
     private function loadAvatar(?string $avatar) {
-        if (empty($avatar)) {
+        return $this->loadImage($avatar);
+    }
+
+    /** Avatar/banner: URL completa ou arquivo em public/uploads/profile. */
+    private function loadImage(?string $value) {
+        if (empty($value)) {
             return null;
         }
-        if (str_starts_with($avatar, 'http')) {
-            $fetched = $this->fetchImages([$avatar]);
+        if (str_starts_with($value, 'http')) {
+            $fetched = $this->fetchImages([$value]);
             return $fetched[0] ?? null;
         }
-        $path = dirname(__DIR__, 2) . '/public/uploads/profile/' . basename($avatar);
+        $path = dirname(__DIR__, 2) . '/public/uploads/profile/' . basename($value);
         $bytes = is_file($path) ? @file_get_contents($path) : false;
         $img = $bytes ? @imagecreatefromstring($bytes) : false;
         return $img ?: null;

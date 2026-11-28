@@ -10,7 +10,7 @@
     // Prévia de link: o card gerado (avatar + números + Top 5). "v" muda quando o card muda,
     // para o WhatsApp/Discord não ficarem mostrando a versão antiga do cache deles.
     $cardVersion = substr(md5(json_encode([
-        $profileUser['avatar'] ?? null, $profileDisplayName,
+        $profileUser['avatar'] ?? null, $profileUser['banner'] ?? null, $profileDisplayName,
         array_map(fn($slot) => $slot['id'] ?? null, $topGames ?? []), $libraryTotalAll ?? null,
     ])), 0, 8);
     $profileCardUrl = 'index.php?' . http_build_query(['action' => 'profile_card', 'u' => $profileUser['username'] ?? '', 'v' => $cardVersion]);

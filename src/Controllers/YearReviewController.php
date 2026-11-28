@@ -63,7 +63,8 @@ class YearReviewController {
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
     }
 
-    private function buildReview(int $userId, int $year): array {
+    /** Público: também usado pelo card de compartilhar (ProfileCardController::yearImage). */
+    public function buildReview(int $userId, int $year): array {
         $start = "$year-01-01";
         $end = "$year-12-31";
 

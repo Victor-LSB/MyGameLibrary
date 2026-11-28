@@ -74,6 +74,7 @@ $routes = [
     'export_library' => [GameController::class, 'exportCsv'],
     'year_review'    => [YearReviewController::class, 'index'],
     'profile_card'   => [ProfileCardController::class, 'image'],
+    'year_card'      => [ProfileCardController::class, 'yearImage'],
     'save_review'    => [GameController::class, 'saveReview'],
     'dashboard'      => [DashboardController::class, 'index'],
     'dashboard_data' => [DashboardController::class, 'data'],
