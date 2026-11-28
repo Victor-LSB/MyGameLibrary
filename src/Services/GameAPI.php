@@ -8,7 +8,6 @@ class GameAPI {
     private $twitchClientId;
     private $twitchClientSecret;
     private $igdbUrl = 'https://api.igdb.com/v4/games';
-    private $igdbPopularityUrl = 'https://api.igdb.com/v4/popularity_primitives';
     private $cacheDir;
     private $cacheTtl = 300; // 5 minutos: buscas repetidas (ex: "the", "witcher", "the witcher") saem do cache
 
@@ -428,13 +427,14 @@ class GameAPI {
     }
 
     /**
-     * Jogos populares agora, pelo ranking de popularidade da IGDB (PopScore,
-     * popularity_type 1 = visitas às páginas dos jogos no IGDB.com).
+     * Jogos populares do momento: lançados nos últimos ~18 meses, ordenados pelo número
+     * de avaliações na IGDB (crítica + jogadores), que acompanha quanta gente jogou.
+     * (O ranking de "visitas" da IGDB foi descartado: muito ruidoso, trazia jogos aleatórios.)
      * Guarda em cache por 6 horas; se a IGDB falhar, usa o último cache, mesmo vencido.
      * Devolve a mesma estrutura de cada item de searchGames()['results'].
      */
     public function getPopularGames($limit = 20) {
-        $path = $this->cacheDir . '/popular_games.json';
+        $path = $this->cacheDir . '/popular_games_v2.json';
         $stale = null;
         if (is_file($path)) {
             $stale = json_decode((string) @file_get_contents($path), true);
@@ -444,35 +444,21 @@ class GameAPI {
         }
         $fallback = is_array($stale) ? array_slice($stale, 0, $limit) : [];
 
+        $now = time();
+        $since = $now - 548 * 86400; // ~18 meses
         // Pega bem mais que o limite: alguns saem no filtro (DLC, versões, sem capa...)
-        $pop = $this->igdbRequest(
-            'fields game_id,value; sort value desc; limit 80; where popularity_type = 1;',
-            5, 3, true, $this->igdbPopularityUrl
+        $games = $this->igdbRequest(
+            'fields ' . $this->igdbListFields . '; '
+            . 'where first_release_date >= ' . $since . ' & first_release_date <= ' . $now . ' & total_rating_count > 5; '
+            . 'sort total_rating_count desc; limit 60;'
         );
-        if (!is_array($pop) || !array_is_list($pop) || !$pop) {
+        if (!is_array($games) || !array_is_list($games) || !$games) {
             return $fallback;
         }
 
-        $ids = array_values(array_unique(array_filter(array_map(fn($p) => (int) ($p['game_id'] ?? 0), $pop))));
-        if (!$ids) {
-            return $fallback;
-        }
-
-        $games = $this->igdbRequest('fields ' . $this->igdbListFields . '; where id = (' . implode(',', $ids) . '); limit ' . count($ids) . ';');
-        if (!is_array($games) || !array_is_list($games)) {
-            return $fallback;
-        }
-
-        $byId = [];
-        foreach ($this->filterIgdbGameTypes($games) as $g) {
-            $byId[(int) $g['id']] = $g;
-        }
-
-        // Mantém a ordem do ranking
         $out = [];
-        foreach ($ids as $id) {
-            if (!isset($byId[$id])) continue;
-            $item = $this->trimGameForList($this->normalizeGameData($byId[$id]));
+        foreach ($this->filterIgdbGameTypes($games) as $g) {
+            $item = $this->trimGameForList($this->normalizeGameData($g));
             unset($item['_added']);
             if (empty($item['background_image'])) continue;
             $out[] = $item;
