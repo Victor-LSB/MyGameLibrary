@@ -48,7 +48,6 @@
                 <option value="<?php echo $key; ?>" <?php echo $librarySort === $key ? 'selected' : ''; ?>><?php echo $label; ?></option>
             <?php endforeach; ?>
         </select>
-        <button type="submit" class="btn btn-primary">Filtrar</button>
     </form>
 <?php endif; ?>
 

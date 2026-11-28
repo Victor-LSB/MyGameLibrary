@@ -107,6 +107,20 @@
         load(url, { push: true });
     });
 
+    // Busca aplica sozinha enquanto digita (sem botão "Filtrar"); Enter também funciona
+    var searchTimer = null;
+    function scheduleSearch(event) {
+        var input = event.target;
+        if (!input.matches || !input.matches('form[data-library-form] input[name="q"]')) return;
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(function () {
+            var form = input.form;
+            if (form.requestSubmit) form.requestSubmit(); else form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+        }, 400);
+    }
+    document.addEventListener('input', scheduleSearch);
+    document.addEventListener('search', scheduleSearch, true); // "x" de limpar a busca
+
     // Botão voltar/avançar do navegador
     window.addEventListener('popstate', function () {
         if (getSection()) {
