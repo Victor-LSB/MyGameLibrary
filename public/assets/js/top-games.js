@@ -129,7 +129,14 @@
                     if (!game || Number.isNaN(to)) { setTimeout(render, 0); return; }
                     placeGame(to, game);
                 },
+                // Arrastando entre slots do Top 5: mostra a troca antes de soltar
+                // (o jogo do slot de destino aparece no slot de onde o card saiu)
+                onMove(evt) {
+                    showSwapPreview(evt.from, evt.to);
+                    return true;
+                },
                 onEnd(evt) {
+                    clearSwapPreview();
                     const from = parseInt(evt.from.dataset.pos, 10);
                     const to = parseInt(evt.to.dataset.pos, 10);
                     if (from !== to && !Number.isNaN(from) && !Number.isNaN(to)) {
@@ -143,6 +150,28 @@
                 },
             }));
         });
+    }
+
+    // ---------- Prévia da troca entre slots ----------
+
+    function clearSwapPreview() {
+        grid.querySelectorAll('.top5-swap-preview').forEach((el) => el.remove());
+        grid.querySelectorAll('.top5-swapping').forEach((el) => el.classList.remove('top5-swapping'));
+    }
+
+    function showSwapPreview(fromZone, toZone) {
+        clearSwapPreview();
+        if (!fromZone || !toZone || fromZone === toZone) return;
+        if (!toZone.classList.contains('top5-drop')) return;
+        // O card que já está no slot de destino (não o que está sendo arrastado)
+        const target = Array.from(toZone.children).find((c) => c.classList.contains('top5-card') && !c.classList.contains('top5-ghost'));
+        if (!target) return; // slot vazio: só move
+        const preview = target.cloneNode(true);
+        preview.classList.remove('top5-card'); // não vira item arrastável
+        preview.classList.add('top5-swap-preview');
+        preview.querySelectorAll('[data-remove]').forEach((b) => b.remove());
+        fromZone.appendChild(preview);
+        toZone.classList.add('top5-swapping');
     }
 
     // ---------- Salvar ----------
@@ -287,7 +316,9 @@
             + '#top5 .top5-drop > .top5-ghost{position:absolute;inset:0;opacity:.85;overflow:hidden;z-index:20;outline:2px solid rgb(139 92 246);border-radius:2px}'
             // ...e o jogo que já estava no slot some da prévia (é ele que vai sair)
             + '#top5 .top5-drop:has(> .top5-ghost) > :not(.top5-ghost){visibility:hidden}'
-            + '#biblioteca .top5-ghost{opacity:.4}';
+            + '#biblioteca .top5-ghost{opacity:.4}'
+            // Prévia da troca: o jogo do destino aparece apagadinho no slot de origem
+            + '#top5 .top5-swap-preview{position:absolute;inset:0;opacity:.6;pointer-events:none;z-index:10;outline:2px dashed rgb(139 92 246);border-radius:2px}';
         document.head.appendChild(style);
     }
 
