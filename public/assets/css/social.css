@@ -1018,9 +1018,13 @@ html.fmodal-open {
 .pe-swap,
 .pe-input,
 .pe-actions,
-.pe-edit-only,
-.pe-form .mgl-preview {
+.pe-edit-only {
   display: none;
+}
+
+/* garantia: a caixinha de pré-visualização nunca aparece no perfil */
+.pe-form .mgl-preview {
+  display: none !important;
 }
 
 .pe-on .pe-view,
@@ -1053,6 +1057,7 @@ html.fmodal-open {
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  white-space: nowrap;
   cursor: pointer;
 }
 

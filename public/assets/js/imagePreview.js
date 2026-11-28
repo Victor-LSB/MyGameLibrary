@@ -137,6 +137,20 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function showPreview(input, cfg, state, blob, noteText) {
+        // Edição no próprio perfil: o resultado aparece direto no banner/avatar da página,
+        // sem a caixinha de pré-visualização (que ficaria dentro do botão "Trocar")
+        var target = document.querySelector('[data-crop-target="' + cfg.key + '"]');
+        if (target) {
+            if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
+            state.previewUrl = URL.createObjectURL(blob);
+            target.src = state.previewUrl;
+            target.hidden = false;
+            var ph = document.querySelector('[data-crop-placeholder="' + cfg.key + '"]');
+            if (ph) ph.hidden = true;
+            if (noteText) target.title = noteText;
+            return;
+        }
+
         var box = getPreview(input, cfg, state);
         if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
         state.previewUrl = URL.createObjectURL(blob);
@@ -147,14 +161,6 @@ document.addEventListener('DOMContentLoaded', function () {
         note.hidden = !noteText;
         box.querySelector('.mgl-preview-readjust').hidden = !state.original;
         box.style.display = 'block';
-        // Edição no próprio perfil: mostra o resultado direto no banner/avatar da página
-        var target = document.querySelector('[data-crop-target="' + cfg.key + '"]');
-        if (target) {
-            target.src = state.previewUrl;
-            target.hidden = false;
-            var ph = document.querySelector('[data-crop-placeholder="' + cfg.key + '"]');
-            if (ph) ph.hidden = true;
-        }
     }
 
     function hidePreview(cfg, state) {
