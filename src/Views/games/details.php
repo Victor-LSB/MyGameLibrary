@@ -24,13 +24,10 @@
         function mgl_render_game_tag_chip($tag, $isOwner) {
             ob_start();
             ?>
-            <div class="inline-flex items-center gap-1 rounded-full border border-violet-500/30 bg-violet-600/15 px-3 py-1.5 text-sm font-semibold text-violet-300" data-tag-id="<?php echo (int) $tag['id']; ?>">
-                <a href="index.php?action=home&tag=<?php echo urlencode($tag['name']); ?>" class="inline-flex items-center gap-2 hover:text-white transition-colors">
-                    <span>#</span>
-                    <span><?php echo htmlspecialchars($tag['name']); ?></span>
-                </a>
+            <div class="rv-tag" data-tag-id="<?php echo (int) $tag['id']; ?>">
+                <a href="index.php?action=home&tag=<?php echo urlencode($tag['name']); ?>"><b>#</b><?php echo htmlspecialchars($tag['name']); ?></a>
                 <?php if ($isOwner): ?>
-                    <button type="button" class="tag-remove-btn ml-2 text-xs font-black uppercase tracking-widest text-amber-200/80 hover:text-red-300 transition-colors" data-tag-id="<?php echo (int) $tag['id']; ?>" title="Remover tag">x</button>
+                    <button type="button" class="tag-remove-btn" data-tag-id="<?php echo (int) $tag['id']; ?>" title="Remover tag" aria-label="Remover tag <?php echo htmlspecialchars($tag['name']); ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" aria-hidden="true"><path stroke-linecap="square" d="M6 6l12 12M18 6L6 18"/></svg></button>
                 <?php endif; ?>
             </div>
             <?php
@@ -345,11 +342,11 @@
                     <h2 class="rv-h">Tags</h2>
                     <div class="bg-zinc-950 border-2 border-zinc-800 rounded-sm p-5">
                         <?php if ($isOwner): ?>
-                            <form id="addTagForm" class="flex flex-col sm:flex-row gap-3">
+                            <form id="addTagForm">
                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(\Victi\MyGameLibrary\Services\Csrf::token()); ?>">
                                 <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($game_id ?? ''); ?>">
-                                <input type="text" name="tags" id="addTagInput" placeholder="Ex.: RPG, Coop" class="flex-1 bg-zinc-900 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
-                                <button type="submit" class="btn btn-secondary rv-tag-add" aria-label="Adicionar tag" title="Adicionar tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="w-4 h-4" aria-hidden="true"><path stroke-linecap="square" d="M12 5v14M5 12h14"/></svg></button>
+                                <input type="text" name="tags" id="addTagInput" placeholder="Ex.: RPG, Coop" class="flex-1 text-white focus:outline-none font-medium text-sm">
+                                <button type="submit" class="rv-tag-add" title="Adicionar tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" aria-hidden="true"><path stroke-linecap="square" d="M12 5v14M5 12h14"/></svg>Adicionar</button>
                             </form>
                             <span class="block mt-2 text-xs text-zinc-500">Separe várias tags por vírgula.</span>
                         <?php endif; ?>
@@ -457,6 +454,7 @@
             position: 'top-end',
             showConfirmButton: false,
             timer: 3000,
+            timerProgressBar: true,
             icon: 'success',
             title: '<?php echo $_SESSION['review_success']; ?>'
         });

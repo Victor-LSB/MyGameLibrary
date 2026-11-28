@@ -34,6 +34,7 @@
     <meta name="theme-color" content="#7c3aed">
     <link rel="stylesheet" href="<?php echo mgl_asset('assets/css/output.css'); ?>">
     <link rel="stylesheet" href="<?php echo mgl_asset('assets/css/scrollbar.css'); ?>">
+    <link rel="stylesheet" href="<?php echo mgl_asset('assets/css/toast.css'); ?>">
     <?php foreach (($extraStyles ?? []) as $extraCss): ?>
     <link rel="stylesheet" href="<?php echo mgl_asset($extraCss); ?>">
     <?php endforeach; ?>

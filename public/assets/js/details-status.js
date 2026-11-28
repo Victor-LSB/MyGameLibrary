@@ -20,7 +20,8 @@
         toast: true,
         position: 'top-end',
         showConfirmButton: false,
-        timer: 3000
+        timer: 3000,
+        timerProgressBar: true
     }) : null;
 
     function notify(icon, title, text) {
@@ -209,11 +210,11 @@
             if (!tagsList) return;
 
             tagsList.innerHTML = tags.map(function (tag) {
-                return '<div class="inline-flex items-center gap-1 rounded-full border border-violet-500/30 bg-violet-600/15 px-3 py-1.5 text-sm font-semibold text-violet-300" data-tag-id="' + tag.id + '">' +
-                    '<a href="index.php?action=home&tag=' + encodeURIComponent(tag.name) + '" class="inline-flex items-center gap-2 hover:text-white transition-colors">' +
-                        '<span>#</span><span>' + escapeHtml(tag.name) + '</span>' +
-                    '</a>' +
-                    '<button type="button" class="tag-remove-btn ml-2 text-xs font-black uppercase tracking-widest text-amber-200/80 hover:text-red-300 transition-colors" data-tag-id="' + tag.id + '" title="Remover tag">x</button>' +
+                return '<div class="rv-tag" data-tag-id="' + tag.id + '">' +
+                    '<a href="index.php?action=home&tag=' + encodeURIComponent(tag.name) + '"><b>#</b>' + escapeHtml(tag.name) + '</a>' +
+                    '<button type="button" class="tag-remove-btn" data-tag-id="' + tag.id + '" title="Remover tag" aria-label="Remover tag ' + escapeHtml(tag.name) + '">' +
+                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" aria-hidden="true"><path stroke-linecap="square" d="M6 6l12 12M18 6L6 18"/></svg>' +
+                    '</button>' +
                 '</div>';
             }).join('');
 

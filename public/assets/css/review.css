@@ -213,22 +213,88 @@
   font-size: 13px;
 }
 
-/* tags na lateral: campo + botão quadrado de "+" */
+/* tags na lateral: campo e botão num controle só */
 #addTagForm {
-  flex-direction: row;
-  gap: 8px;
+  display: flex;
+  border: 2px solid #27272a;
+  border-radius: 2px;
+  background: #18181b;
+  transition: border-color 0.15s;
 }
+
+#addTagForm:focus-within { border-color: #8b5cf6; }
 
 #addTagForm input[type="text"] {
   min-width: 0;
+  border: 0;
+  background: transparent;
   padding: 10px 12px;
 }
 
 .rv-tag-add {
-  width: 46px;
-  padding: 0;
-  justify-content: center;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   flex-shrink: 0;
+  padding: 0 14px;
+  border-left: 2px solid #27272a;
+  color: #a1a1aa;
+  font: 900 11px/1 Inter, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.rv-tag-add svg { width: 12px; height: 12px; }
+
+.rv-tag-add:hover,
+#addTagForm:focus-within .rv-tag-add {
+  color: #fff;
+  background: #7c3aed;
+  border-left-color: #7c3aed;
+}
+
+/* chips de tag: retângulo escuro, # roxo, remover discreto */
+.rv-tag {
+  display: inline-flex;
+  align-items: stretch;
+  border: 2px solid #27272a;
+  border-radius: 2px;
+  background: #18181b;
+  color: #e4e4e7;
+  font: 700 13px/1 Inter, sans-serif;
+  transition: border-color 0.15s;
+}
+
+.rv-tag:hover { border-color: #3f3f46; }
+
+.rv-tag a {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 10px 7px 9px;
+}
+
+.rv-tag a b { color: #8b5cf6; font-weight: 900; }
+.rv-tag a:hover { color: #fff; }
+
+.rv-tag .tag-remove-btn {
+  display: flex;
+  align-items: center;
+  padding: 0 7px;
+  border-left: 2px solid #27272a;
+  color: #52525b;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.rv-tag .tag-remove-btn svg { width: 10px; height: 10px; }
+
+.rv-tag .tag-remove-btn:hover,
+.rv-tag .tag-remove-btn:focus-visible {
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.12);
 }
 
 /* comentário compacto: uma linha que cresce ao focar (igual ao mural do perfil) */

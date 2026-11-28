@@ -542,7 +542,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         Swal.fire({
-            toast: true, position: 'top-end', showConfirmButton: false, timer: 3000,
+            toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true,
             icon: 'success', title: '<?php echo $_SESSION['profile_success']; ?>'
         });
     </script>
