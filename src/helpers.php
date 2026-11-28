@@ -227,22 +227,36 @@ if (!function_exists('mgl_current_user')) {
 
 if (!function_exists('mgl_cover_thumb')) {
     /**
-     * Versão pequena de uma capa, para miniaturas (até ~90 px na tela).
-     * Só muda o endereço na exibição; o banco continua com a capa grande.
-     *   - IGDB: troca o tamanho (t_cover_big_2x etc.) por t_cover_small_2x (180x240).
-     *   - RAWG (capas antigas, de antes da migração): usa o redimensionamento do próprio
-     *     RAWG; sem isso a imagem original chega com até 4000 px de largura.
+     * Versão de uma capa no tamanho certo para onde ela aparece.
+     * Só muda o endereço na exibição; o banco continua com a capa original.
+     *   $size 'small'  -> miniaturas de até ~90 px (diário, "Jogando agora")
+     *   $size 'medium' -> capas médias de até ~130 px (mosaico do gráfico)
+     *   $size 'large'  -> versão 2x da média, para telas de alta densidade (srcset)
+     * IGDB: troca o tamanho no caminho. RAWG (capas antigas): usa o redimensionamento
+     * do próprio RAWG; sem isso a imagem original chega com até 4000 px.
      * Qualquer outro endereço volta como está.
      */
-    function mgl_cover_thumb(?string $url): ?string {
+    function mgl_cover_thumb(?string $url, string $size = 'small'): ?string {
         if ($url === null || $url === '') return $url;
         $url = preg_replace('#^http://(?!localhost|127\.)#i', 'https://', $url);
+        $igdb = ['small' => 't_cover_small_2x', 'medium' => 't_cover_big', 'large' => 't_cover_big_2x'];
+        $rawg = ['small' => 200, 'medium' => 640, 'large' => 1280];
+        $size = isset($igdb[$size]) ? $size : 'small';
         if (str_contains($url, 'images.igdb.com/igdb/image/upload/')) {
-            return preg_replace('#/upload/t_[a-z0-9_]+/#i', '/upload/t_cover_small_2x/', $url);
+            return preg_replace('#/upload/t_[a-z0-9_]+/#i', '/upload/' . $igdb[$size] . '/', $url);
         }
         if (str_contains($url, 'media.rawg.io/media/') && !str_contains($url, '/media/resize/') && !str_contains($url, '/media/crop/')) {
-            return str_replace('media.rawg.io/media/', 'media.rawg.io/media/resize/200/-/', $url);
+            return str_replace('media.rawg.io/media/', 'media.rawg.io/media/resize/' . $rawg[$size] . '/-/', $url);
         }
         return $url;
+    }
+}
+
+if (!function_exists('mgl_cover_srcset')) {
+    /** srcset "média 1x, grande 2x" para capas médias (vazio se a capa não tem versões). */
+    function mgl_cover_srcset(?string $url): string {
+        $m = mgl_cover_thumb($url, 'medium');
+        $l = mgl_cover_thumb($url, 'large');
+        return ($m && $l && $m !== $l) ? $m . ' 1x, ' . $l . ' 2x' : '';
     }
 }

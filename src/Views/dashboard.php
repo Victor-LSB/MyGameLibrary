@@ -240,7 +240,7 @@
                                                     <div class="dash-bar__covers" style="grid-template-columns: repeat(<?php echo $mosaicCols; ?>, minmax(0, 1fr))">
                                                         <?php foreach ($coverGames as $cg): ?>
                                                             <?php if (!empty($cg['cover_image'])): ?>
-                                                                <img src="<?php echo htmlspecialchars(mgl_cover_thumb($cg['cover_image'])); ?>" alt="" loading="lazy">
+                                                                <img src="<?php echo htmlspecialchars(mgl_cover_thumb($cg['cover_image'], 'medium')); ?>" srcset="<?php echo htmlspecialchars(mgl_cover_srcset($cg['cover_image'])); ?>" alt="" loading="lazy">
                                                             <?php else: ?>
                                                                 <?php $initials = mb_strtoupper(implode('', array_map(fn($w) => mb_substr($w, 0, 1), array_slice(preg_split('/\s+/u', trim(preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $cg['title']))), 0, 3)))); ?>
                                                                 <span><?php echo htmlspecialchars($initials); ?></span>
@@ -426,133 +426,16 @@
         </div>
 
         <?php require __DIR__ . '/partials/igdb_credit.php'; ?>
+        <script type="application/json" id="dashCalData"><?php echo json_encode([
+            'period' => $period,
+            'ref' => $dash['ref'] ?? date('Y-m-d'),
+            'today' => date('Y-m-d'),
+            'firstDay' => $dash['first_day'] ?? date('Y-m-d'),
+            'days' => (object) ($dash['completion_days'] ?? []),
+        ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE); ?></script>
     </main>
 
-    <script>
-    // Calendário do dashboard: escolher semana, mês ou ano sem ir de seta em seta.
-    // Períodos com jogos zerados ficam marcados; datas futuras e antes da primeira atividade ficam desligadas.
-    (function () {
-        const btn = document.getElementById('dashCalBtn');
-        const box = document.getElementById('dashCal');
-        if (!btn || !box) return;
-
-        const period = <?php echo json_encode($period); ?>;
-        const ref = <?php echo json_encode($dash['ref'] ?? date('Y-m-d')); ?>;
-        const today = <?php echo json_encode(date('Y-m-d')); ?>;
-        const firstDay = <?php echo json_encode($dash['first_day'] ?? date('Y-m-d')); ?>;
-        const days = <?php echo json_encode((object) ($dash['completion_days'] ?? [])); ?>;
-        const months = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-        const wk = ['seg','ter','qua','qui','sex','sáb','dom'];
-
-        const pad = (n) => String(n).padStart(2, '0');
-        const ymd = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-        const parse = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
-        const url = (d) => 'index.php?action=dashboard&period=' + period + '&d=' + d;
-        const count = (prefix) => Object.keys(days).reduce((t, k) => t + (k.startsWith(prefix) ? days[k] : 0), 0);
-        const firstYear = Number(firstDay.slice(0, 4));
-        const thisYear = Number(today.slice(0, 4));
-
-        let viewYear = Number(ref.slice(0, 4));
-        let viewMonth = Number(ref.slice(5, 7)) - 1;
-
-        function head(label, canPrev, canNext) {
-            return '<div class="dash-cal__head">'
-                + '<button type="button" data-step="-1" ' + (canPrev ? '' : 'disabled') + ' aria-label="Anterior">‹</button>'
-                + '<b>' + label + '</b>'
-                + '<button type="button" data-step="1" ' + (canNext ? '' : 'disabled') + ' aria-label="Próximo">›</button></div>';
-        }
-
-        function render() {
-            let html = '';
-            if (period === 'year') {
-                html += '<p class="dash-cal__title">Escolha o ano</p><div class="dash-cal__grid dash-cal__grid--3">';
-                for (let y = thisYear; y >= firstYear; y--) {
-                    const n = count(y + '-');
-                    const cur = Number(ref.slice(0, 4)) === y;
-                    html += '<a href="' + url(y + '-01-01') + '" class="dash-cal__cell' + (cur ? ' is-cur' : '') + '">' + y
-                        + (n ? '<small>' + n + ' zerado' + (n > 1 ? 's' : '') + '</small>' : '<small class="is-none">—</small>') + '</a>';
-                }
-                html += '</div>';
-            } else if (period === 'month') {
-                html += head(String(viewYear), viewYear > firstYear, viewYear < thisYear) + '<div class="dash-cal__grid dash-cal__grid--3">';
-                for (let m = 0; m < 12; m++) {
-                    const key = viewYear + '-' + pad(m + 1);
-                    const off = key > today.slice(0, 7) || key < firstDay.slice(0, 7);
-                    const cur = key === ref.slice(0, 7);
-                    const n = count(key + '-');
-                    const label = months[m].slice(0, 3);
-                    html += off
-                        ? '<span class="dash-cal__cell is-off">' + label + '</span>'
-                        : '<a href="' + url(key + '-01') + '" class="dash-cal__cell' + (cur ? ' is-cur' : '') + '">' + label
-                          + (n ? '<small>' + n + '</small>' : '') + '</a>';
-                }
-                html += '</div>';
-            } else {
-                // Semana: calendário do mês, uma linha por semana (segunda a domingo)
-                const first = new Date(viewYear, viewMonth, 1);
-                const last = new Date(viewYear, viewMonth + 1, 0);
-                const canPrev = (viewYear * 12 + viewMonth) > (firstYear * 12 + Number(firstDay.slice(5, 7)) - 1);
-                const canNext = (viewYear * 12 + viewMonth) < (thisYear * 12 + Number(today.slice(5, 7)) - 1);
-                html += head(months[viewMonth] + ' ' + viewYear, canPrev, canNext);
-                html += '<div class="dash-cal__week dash-cal__week--head">' + wk.map((d) => '<span>' + d + '</span>').join('') + '</div>';
-                let start = new Date(first);
-                start.setDate(start.getDate() - ((start.getDay() + 6) % 7));   // volta até a segunda-feira
-                const refMonday = (() => { const r = parse(ref); r.setDate(r.getDate() - ((r.getDay() + 6) % 7)); return ymd(r); })();
-                while (start <= last) {
-                    const monday = ymd(start);
-                    const sunday = new Date(start); sunday.setDate(sunday.getDate() + 6);
-                    const off = monday > today || ymd(sunday) < firstDay;
-                    const cur = monday === refMonday;
-                    let cells = '';
-                    for (let i = 0; i < 7; i++) {
-                        const d = new Date(start); d.setDate(d.getDate() + i);
-                        const key = ymd(d);
-                        const other = d.getMonth() !== viewMonth;
-                        cells += '<span class="' + (other ? 'is-other ' : '') + (days[key] ? 'has-game' : '') + '">' + d.getDate() + '</span>';
-                    }
-                    html += off
-                        ? '<span class="dash-cal__week is-off">' + cells + '</span>'
-                        : '<a href="' + url(monday) + '" class="dash-cal__week' + (cur ? ' is-cur' : '') + '">' + cells + '</a>';
-                    start.setDate(start.getDate() + 7);
-                }
-                html += '<p class="dash-cal__hint"><i></i> dia com jogo zerado · clique numa semana</p>';
-            }
-            box.innerHTML = html;
-        }
-
-        function open() {
-            viewYear = Number(ref.slice(0, 4));
-            viewMonth = Number(ref.slice(5, 7)) - 1;
-            render();
-            box.hidden = false;
-            btn.setAttribute('aria-expanded', 'true');
-            btn.classList.add('is-active');
-        }
-        function close() {
-            box.hidden = true;
-            btn.setAttribute('aria-expanded', 'false');
-            btn.classList.remove('is-active');
-        }
-
-        btn.addEventListener('click', (e) => { e.stopPropagation(); box.hidden ? open() : close(); });
-        box.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const step = e.target.closest('[data-step]');
-            if (!step || step.disabled) return;
-            const dir = Number(step.dataset.step);
-            if (period === 'month') {
-                viewYear += dir;
-            } else {
-                viewMonth += dir;
-                if (viewMonth < 0) { viewMonth = 11; viewYear--; }
-                if (viewMonth > 11) { viewMonth = 0; viewYear++; }
-            }
-            render();
-        });
-        document.addEventListener('click', () => { if (!box.hidden) close(); });
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !box.hidden) { close(); btn.focus(); } });
-    })();
-    </script>
+    <script src="<?php echo mgl_asset('assets/js/dashboard-nav.js'); ?>"></script>
     <script src="<?php echo mgl_asset('assets/js/notifications.js'); ?>"></script>
 </body>
 </html>
