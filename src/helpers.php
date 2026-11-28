@@ -253,10 +253,16 @@ if (!function_exists('mgl_cover_thumb')) {
 }
 
 if (!function_exists('mgl_cover_srcset')) {
-    /** srcset "média 1x, grande 2x" para capas médias (vazio se a capa não tem versões). */
-    function mgl_cover_srcset(?string $url): string {
-        $m = mgl_cover_thumb($url, 'medium');
-        $l = mgl_cover_thumb($url, 'large');
-        return ($m && $l && $m !== $l) ? $m . ' 1x, ' . $l . ' 2x' : '';
+    /**
+     * srcset "1x, 2x" a partir de um tamanho base (vazio se a capa não tem versões):
+     *   'small'  -> pequena 1x, média 2x   (miniaturas)
+     *   'medium' -> média 1x, grande 2x    (capas médias)
+     */
+    function mgl_cover_srcset(?string $url, string $base = 'medium'): string {
+        $next = ['small' => 'medium', 'medium' => 'large'];
+        $base = isset($next[$base]) ? $base : 'medium';
+        $a = mgl_cover_thumb($url, $base);
+        $b = mgl_cover_thumb($url, $next[$base]);
+        return ($a && $b && $a !== $b) ? $a . ' 1x, ' . $b . ' 2x' : '';
     }
 }

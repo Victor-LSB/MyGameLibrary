@@ -254,8 +254,8 @@
 .dash-date span { font-size: 10px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #71717a; }
 .dash-cover {
   display: block;
-  width: 3.25rem;
-  height: 4.4rem;
+  width: 3.75rem;
+  height: 5rem;
   overflow: hidden;
   border: 2px solid #27272a;
   background: #27272a;
@@ -305,7 +305,7 @@
     padding: 0.75rem;
   }
   .dash-stars { display: none; }
-  .dash-cover { width: 2.75rem; height: 3.7rem; }
+  .dash-cover { width: 3.25rem; height: 4.35rem; }
   .dash-game { font-size: 0.875rem; }
   .dash-hrs { font-size: 1rem; }
 }
@@ -381,3 +381,6 @@ a.dash-cal__week:hover { border-color: #8b5cf6; background: #09090b; }
 .dash-cal__week.is-off span { color: #3f3f46; }
 .dash-cal__hint { margin-top: 10px; display: flex; align-items: center; gap: 6px; font-size: 11px; color: #71717a; }
 .dash-cal__hint i { width: 6px; height: 6px; background: #10b981; display: inline-block; }
+
+/* miniatura do "Jogando agora" (maior que antes, para a capa ser reconhecível) */
+.dash-thumb { display: block; width: 3.5rem; height: 4.7rem; }
