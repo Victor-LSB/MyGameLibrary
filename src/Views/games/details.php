@@ -9,7 +9,7 @@
         $ogImage = $game['cover_image'] ?? null;
         $ogType = 'article';
     }
-    $extraStyles = ['assets/css/review.css'];
+    $extraStyles = ['assets/css/review.css', 'assets/css/form-fields.css'];
     require_once __DIR__ . '/../header.php';
 ?>
 <body class="bg-zinc-950 text-zinc-200 font-sans min-h-screen pb-12 selection:bg-violet-600 selection:text-white">
@@ -288,11 +288,11 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <label class="block">
                                     <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Data de conclusão</span>
-                                    <input type="date" name="completion_date" max="<?php echo date('Y-m-d'); ?>" value="<?php echo htmlspecialchars($game['completion_date'] ?? ''); ?>" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
+                                    <input type="date" data-datepicker name="completion_date" max="<?php echo date('Y-m-d'); ?>" value="<?php echo htmlspecialchars($game['completion_date'] ?? ''); ?>" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
                                 </label>
                                 <label class="block">
                                     <span class="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Tempo gasto (horas)</span>
-                                    <input type="number" name="time_spent_hours" min="0" step="0.25" value="<?php echo htmlspecialchars(isset($game['time_spent_hours']) ? (string) $game['time_spent_hours'] : ''); ?>" placeholder="Ex.: 15.5" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
+                                    <input type="text" inputmode="decimal" autocomplete="off" data-hours name="time_spent_hours" value="<?php echo htmlspecialchars(mgl_hours_input($game['time_spent_hours'] ?? null)); ?>" placeholder="Ex.: 3,1 ou 3:20" class="w-full bg-zinc-950 border-2 border-zinc-800 text-white rounded-sm px-4 py-3 focus:outline-none focus:border-violet-500 transition-colors font-medium text-sm">
                                 </label>
                             </div>
                             <div>
@@ -431,12 +431,12 @@
                 <div class="grid grid-cols-1 gap-4">
                     <label class="block">
                         <span class="mb-2 block text-xs font-black uppercase tracking-widest text-zinc-500">Data de Conclusão</span>
-                        <input type="datetime-local" name="completion_date" id="detailModalCompletionDate" class="w-full rounded-sm border-2 border-zinc-800 bg-zinc-950 px-4 py-3 text-zinc-100 font-medium outline-none transition-colors focus:border-violet-500">
+                        <input type="datetime-local" data-datepicker name="completion_date" id="detailModalCompletionDate" class="w-full rounded-sm border-2 border-zinc-800 bg-zinc-950 px-4 py-3 text-zinc-100 font-medium outline-none transition-colors focus:border-violet-500">
                     </label>
 
                     <label class="block">
                         <span class="mb-2 block text-xs font-black uppercase tracking-widest text-zinc-500">Horas Jogadas</span>
-                        <input type="number" min="0" step="0.25" name="time_spent_hours" id="detailModalTimeSpentHours" value="<?php echo htmlspecialchars(isset($game['time_spent_hours']) ? (string) $game['time_spent_hours'] : ''); ?>" class="w-full rounded-sm border-2 border-zinc-800 bg-zinc-950 px-4 py-3 text-zinc-100 font-medium outline-none transition-colors focus:border-violet-500" placeholder="Ex.: 24.5">
+                        <input type="text" inputmode="decimal" autocomplete="off" data-hours name="time_spent_hours" id="detailModalTimeSpentHours" value="<?php echo htmlspecialchars(mgl_hours_input($game['time_spent_hours'] ?? null)); ?>" class="w-full rounded-sm border-2 border-zinc-800 bg-zinc-950 px-4 py-3 text-zinc-100 font-medium outline-none transition-colors focus:border-violet-500" placeholder="Ex.: 3,1 ou 3:20">
                     </label>
                 </div>
 
@@ -514,6 +514,7 @@
     <?php if (!isset($_SESSION['review_success'])): ?>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <?php endif; ?>
+    <script src="<?php echo mgl_asset('assets/js/form-fields.js'); ?>"></script>
     <script src="<?php echo mgl_asset('assets/js/details-status.js'); ?>"></script>
     <?php endif; ?>
     <?php if (isset($game) && $game): ?>

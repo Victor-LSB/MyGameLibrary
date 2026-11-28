@@ -372,9 +372,10 @@ class GameController {
                 }
             }
 
-            $time_spent_raw = $_POST['time_spent_hours'] ?? null;
-            if ($time_spent_raw !== null && $time_spent_raw !== '' && is_numeric($time_spent_raw)) {
-                $time_spent_hours = number_format((float) $time_spent_raw, 2, '.', '');
+            // Aceita 3.1 / 3,1 / 3:20 / 3h20 / 45min (ver mgl_parse_hours)
+            $parsedHours = mgl_parse_hours($_POST['time_spent_hours'] ?? '');
+            if (is_float($parsedHours)) {
+                $time_spent_hours = number_format($parsedHours, 2, '.', '');
             }
 
             if ($game_id) {
@@ -721,10 +722,11 @@ class GameController {
             }
         }
 
-        $time_spent_raw = $_POST['time_spent_hours'] ?? '';
+        // Aceita 3.1 / 3,1 / 3:20 / 3h20 / 45min (ver mgl_parse_hours)
         $time_spent_hours = null;
-        if ($time_spent_raw !== '' && is_numeric($time_spent_raw)) {
-            $time_spent_hours = number_format((float) $time_spent_raw, 2, '.', '');
+        $parsedHours = mgl_parse_hours($_POST['time_spent_hours'] ?? '');
+        if (is_float($parsedHours)) {
+            $time_spent_hours = number_format($parsedHours, 2, '.', '');
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {

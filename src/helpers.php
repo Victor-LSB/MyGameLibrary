@@ -266,3 +266,34 @@ if (!function_exists('mgl_cover_srcset')) {
         return ($a && $b && $a !== $b) ? $a . ' 1x, ' . $b . ' 2x' : '';
     }
 }
+
+if (!function_exists('mgl_parse_hours')) {
+    /**
+     * Converte o que a pessoa digitou no campo de horas para horas decimais.
+     * Aceita "3.1", "3,1" (Steam usa ponto), "3:20" e "3h20" (horas:minutos), "3h 20min",
+     * "45min" e "1,5h". Vazio -> null. Texto que não dá para entender -> false.
+     */
+    function mgl_parse_hours($raw) {
+        $s = strtolower(preg_replace('/\s+/', '', trim((string) $raw)));
+        if ($s === '') return null;
+        if (preg_match('/^(\d+):([0-5]?\d)$/', $s, $m) || preg_match('/^(\d+)h([0-5]?\d)$/', $s, $m)) {
+            $h = (int) $m[1] + (int) $m[2] / 60;
+        } elseif (preg_match('/^(?:(\d+(?:[.,]\d+)?)h)?(?:(\d+)(?:m|min))?$/', $s, $m) && (($m[1] ?? '') !== '' || ($m[2] ?? '') !== '')) {
+            $h = (float) str_replace(',', '.', $m[1] ?? '0') + (int) ($m[2] ?? 0) / 60;
+        } elseif (preg_match('/^\d+([.,]\d+)?$/', $s)) {
+            $h = (float) str_replace(',', '.', $s);
+        } else {
+            return false;
+        }
+        return ($h >= 0 && $h < 100000) ? round($h, 2) : false;
+    }
+}
+
+if (!function_exists('mgl_hours_input')) {
+    /** Valor para mostrar no campo de horas: 22 -> "22", 3.10 -> "3,1", 3.33 -> "3,33". */
+    function mgl_hours_input($hours): string {
+        if ($hours === null || $hours === '') return '';
+        $s = rtrim(rtrim(number_format((float) $hours, 2, ',', ''), '0'), ',');
+        return $s;
+    }
+}

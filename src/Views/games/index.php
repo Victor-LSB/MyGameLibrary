@@ -296,12 +296,12 @@
                 <div class="grid grid-cols-1 gap-4">
                     <label class="block">
                         <span class="mb-2 block text-xs font-black uppercase tracking-widest text-zinc-500">Data de Conclusão</span>
-                        <input type="datetime-local" name="completion_date" id="modalCompletionDate" class="w-full rounded-sm border-2 border-zinc-800 bg-zinc-950 px-4 py-3 text-zinc-100 font-medium outline-none transition-colors focus:border-violet-500">
+                        <input type="datetime-local" data-datepicker name="completion_date" id="modalCompletionDate" class="w-full rounded-sm border-2 border-zinc-800 bg-zinc-950 px-4 py-3 text-zinc-100 font-medium outline-none transition-colors focus:border-violet-500">
                     </label>
 
                     <label class="block">
                         <span class="mb-2 block text-xs font-black uppercase tracking-widest text-zinc-500">Horas Jogadas</span>
-                        <input type="number" min="0" step="0.25" name="time_spent_hours" id="modalTimeSpentHours" class="w-full rounded-sm border-2 border-zinc-800 bg-zinc-950 px-4 py-3 text-zinc-100 font-medium outline-none transition-colors focus:border-violet-500" placeholder="Ex.: 24.5">
+                        <input type="text" inputmode="decimal" autocomplete="off" data-hours name="time_spent_hours" id="modalTimeSpentHours" class="w-full rounded-sm border-2 border-zinc-800 bg-zinc-950 px-4 py-3 text-zinc-100 font-medium outline-none transition-colors focus:border-violet-500" placeholder="Ex.: 3,1 ou 3:20">
                     </label>
                 </div>
 
@@ -314,6 +314,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="<?php echo mgl_asset('assets/css/form-fields.css'); ?>">
+    <script src="<?php echo mgl_asset('assets/js/form-fields.js'); ?>"></script>
     <script src="<?php echo mgl_asset('assets/js/status.js'); ?>"></script>
     <script src="<?php echo mgl_asset('assets/js/notifications.js'); ?>"></script>
 <?php require __DIR__ . '/../partials/igdb_credit.php'; ?>

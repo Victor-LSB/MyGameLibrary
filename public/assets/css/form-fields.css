@@ -1,0 +1,165 @@
+/* Calendário próprio (form-fields.js), no estilo do calendário do dashboard */
+.mdp {
+  position: relative;
+}
+
+.mdp__display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mdp__display::after {
+  content: "";
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-left: 10px;
+  background: currentColor;
+  opacity: 0.6;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5'%3E%3Crect x='3' y='5' width='18' height='16'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5'%3E%3Crect x='3' y='5' width='18' height='16'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.mdp__display.is-empty {
+  color: #71717a;
+}
+
+.mdp__display[aria-expanded="true"] {
+  border-color: #8b5cf6;
+}
+
+.mdp__pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 60;
+  width: 296px;
+  max-width: calc(100vw - 32px);
+  padding: 12px;
+  background: #18181b;
+  border: 2px solid #3f3f46;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+}
+
+.mdp__pop[hidden] {
+  display: none;
+}
+
+.mdp__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.mdp__head b {
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.mdp__head button {
+  width: 32px;
+  height: 32px;
+  border: 2px solid #27272a;
+  background: #09090b;
+  color: #d4d4d8;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.mdp__head button:hover:not(:disabled) {
+  border-color: #8b5cf6;
+  color: #fff;
+}
+
+.mdp__head button:disabled {
+  color: #3f3f46;
+  cursor: not-allowed;
+}
+
+.mdp__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.mdp__grid--head span {
+  padding-bottom: 6px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #71717a;
+}
+
+.mdp__day {
+  height: 36px;
+  border: 2px solid transparent;
+  background: transparent;
+  color: #e4e4e7;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.mdp__day:hover:not(:disabled) {
+  border-color: #8b5cf6;
+  color: #fff;
+}
+
+.mdp__day:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: -2px;
+}
+
+.mdp__day.is-other {
+  color: #52525b;
+}
+
+.mdp__day.is-today {
+  border-color: #3f3f46;
+}
+
+.mdp__day.is-sel {
+  background: #7c3aed;
+  border-color: #7c3aed;
+  color: #fff;
+}
+
+.mdp__day:disabled {
+  color: #3f3f46;
+  cursor: not-allowed;
+}
+
+.mdp__foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 2px solid #27272a;
+}
+
+.mdp__foot button {
+  padding: 4px 2px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a78bfa;
+}
+
+.mdp__foot button:hover {
+  color: #fff;
+}
+
+/* campo de horas com texto que não dá para entender */
+input[data-hours].is-invalid {
+  border-color: #f87171 !important;
+}
